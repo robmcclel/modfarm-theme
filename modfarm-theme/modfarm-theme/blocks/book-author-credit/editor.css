@@ -1,0 +1,29 @@
+/* Book Author Credit editor styles */
+
+.mfs-author-name {
+    font-size: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    color: inherit;
+}
+
+.align-left {
+    margin-left: 0;
+    justify-content: flex-start;
+}
+
+.align-center {
+   margin-left: auto;
+   margin-right: auto;
+   justify-content: center;
+}
+
+.align-right {
+    margin-right: 0;
+    justify-content: flex-end;
+}
+
+.mfs-author-credit-entry,
+.mfs-author-name {
+	/* text-align: inherit; */
+}

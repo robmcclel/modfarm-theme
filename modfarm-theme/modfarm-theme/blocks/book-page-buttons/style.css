@@ -1,0 +1,62 @@
+/* === Book Page Buttons Block Styles === */
+
+/* Layout alignment */
+.mfs-align-left { text-align: left; }
+.mfs-align-center { text-align: center; }
+.mfs-align-right { text-align: right; }
+
+/*
+  Base button styling (shared)
+  Uses ModFarm Settings design tokens:
+  --mfb-bp-btn-border-width
+  --mfb-bp-btn-radius
+  Plus optional per-button overrides injected as:
+  --mfb-bp-override-bg / --mfb-bp-override-fg / --mfb-bp-override-border / --mfb-bp-override-radius
+*/
+a.book-page-button {
+  /* Fallbacks if tokens are missing */
+  --_bp-border-w: var(--mfb-bp-btn-border-width, 1px);
+  --_bp-radius:   var(--mfb-bp-override-radius, var(--mfb-bp-btn-radius, 0px));
+
+  border-width: var(--_bp-border-w);
+  border-style: solid;
+  border-radius: var(--_bp-radius);
+
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+
+  display: block;
+  padding: 18px 30px;
+  margin: 10px auto;
+  text-align: center;
+  width: 85%;
+
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* Primary (filled “Buy” style) */
+a.book-page-button.is-primary {
+  background-color: var(--mfb-bp-override-bg, var(--mfb-bp-primary-bg, #f2b100));
+  color:            var(--mfb-bp-override-fg, var(--mfb-bp-primary-fg, #111111));
+  border-color:     var(--mfb-bp-override-border, var(--mfb-bp-primary-border, #f2b100));
+}
+
+/* Secondary (outline “Sample/Reviews” style) */
+a.book-page-button.is-secondary {
+  background-color: var(--mfb-bp-override-bg, var(--mfb-bp-secondary-bg, transparent));
+  color:            var(--mfb-bp-override-fg, var(--mfb-bp-secondary-fg, #222222));
+  border-color:     var(--mfb-bp-override-border, var(--mfb-bp-secondary-border, #222222));
+}
+
+/* Hover/focus: keep it simple + accessible */
+a.book-page-button:focus,
+a.book-page-button:hover {
+  text-decoration: none;
+  filter: brightness(0.97);
+}
+
+a.book-page-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

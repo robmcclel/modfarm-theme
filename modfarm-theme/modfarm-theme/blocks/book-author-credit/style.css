@@ -1,0 +1,76 @@
+/* === Book Page Author Block Styles === */
+
+.mfs-author-credit {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem;
+	/* text-align: center; */
+	margin: 1.5rem 0;
+}
+
+.mfs-author-credit-line {
+	font-size: inherit;
+	/*color: inherit;*/
+	font-weight: 600;
+	/*text-align: inherit; */
+	margin: 0;
+} 
+
+.mfs-author-fallback {
+	color: #cc0000;
+	font-style: italic;
+}
+
+/* Alignments applied to .mfs-author-credit-entry */
+.align-left {
+	margin-left: 0;
+	margin-right: auto;
+	text-align: left;
+}
+
+.align-center {
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+}
+
+.align-right {
+	margin-left: auto;
+	margin-right: 0;
+	text-align: right;
+}
+
+.mfs-author-credit-entry {
+	display: flex;
+	flex-direction: column;
+	/* text-align: center; */
+	/* max-width: 120px; */
+	/* text-align: inherit; */
+}
+
+.mfs-author-avatar {
+	border-radius: 50%;
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	margin-bottom: 0.5rem;
+}
+
+.mfs-author-name {
+	font-size: inherit;
+	font-weight: 600;
+	text-decoration: none;
+	/*color: inherit; */
+	/* text-align: inherit; */
+}
+
+.mfs-author-name:hover {
+	text-decoration: underline;
+}
+
+/* Responsive stack for small screens */
+@media (max-width: 600px) {
+	.mfs-author-credit {
+		justify-content: center;
+	}
+}

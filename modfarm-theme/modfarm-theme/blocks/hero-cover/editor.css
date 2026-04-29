@@ -1,0 +1,105 @@
+.editor-styles-wrapper .mf-hero-cover{
+  min-height: 240px;
+}
+
+/* Ensure the hero wrapper is a real stacking context in the editor */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover--editor{
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background layer: true overlay behind content */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__bg{
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* SSR markup will render a <section> inside __bg; make it fill */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__bg > *{
+  height: 100%;
+}
+
+/* Content layer: above background, clickable */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content--editor{
+  position: relative;
+  z-index: 5;
+
+  /* correct “centered max-width box” behavior */
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+
+  /* prevent inner margins escaping (no margin-collapse weirdness) */
+  display: flow-root;
+}
+
+/* Optional: small helper note */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__note{
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 10;
+  font-size: 12px;
+  opacity: .8;
+  background: rgba(0,0,0,.35);
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #fff;
+  pointer-events: none;
+}
+
+/* The SSR preview renders the actual frontend <section> inside __bg.
+   Force that section to fill the background layer. */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__bg section.modfarm-hero-cover{
+  position: absolute !important;
+  inset: 0 !important;
+  min-height: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+/* Ensure the overlay inside SSR preview is visible and fills the bg */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__bg section.modfarm-hero-cover .modfarm-hero-cover__overlay{
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+}
+
+/* Hide SSR “content” layer in editor preview mode if it ever renders */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__bg section.modfarm-hero-cover .modfarm-hero-cover__content{
+  display: none !important;
+}
+
+/* Default hero text to white for readability */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content,
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content *{
+  color: #fff;
+}
+
+/* Links too */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content a{
+  color: #fff;
+  text-decoration-color: currentColor;
+}
+
+
+/* Make hero flush with neighbors (kills “mystery gap”) */
+.wp-block-modfarm-hero-cover,
+.modfarm-hero-cover {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Kill the next block's top margin if it’s creating the visible gap */
+.wp-block-modfarm-hero-cover + * {
+  margin-top: 0 !important;
+}
+
+/* If your theme uses block-gap on a parent container, this helps too */
+.wp-site-blocks > .wp-block-modfarm-hero-cover {
+  margin-block-start: 0 !important;
+}
+.wp-site-blocks > .wp-block-modfarm-hero-cover + * {
+  margin-block-start: 0 !important;
+}

@@ -1,0 +1,19 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/tax-description",
+  "title": "Taxonomy Description",
+  "category": "modfarm-theme",
+  "icon": "align-left",
+  "description": "Auto-detect the current archive term and show its image, title, and description.",
+  "keywords": ["taxonomy", "archive", "description", "author", "series", "genre"],
+  "supports": { "html": false, "align": false },
+  "attributes": {
+    "layout":          { "type": "string",  "default": "auto" },
+    "imageShape":      { "type": "string",  "default": "circle" },
+    "imgSize":         { "type": "number",  "default": 240 },
+    "textColor":       { "type": "string",  "default": "" }
+  },
+  "editorScript": "modfarm-tax-description-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./style.css"
+}

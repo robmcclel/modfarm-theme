@@ -1,0 +1,28 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/book-author-credit",
+  "title": "Book Author Credit",
+  "description": "Displays all authors for the current book, with alignment, font size, and color options.",
+  "category": "modfarm-book-page",
+  "icon": "id",
+  "keywords": ["author", "book", "modfarm"],
+  "attributes": {
+    "alignment": {
+      "type": "string",
+      "default": "left"
+    },
+    "fontSize": {
+      "type": "integer"
+    },
+    "textColor": {
+      "type": "string"
+    },
+    "showAvatar": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "modfarm-book-author-credit-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

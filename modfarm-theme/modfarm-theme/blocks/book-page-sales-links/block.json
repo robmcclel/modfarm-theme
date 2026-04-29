@@ -1,0 +1,39 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/book-page-sales-links",
+  "title": "Book Page Sales Links",
+  "category": "modfarm-book-page",
+  "icon": "book",
+  "description": "Displays retailer purchase buttons for a book, with optional auto-detect and labels.",
+  "keywords": ["purchase", "buy", "retailers", "book", "sales", "buttons"],
+  "supports": {
+    "html": false,
+    "anchor": false
+  },
+  "attributes": {
+    "introText": { "type": "string", "default": "Buy The Book" },
+    "textAlign": { "type": "string", "default": "center" },
+    "linksAlign": { "type": "string", "default": "center" },
+    "textColor": { "type": "string", "default": "" },
+    "fontWeight": { "type": "number", "default": 600 },
+    "fontSize": { "type": "number", "default": 18 },
+    "buttonAlign": { "type": "string", "default": "center" },
+    "buttonSize": { "type": "number", "default": 50 },
+    "borderRadius": { "type": "number","default": 4 },
+    "buttonPath": {
+      "type": "string",
+      "default": "/wp-content/themes/modfarm-theme/blocks/book-page-sales-links/images/"
+    },
+    "autoDetect": { "type": "boolean", "default": true },
+    "showLabels": { "type": "boolean", "default": false },
+    "retailer1": { "type": "string", "default": "" },
+    "retailer2": { "type": "string", "default": "" },
+    "retailer3": { "type": "string", "default": "" },
+    "retailer4": { "type": "string", "default": "" },
+    "retailer5": { "type": "string", "default": "" },
+    "retailer6": { "type": "string", "default": "" }
+  },
+  "editorScript": "modfarm-book-page-sales-links-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

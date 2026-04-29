@@ -1,0 +1,18 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/advanced-book-details",
+  "title": "Book Details (Advanced)",
+  "category": "modfarm-theme",
+  "icon": "list-view",
+  "description": "Ordered book details from taxonomies and meta fields using simple dropdowns.",
+  "keywords": ["book", "details", "meta", "taxonomy", "bms"],
+  "supports": { "html": false, "align": false },
+  "attributes": {
+    "rows": { "type": "array", "default": [] },
+    "hideEmpty": { "type": "boolean", "default": true },
+    "title": { "type": "string", "default": "" }
+  },
+  "editorScript": "modfarm-advanced-book-details-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

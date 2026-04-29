@@ -1,0 +1,90 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/featured-banner",
+  "title": "Featured Banner",
+  "category": "modfarm-theme",
+  "icon": "cover-image",
+  "description": "Hero banner with selectable book, overlay/gradient, optional media (none/cover/card), and up to three buttons.",
+  "keywords": ["featured", "banner", "hero", "book", "series"],
+  "supports": { "html": false, "align": ["wide", "full"] },
+
+  "attributes": {
+    "bookId": { "type": "number", "default": 0 },
+
+    "mediaMode": { "type": "string", "default": "cover" },
+    "mediaSide": { "type": "string", "default": "right" },
+    "mediaWidth": { "type": "number", "default": 350 },
+
+    "coverSource": { "type": "string", "default": "cover_ebook" },
+    "coverCorners": { "type": "string", "default": "square" },
+
+    "minHeight": { "type": "number", "default": 620 },
+
+    "overlayMode": { "type": "string", "default": "solid" },
+    "dimRatio": { "type": "number", "default": 30 },
+    "overlayColor": { "type": "string", "default": "#000000" },
+    "overlayGradient": { "type": "string", "default": "" },
+
+    "gradientColor1": { "type": "string", "default": "#000000" },
+    "gradientColor2": { "type": "string", "default": "#000000" },
+    "gradientAngle": { "type": "number", "default": 90 },
+
+    "heroSource": { "type": "string", "default": "book_meta" },
+    "heroUrl": { "type": "string", "default": "" },
+
+    "showHeadline": { "type": "boolean", "default": true },
+    "headlineSource": { "type": "string", "default": "book" },
+    "headline": { "type": "string", "default": "" },
+
+    "headlineTag": { "type": "string", "default": "h2" },
+    "headlineFontSize": { "type": "number", "default": 42 },
+
+    "kicker": { "type": "string", "default": "" },
+    "subhead": { "type": "string", "default": "" },
+
+    "textAlign": { "type": "string", "default": "left" },
+    "buttonAlign": { "type": "string", "default": "center" },
+
+    "useCustomDesc": { "type": "boolean", "default": false },
+    "refreshCustomDescOnBookChange": { "type": "boolean", "default": true },
+    "descOverride": { "type": "string", "default": "" },
+
+    "descFontSize": { "type": "number", "default": 18 },
+    "descFontWeight": { "type": "number", "default": 500 },
+    "descTextTransform": { "type": "string", "default": "none" },
+
+    "useExcerpt": { "type": "boolean", "default": false },
+    "excerptLen": { "type": "number", "default": 180 },
+
+    "btn1Source": { "type": "string", "default": "__none__" },
+    "btn1Label": { "type": "string", "default": "" },
+    "btn1Variant": { "type": "string", "default": "secondary" },
+
+    "btn2Source": { "type": "string", "default": "__none__" },
+    "btn2Label": { "type": "string", "default": "" },
+    "btn2Variant": { "type": "string", "default": "secondary" },
+
+    "btn3Source": { "type": "string", "default": "__none__" },
+    "btn3Label": { "type": "string", "default": "" },
+    "btn3Variant": { "type": "string", "default": "secondary" },
+
+    "buttonStyleMode": { "type": "string", "default": "inherit" },
+
+    "btnPrimaryBg": { "type": "string", "default": "" },
+    "btnPrimaryText": { "type": "string", "default": "" },
+    "btnPrimaryBorder": { "type": "string", "default": "" },
+
+    "btnOutlineBg": { "type": "string", "default": "" },
+    "btnOutlineText": { "type": "string", "default": "" },
+    "btnOutlineBorder": { "type": "string", "default": "" },
+
+    "buttonCorners": { "type": "string", "default": "inherit" },
+
+    "tracking": { "type": "boolean", "default": false },
+    "eventOrigin": { "type": "string", "default": "" }
+  },
+
+  "editorScript": "modfarm-featured-banner-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

@@ -1,0 +1,38 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/book-page-buttons",
+  "title": "Book Page Buttons",
+  "description": "Display customizable purchase or sample buttons for a book.",
+  "category": "modfarm-book-page",
+  "icon": "button",
+  "keywords": ["books", "buttons", "purchase", "modfarm"],
+  "usesContext": ["postId", "postType"],
+  "attributes": {
+    "buttons": {
+      "type": "array",
+      "default": []
+    },
+    "alignment": {
+      "type": "string",
+      "default": "center"
+    },
+    "radiusMode": {
+      "type": "string",
+      "default": "inherit"
+    },
+    "border_radius": {
+      "type": "number",
+      "default": 0
+    },
+    "showAdvanced": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "modfarm-book-page-buttons-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css",
+  "supports": {
+    "html": false
+  }
+}

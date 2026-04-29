@@ -1,0 +1,65 @@
+/* ModFarm — Table of Contents (frontend) */
+/* No explicit colors; everything inherits. */
+
+.mftoc {
+  --mftoc-gap: 10px;
+  --mftoc-col-min: 220px;
+  display: block;
+  margin: 20px 0;
+}
+
+.mftoc-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.mftoc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--mftoc-gap);
+}
+
+.mftoc--cols-1 .mftoc-list { grid-template-columns: 1fr; }
+.mftoc--cols-2 .mftoc-list { grid-template-columns: repeat(2, minmax(var(--mftoc-col-min), 1fr)); }
+.mftoc--cols-3 .mftoc-list { grid-template-columns: repeat(3, minmax(var(--mftoc-col-min), 1fr)); }
+
+.mftoc-item { position: relative; margin: 0; }
+
+/* Links: let color inherit; only change decoration for affordance */
+.mftoc-item a {
+  text-decoration: none;
+  border-bottom: 1px solid transparent; /* inherits color */
+}
+.mftoc-item a:hover {
+  text-decoration: underline;
+}
+
+/* Plain (default) */
+.mftoc--plain .mftoc-item::before { content: none; }
+
+/* Bulleted */
+.mftoc--bulleted .mftoc-item { padding-left: 1.1em; }
+.mftoc--bulleted .mftoc-item::before {
+  content: "•";
+  position: absolute; left: 0; top: 0;
+  line-height: 1.1;
+}
+
+/* Numbered */
+.mftoc--numbered .mftoc-list { counter-reset: mftoc; }
+.mftoc--numbered .mftoc-item { counter-increment: mftoc; padding-left: 1.2em; }
+.mftoc--numbered .mftoc-item::before {
+  content: counter(mftoc) ". ";
+  position: absolute; left: 0; top: 0;
+}
+
+/* Alignment */
+.mftoc--align-left  .mftoc-list { text-align: left; }
+.mftoc--align-center .mftoc-list { text-align: center; }
+.mftoc--align-right  .mftoc-list { text-align: right; }
+
+/* Gentle level cues (remain purely visual via opacity) */
+.mftoc .mftoc-l3 { opacity: .95; }
+.mftoc .mftoc-l4 { opacity: .90; }

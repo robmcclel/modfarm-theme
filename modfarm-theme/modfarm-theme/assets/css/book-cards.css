@@ -1,0 +1,546 @@
+/* ==========================================================
+   ModFarm Book Cards — unified (mfb-*) design language only
+   ========================================================== */
+
+/* Design tokens (tweak as needed) */
+:root {
+  --mfb-gap: 10px;
+
+  /* Card + media */
+  /* --mfb-card-bg: #fff;
+  --mfb-card-fg: #222; */
+  --mfb-card-pad: 0px;
+  --mfb-shadow-none: none;
+  --mfb-shadow-sm: 0 1px 6px rgba(0,0,0,.08);
+  --mfb-shadow-md: 0 4px 16px rgba(0,0,0,.12);
+  --mfb-shadow-lg: 0 10px 30px rgba(0,0,0,.18);
+
+  --mfb-emboss-bg: #f3f6f9;
+  --mfb-emboss-inset: inset 0 2px 6px rgba(255,255,255,.35),
+                      inset 0 -6px 12px rgba(0,0,0,.06);
+
+  /* Buttons (color tokens; can be overridden with inline styles) */
+  --mfb-btn-bg: #f2b100;
+  --mfb-btn-fg: #111;
+  --mfb-btn-border: #f2b100;
+
+  /* Typography */
+  --mfb-title-size: 1rem;
+  --mfb-series-size: .95rem;
+
+  /* Media */
+  --mfb-image-aspect: 2/3;
+
+  /* Shape + spacing tokens (overridable) */
+  --mfb-card-radius: 0px;
+  --mfb-cover-radius: 0px;
+  --mfb-button-radius: 0px;
+  --mfb-sample-radius: 0px;
+  --mfb-cta-gap: 0px;
+}
+
+/* ==========================================================
+   Global defaults driven by body classes – set ONLY variables
+   ========================================================== */
+
+/* Cover shape defaults */
+body.mfb-default-cover-rounded .mfb-wrapper {
+  --mfb-cover-radius: 16px;
+}
+
+/* Primary button shape defaults */
+body.mfb-default-button-rounded .mfb-wrapper {
+  --mfb-button-radius: 16px;
+}
+body.mfb-default-button-pill .mfb-wrapper {
+  --mfb-button-radius: 9999px;
+}
+
+/* Sample button shape defaults */
+body.mfb-default-sample-rounded .mfb-wrapper {
+  --mfb-sample-radius: 16px;
+}
+body.mfb-default-sample-pill .mfb-wrapper {
+  --mfb-sample-radius: 9999px;
+}
+
+/* Default CTA spacing */
+body.mfb-default-cta-gap .mfb-wrapper {
+  --mfb-cta-gap: 10px;
+}
+body.mfb-default-cta-joined .mfb-wrapper {
+  --mfb-cta-gap: 0px;
+}
+
+/* Default shadow effects via body classes */
+
+/* Flat – clear shadows from media & buttons */
+body.mfb-default-effect-flat .mfb-wrapper .mfb-media,
+body.mfb-default-effect-flat .mfb-wrapper .mfb-image,
+body.mfb-default-effect-flat .mfb-wrapper .mfb-button {
+  box-shadow: var(--mfb-shadow-none);
+}
+
+/* Small shadow */
+body.mfb-default-effect-shadow-sm .mfb-wrapper.mfb-cta--joined .mfb-media {
+  box-shadow: var(--mfb-shadow-sm);
+}
+body.mfb-default-effect-shadow-sm .mfb-wrapper.mfb-cta--gap .mfb-image,
+body.mfb-default-effect-shadow-sm .mfb-wrapper.mfb-cta--gap .mfb-button {
+  box-shadow: var(--mfb-shadow-sm);
+}
+
+/* Medium shadow */
+body.mfb-default-effect-shadow-md .mfb-wrapper.mfb-cta--joined .mfb-media {
+  box-shadow: var(--mfb-shadow-md);
+}
+body.mfb-default-effect-shadow-md .mfb-wrapper.mfb-cta--gap .mfb-image,
+body.mfb-default-effect-shadow-md .mfb-wrapper.mfb-cta--gap .mfb-button {
+  box-shadow: var(--mfb-shadow-md);
+}
+
+/* Large shadow */
+body.mfb-default-effect-shadow-lg .mfb-wrapper.mfb-cta--joined .mfb-media {
+  box-shadow: var(--mfb-shadow-lg);
+}
+body.mfb-default-effect-shadow-lg .mfb-wrapper.mfb-cta--gap .mfb-image,
+body.mfb-default-effect-shadow-lg .mfb-wrapper.mfb-cta--gap .mfb-button {
+  box-shadow: var(--mfb-shadow-lg);
+}
+
+/* Embossed */
+body.mfb-default-effect-emboss .mfb-wrapper.mfb-cta--joined .mfb-media {
+  background: var(--mfb-emboss-bg);
+  box-shadow: var(--mfb-shadow-md), var(--mfb-emboss-inset);
+}
+body.mfb-default-effect-emboss .mfb-wrapper.mfb-cta--gap .mfb-image,
+body.mfb-default-effect-emboss .mfb-wrapper.mfb-cta--gap .mfb-button {
+  background: var(--mfb-emboss-bg);
+  box-shadow: var(--mfb-shadow-sm), var(--mfb-emboss-inset);
+}
+
+/* Global visibility toggles via body classes
+   (can be phased out later in favor of PHP logic) */
+body.mfb-hide-title .mfb-title {
+  display: none;
+}
+
+body.mfb-hide-series .mfb-series {
+  display: none;
+}
+
+/* Hide primary (book) button – but keep audio/sample if present */
+body.mfb-hide-primary-button .mfb-button:not(.mfb-audio-cta) {
+  display: none;
+}
+
+/* Base: audio CTA visibility is token-driven */
+.mfb-audio .mfb-button.mfb-audio-cta {
+  display: var(--mfb-audio-cta-display, inline-flex);
+}
+
+/* Global hide from ModFarm Settings */
+body.mfb-hide-sample-button {
+  --mfb-audio-cta-display: none;
+}
+
+
+/* ==========================================================
+   Layout + card
+   ========================================================== */
+
+.mfb-wrapper {
+  display:block;
+  margin:20px 0;
+}
+
+.mfb-grid {
+  --mfb-cols: 4; /* render.php overrides inline */
+  max-width: 1100px;
+  margin-inline: auto;
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap: var(--mfb-gap);
+}
+
+.mfb-item {
+  box-sizing:border-box;
+  padding-inline:5px;
+  margin: 0 0 40px 0;
+  text-align:center;
+  flex: 0 0 calc((100% - (var(--mfb-gap) * (var(--mfb-cols) - 1))) / var(--mfb-cols));
+}
+
+/* Card */
+.mfb-card {
+  display:flex;
+  flex-direction:column;
+  /* background: var(--mfb-card-bg); */
+  /* color: var(--mfb-card-fg); */
+  color: inherit;
+  box-shadow: var(--mfb-shadow-none);
+  padding: var(--mfb-card-pad);
+  border-radius: var(--mfb-card-radius, 0);
+  overflow:hidden;  /* ensures shared corners when joined */
+}
+
+/* ==========================================================
+   Effects (per-block classes)
+   ========================================================== */
+
+.mfb-effect--flat .mfb-card {
+  box-shadow: var(--mfb-shadow-none);
+}
+.mfb-effect--shadow-sm.mfb-cta--joined .mfb-media {
+  box-shadow: var(--mfb-shadow-sm);
+}
+.mfb-effect--shadow-md.mfb-cta--joined .mfb-media {
+  box-shadow: var(--mfb-shadow-md);
+}
+.mfb-effect--shadow-lg.mfb-cta--joined .mfb-media {
+  box-shadow: var(--mfb-shadow-lg);
+}
+.mfb-effect--emboss.mfb-cta--joined .mfb-media {
+  background: var(--mfb-emboss-bg);
+  box-shadow: var(--mfb-shadow-md), var(--mfb-emboss-inset);
+}
+.mfb-effect--shadow-sm.mfb-cta--gap .mfb-image,
+.mfb-effect--shadow-sm.mfb-cta--gap .mfb-button {
+  box-shadow: var(--mfb-shadow-sm);
+}
+.mfb-effect--shadow-md.mfb-cta--gap .mfb-image,
+.mfb-effect--shadow-md.mfb-cta--gap .mfb-button {
+  box-shadow: var(--mfb-shadow-md);
+}
+.mfb-effect--shadow-lg.mfb-cta--gap .mfb-image,
+.mfb-effect--shadow-lg.mfb-cta--gap .mfb-button {
+  box-shadow: var(--mfb-shadow-lg);
+}
+.mfb-effect--emboss.mfb-cta--gap .mfb-image,
+.mfb-effect--emboss.mfb-cta--gap .mfb-button {
+  background: var(--mfb-emboss-bg);
+  box-shadow: var(--mfb-shadow-sm), var(--mfb-emboss-inset);
+}
+
+/* ==========================================================
+   Media
+   ========================================================== */
+
+.mfb-media {
+  position:relative;
+  display:block;
+  width:100%;
+}
+
+.mfb-image {
+  display:block;
+  width:100%;
+  aspect-ratio: var(--mfb-image-aspect);
+  overflow:hidden;
+  border-radius: var(--mfb-cover-radius, 0);
+}
+
+.mfb-image img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit: fill;
+}
+
+/* Cover shape (per-block, via variable) */
+.mfb-cover--rounded {
+  --mfb-cover-radius: 16px;
+}
+
+/* Explicit square override (if global is rounded but a block wants square) */
+.mfb-cover--square {
+  --mfb-cover-radius: 0px;
+}
+
+/* When joined, keep top corners rounded and bottom corners square
+   so the primary button can "attach" flush under the cover */
+.mfb-cta--joined .mfb-image {
+  border-radius: var(--mfb-cover-radius, 0) var(--mfb-cover-radius, 0) 0 0;
+}
+
+/* ==========================================================
+   Primary button (book link)
+   ========================================================== */
+
+.mfb-button {
+  display:block;
+  width:100% !important;
+  text-align:center;
+  text-decoration:none;
+  font-weight:600;
+  font-size:18px;
+  padding:18px 0 !important;
+  margin:0;
+  background: var(--mfb-btn-bg);
+  color: var(--mfb-btn-fg);
+  border-radius: var(--mfb-button-radius, 0);
+}
+
+/* Per-block button shapes set the radius token */
+.mfb-button--square {
+  --mfb-button-radius: 0px;
+}
+.mfb-button--rounded {
+  --mfb-button-radius: 16px;
+}
+.mfb-button--pill {
+  --mfb-button-radius: 9999px;
+}
+
+/* CTA spacing: token-driven, global + per-block */
+.mfb-media .mfb-button:not(.mfb-audio-cta) {
+  margin-top: var(--mfb-cta-gap, 0);
+}
+
+/* Per-block overrides for layout */
+.mfb-cta--gap {
+  --mfb-cta-gap: 10px;
+}
+.mfb-cta--joined {
+  --mfb-cta-gap: 0px;
+}
+
+/* Joined: no gap, and only bottom corners rounded
+   Top corners stay flush with the cover image */
+.mfb-cta--joined .mfb-button:not(.mfb-audio-cta) {
+  margin-top: 0;
+  border-radius: 0 0 var(--mfb-button-radius, 0) var(--mfb-button-radius, 0);
+}
+
+/* ==========================================================
+   Sample CTA row / audio
+   ========================================================== */
+
+.mfb-audio {
+  margin-top:0px;
+}
+
+.mfb-audio-cta::before {
+  content:"\25B6\FE0E";
+  font-weight:700;
+  margin-right:8px;
+}
+
+/* === Audio reveal UX === */
+.mfb-audio-reveal {
+  display:block;
+}
+.mfb-audio-reveal > summary {
+  list-style:none;
+  cursor:pointer; /* turn off default marker */
+}
+.mfb-audio-reveal > summary::-webkit-details-marker {
+  display:none;
+}
+
+/* Make <summary> look exactly like our buttons (already has .mfb-button, .mfb-audio-cta) */
+.mfb-audio .mfb-button.mfb-audio-cta {
+  width:99% !important;
+  margin-top:10px;
+  background: var(--mfb-sample-bg, transparent);
+  color: var(--mfb-sample-fg, #222);
+  border:1px solid var(--mfb-sample-border, #222);
+  border-radius: var(--mfb-sample-radius, 0);
+  display:block;
+}
+
+/* Per-block sample button shapes */
+.mfb-sample--square {
+  --mfb-sample-radius: 0px;
+}
+.mfb-sample--rounded {
+  --mfb-sample-radius: 16px;
+}
+.mfb-sample--pill {
+  --mfb-sample-radius: 9999px;
+}
+
+/* Panel spacing and fluid media */
+.mfb-audio-panel {
+  margin-top:0px;
+}
+.mfb-audio-panel .wp-audio-shortcode,
+.mfb-audio-panel .mejs-container,
+.mfb-audio-panel audio {
+  width:100% !important;
+  max-width:100%;
+}
+.mfb-audio-panel iframe {
+  width: 100%;
+  max-width:99%;
+  border:0;
+}
+
+.mfb-audio--align-center { text-align: center; }
+.mfb-audio--align-right  { text-align: right;  }
+
+.mfb-audio--align-center .mfb-button.mfb-audio-cta,
+.mfb-audio--align-right  .mfb-button.mfb-audio-cta {
+  width: auto !important;
+  display: inline-block;
+  min-width: 12rem;
+}
+
+/* ==========================================================
+   Titles/series
+   ========================================================== */
+
+.mfb-title {
+  display:block;
+  margin-top:10px;
+  font-size: var(--mfb-title-size);
+  font-weight:600;
+  text-align:center;
+}
+
+.mfb-series {
+  display:block;
+  margin-top:5px;
+  font-size: var(--mfb-series-size);
+  opacity:.85;
+  font-style:italic;
+  text-align:center;
+}
+
+.mfb-author { display:block; margin-top:10px; font-weight:600; }
+.mfb-pubdate { display:block; margin-top:6px; font-weight:600; }
+.mfb-blurb { margin-top:14px; line-height:1.6; }
+
+/* ==========================================================
+   ModFarm: Archive/Multi-tax pagination
+   ========================================================== */
+
+.mfb-pagination { 
+  margin: 24px 0 8px; 
+}
+
+.mfb-pagination .page-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mfb-pagination .page-numbers li { list-style: none; }
+
+/* Buttons */
+.mfb-pagination .page-numbers a,
+.mfb-pagination .page-numbers span {
+  display: inline-flex;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 14px;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--mfb-border, #ddd);
+  border-radius: 9999px;            /* pill by default */
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1;
+  background: var(--mfb-surface, #fff);
+  color: var(--mfb-text, #222);
+  box-shadow: 0 1px 0 rgba(0,0,0,.03);
+}
+
+/* Hover/Focus */
+.mfb-pagination .page-numbers a:hover,
+.mfb-pagination .page-numbers a:focus {
+  border-color: var(--mfb-accent, #111);
+  color: var(--mfb-accent, #111);
+  outline: none;
+}
+
+/* Current page */
+.mfb-pagination .page-numbers .current {
+  background: var(--mfb-accent, #111);
+  border-color: var(--mfb-accent, #111);
+  color: var(--mfb-on-accent, #fff);
+  cursor: default;
+}
+
+/* Dots (…) */
+.mfb-pagination .page-numbers .dots {
+  border-color: transparent;
+  background: transparent;
+  min-width: auto;
+  padding: 0 6px;
+  color: var(--mfb-text-muted, #666);
+}
+
+/* If you prefer square/rounded to match block settings: hook to wrapper tokens */
+.mfb-wrapper.mfb-button--square .mfb-pagination .page-numbers a,
+.mfb-wrapper.mfb-button--square .mfb-pagination .page-numbers span { border-radius: 6px; }
+
+.mfb-wrapper.mfb-button--rounded .mfb-pagination .page-numbers a,
+.mfb-wrapper.mfb-button--rounded .mfb-pagination .page-numbers span { border-radius: 12px; }
+
+.mfb-wrapper.mfb-button--pill .mfb-pagination .page-numbers a,
+.mfb-wrapper.mfb-button--pill .mfb-pagination .page-numbers span { border-radius: 9999px; }
+
+/* Coming Soon timing states */
+/* .is-coming-soon .mfb-item.is-launch .mfb-card { outline: 2px solid rgba(0,0,0,.15); outline-offset: 4px; }
+.is-coming-soon .mfb-item.is-faded { opacity: .45; filter: grayscale(.15); } */
+
+
+/* ==========================================================
+   Responsive clamps (frontend)
+   ========================================================== */
+
+@media (max-width:1100px){
+  .mfb-grid{ --mfb-cols: min(var(--mfb-cols), 3); }
+}
+@media (max-width:800px){
+  .mfb-grid{ --mfb-cols: 2 !important; }
+}
+@media (max-width:520px){
+  .mfb-grid{ --mfb-cols: 2 !important; }
+}
+
+/* ==========================================================
+   Editor parity
+   ========================================================== */
+
+.block-editor-page .editor-styles-wrapper .mfb-grid{
+  max-width:1100px;
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap: var(--mfb-gap);
+}
+
+.block-editor-page .editor-styles-wrapper .mfb-grid .mfb-item{
+  width:auto !important;
+  flex: 0 0 calc((100% - (var(--mfb-gap) * (var(--mfb-cols) - 1))) / var(--mfb-cols));
+} 
+
+.block-editor-page .editor-styles-wrapper .mfb-card img{
+  border-radius:0 !important;
+}
+
+@media (max-width:1100px){
+  .block-editor-page .editor-styles-wrapper .mfb-grid{
+    --mfb-cols: min(var(--mfb-cols), 3);
+  }
+}
+@media (max-width:800px){
+  .block-editor-page .editor-styles-wrapper .mfb-grid{
+    --mfb-cols: 2 !important;
+  }
+  
+  /* Center rows so the last orphan sits centered */
+  .mfb-grid{ justify-content: center; }
+  .block-editor-page .editor-styles-wrapper .mfb-grid{ justify-content: center; }
+}
+@media (max-width:520px){
+  .block-editor-page .editor-styles-wrapper .mfb-grid{
+    --mfb-cols: 2 !important;
+  }
+}

@@ -1,0 +1,59 @@
+/* Book Details (Simple) — frontend: single-line "Label: Value" */
+
+.mfb-details{
+  --mfb-details-fg: #eee;        /* inherit/darken as needed */
+  --mfb-details-dim: #bbb;
+  margin: 1rem 0 1.25rem;
+  font-family: var(--wp--preset--font-family--system-sans, ui-sans-serif, system-ui);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.mfb-details__heading{
+  margin: 0 0 .75rem;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+/* One line per row (no grid) */
+.mfb-details__row{
+  display: block;
+  padding: .12rem 0;             /* subtle vertical rhythm */
+  border: 0;                     /* ensure no leftover dividers */
+}
+
+.mfb-details__label{
+  display: inline;
+  font-weight: 700;
+}
+
+/* Add the colon automatically */
+.mfb-details__label::after{
+  content: ": ";
+}
+
+/* Value continues on the same line */
+.mfb-details__value{
+  display: inline;
+}
+
+.mfb-details__value a{
+  color: inherit;
+  text-decoration: underline;
+}
+
+.mfb-details__empty{
+  color: var(--mfb-details-dim);
+}
+
+/* Admin note (frontend-safe) */
+.mfb--admin-note{
+  background: #fff7d6;
+  color: #222;
+  border: 1px solid #f3d36a;
+  padding: 10px;
+}
+
+/* Optional: tighter look if you add class "mfb-details--compact" to wrapper */
+.mfb-details.mfb-details--compact .mfb-details__row{ padding: .05rem 0; }
+.mfb-details.mfb-details--compact{ font-size: 15px; }

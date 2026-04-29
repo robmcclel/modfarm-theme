@@ -1,0 +1,20 @@
+<!-- wp:template-part {"slug":"header","theme":"modfarm-author","tagName":"header"} /-->
+
+<!-- wp:group {"layout":{"type":"constrained"}} -->
+<div class="archive-books">
+  <!-- wp:query-title {"type":"archive","level":1} /-->
+  <!-- wp:post-template -->
+    <!-- wp:group {"layout":{"type":"constrained"}} -->
+      <article>
+        <!-- wp:post-title {"isLink":true} /-->
+        <!-- wp:post-excerpt /-->
+        <!-- wp:post-terms {"term":"series"} /-->
+        <!-- wp:post-terms {"term":"genre"} /-->
+      </article>
+    <!-- /wp:group -->
+  <!-- /wp:post-template -->
+  <!-- wp:query-pagination /-->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","theme":"modfarm-author","tagName":"footer"} /-->

@@ -1,0 +1,34 @@
+/* Available Format Icons (frontend) */
+:root{
+  --mfi-color: currentColor;
+  --mfi-size: 20px;
+  --mfi-gap: 8px;
+}
+
+.mfi-icons{
+  display: flex;
+  align-items: center;
+  gap: var(--mfi-gap);
+  color: var(--mfi-color);
+  line-height: 1;
+}
+.mfi-icons .mfi-label{
+  font-size: 0.95em;
+  opacity: .85;
+  margin-right: 2px;
+}
+.mfi-icons .mfi{
+  display: inline-flex;
+  width: var(--mfi-size);
+  height: var(--mfi-size);
+}
+.mfi-icons .mfi-svg{
+  width: 100%; height: 100%;
+  display: block;
+}
+
+.mfi--align-left   { justify-content: flex-start; }
+.mfi--align-center { justify-content: center; }
+.mfi--align-right  { justify-content: flex-end; }
+
+/* Editor parity handled in editor.css */

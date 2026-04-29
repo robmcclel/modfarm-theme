@@ -1,0 +1,13 @@
+.wp-block-modfarm-book-page-description {
+  margin-bottom: 1.5em;
+  line-height: 1.6;
+}
+
+.wp-block-modfarm-book-page-description p {
+  margin-bottom: 1em;
+}
+
+.wp-block-modfarm-book-page-description ul,
+.wp-block-modfarm-book-page-description ol {
+  padding-left: 1.5em;
+}

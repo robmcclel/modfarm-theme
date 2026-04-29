@@ -1,0 +1,27 @@
+/* Front-end styles for Theme Icon */
+.mf-theme-icon { display:inline-flex; line-height:0; }
+.mf-theme-icon img { display:block; height:auto; }
+.mf-theme-icon--square img   { border-radius: 0; }
+.mf-theme-icon--rounded img  { border-radius: 12px; }
+.mf-theme-icon--circle img   { border-radius: 9999px; }
+
+/* Optional: hover affordance when linked */
+.mf-theme-icon a { text-decoration: none; }
+.mf-theme-icon a:focus-visible { outline: 2px solid #4d90fe; outline-offset: 2px; }
+
+
+/* Alignment + layout */
+.mf-theme-icon--block { display:flex; width:100%; }
+
+/* Alignment only applies when in block mode */
+.mf-theme-icon--block.mf-theme-icon--align-left   { justify-content: flex-start; }
+.mf-theme-icon--block.mf-theme-icon--align-center { justify-content: center; }
+.mf-theme-icon--block.mf-theme-icon--align-right  { justify-content: flex-end; }
+
+.mf-theme-icon img { display:block; height:auto; }
+.mf-theme-icon--square img   { border-radius: 0; }
+.mf-theme-icon--rounded img  { border-radius: 12px; }
+.mf-theme-icon--circle img   { border-radius: 9999px; }
+
+.mf-theme-icon a { text-decoration: none; }
+.mf-theme-icon a:focus-visible { outline: 2px solid #4d90fe; outline-offset: 2px; }

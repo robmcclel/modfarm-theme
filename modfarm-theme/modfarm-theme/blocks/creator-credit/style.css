@@ -1,0 +1,145 @@
+/* Creator Credit — one taxonomy, one term; simple, clear responsive design */
+
+.mfc-team {
+  --mfc-accent: var(--wp--preset--color--accent, #5aa15e);
+  --mfc-text: var(--wp--preset--color--foreground, #222);
+  --mfc-name: var(--wp--preset--color--foreground, #111);
+  --mfc-img-size: 240px;
+  margin: 2rem 0;
+}
+
+.mfc-team__heading {
+  /*color: var(--mfc-name);*/
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  font-weight: 800;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+/* Default (Auto): horizontal on wide, stacks on narrow */
+.mfc-card {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2rem;
+  /*color: var(--mfc-text);*/
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: left;
+}
+
+/* Image + text */
+.mfc-card__image {
+  flex: 0 0 auto;
+  width: var(--mfc-img-size);
+  height: var(--mfc-img-size);
+  overflow: hidden;
+}
+
+.mfc-headshot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9999px;
+  background: #222;
+}
+.mfc-shape--square .mfc-headshot {
+  border-radius: 12px;
+}
+
+.mfc-card__body {
+  flex: 1 1 auto;
+}
+
+.mfc-card__name {
+  font-weight: 700;
+  font-size: 1.4rem;
+  /*color: var(--mfc-name);*/
+  margin: 0 0 0.25rem;
+}
+.mfc-card__name a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.mfc-card__name a:hover {
+  border-bottom-color: currentColor;
+}
+
+.mfc-card__role {
+  font-weight: 600;
+  color: var(--mfc-accent);
+  margin: 0 0 0.75rem;
+}
+
+.mfc-card__desc {
+  line-height: 1.6;
+  /*color: var(--mfc-text);*/
+  max-width: 65ch;
+}
+
+/* --- Responsive: AUTO stacks vertically under 720px --- */
+@media (max-width: 720px) {
+  .mfc-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+  }
+  .mfc-card__body {
+    width: 100%;
+    max-width: 90%;
+    text-align: left;
+  }
+  .mfc-card__name,
+  .mfc-card__role {
+    text-align: center;
+  }
+}
+
+/* --- Explicit layout overrides --- */
+
+/* Force vertical: stack and center everything, even on wide screens */
+.mfc-layout-vertical .mfc-card {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+}
+.mfc-layout-vertical .mfc-card__body {
+  max-width: 90%;
+  text-align: left;
+}
+.mfc-layout-vertical .mfc-card__name,
+.mfc-layout-vertical .mfc-card__role {
+  text-align: center;
+}
+
+/* Force horizontal: always side-by-side, even on small screens */
+.mfc-layout-horizontal .mfc-card {
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  gap: 2rem;
+}
+.mfc-layout-horizontal .mfc-card__body {
+  text-align: left;
+}
+
+/* Fallback headshot (letter) */
+.mfc-headshot.mfc-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-weight: 800;
+  font-size: calc(var(--mfc-img-size) * 0.35);
+  color: #fff;
+  background: #222;
+}
+
+/* If you're using square shape, keep it consistent */
+.mfc-shape--square .mfc-headshot.mfc-fallback {
+  border-radius: 12px;
+}

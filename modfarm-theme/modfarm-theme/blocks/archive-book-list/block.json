@@ -1,0 +1,60 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/archive-book-list",
+  "title": "Book Archive List",
+  "category": "modfarm-theme",
+  "icon": "book",
+  "description": "Auto-detects the current archive (series, genre, author, tag, language, or all books) and renders book cards with archive-level controls.",
+  "keywords": ["Books", "Archive", "Series", "Genre", "Author"],
+  "supports": { "html": false, "align": false },
+
+  "attributes": {
+    "image-type":      { "type": "string",  "default": "featured" },
+
+    "books-in-row":    { "type": "string",  "default": "25%" },
+    "display-order":   { "type": "string",  "default": "DESC" },
+    "books-per-page":  { "type": "number",  "default": 12 },
+    "show-pagination": { "type": "boolean", "default": false },
+
+    "button-text":     { "type": "string",  "default": "See The Book" },
+    "button-link":     { "type": "string",  "default": "bookpage" },
+    "button-target":   { "type": "string",  "default": "_self" },
+    "tracker-loc":     { "type": "string",  "default": "" },
+
+    "samplebtn-text":  { "type": "string",  "default": "Play Sample" },
+
+    "audio-mode":      { "type": "string",  "default": "auto" },
+
+    "volume-text":     { "type": "string",  "default": "Book" },
+
+    "book-format": {
+      "type": "object",
+      "default": { "id": 0 }
+    },
+
+    
+    "cardUseGlobal":   { "type": "boolean", "default": true },
+
+    "cardCoverShape":  { "type": "string",  "default": "inherit" },
+    "cardButtonShape": { "type": "string",  "default": "inherit" },
+    "cardSampleShape": { "type": "string",  "default": "inherit" },
+    "cardCtaMode":     { "type": "string",  "default": "inherit" },
+    "cardShadowStyle": { "type": "string",  "default": "inherit" },
+
+    
+    "cardShowTitle":         { "type": "boolean", "default": true },
+    "cardShowSeries":        { "type": "boolean", "default": true },
+    "cardShowPrimaryButton": { "type": "boolean", "default": true },
+    "cardShowSampleButton":  { "type": "boolean", "default": true },
+
+    
+    "cardButtonBg":   { "type": "string", "default": "" },
+    "cardButtonFg":   { "type": "string", "default": "" },
+    "cardSampleBg":   { "type": "string", "default": "" },
+    "cardSampleFg":   { "type": "string", "default": "" }
+  },
+
+  "editorScript": "modfarm-archive-book-list-editor",
+  "style": "file:./assets/css/book-cards.css",
+  "editorStyle": "file:./assets/css/book-cards.css"
+}

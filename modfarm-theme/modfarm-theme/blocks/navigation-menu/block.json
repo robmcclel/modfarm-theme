@@ -1,0 +1,76 @@
+{
+  "name": "modfarm/navigation-menu",
+  "title": "ModFarm Navigation Menu",
+  "category": "modfarm-theme",
+  "icon": "menu",
+  "description": "A flexible, reliable navigation block with support for simple and split menu layouts.",
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  },
+  "attributes": {
+    "layoutType": {
+      "type": "string",
+      "default": "simple"
+    },
+    "simpleAlign": {
+      "type": "string",
+      "default": "left"
+    },
+    "leftMenu": {
+      "type": "number"
+    },
+    "rightMenu": {
+      "type": "number"
+    },
+    "centerContent": {
+      "type": "string",
+      "default": "site-title"
+    },
+    "mode": {
+      "type": "string",
+      "default": "header"
+    },
+    "localStyle": {
+      "type": "boolean",
+      "default": false
+    },
+    "transparent": {
+      "type": "boolean",
+      "default": false
+    },
+    "navBg": {
+      "type": "string"
+    },
+    "navColor": {
+      "type": "string"
+    },
+    "navHover": {
+      "type": "string"
+    },
+    "submenuBg": {
+      "type": "string"
+    },
+    "submenuColor": {
+      "type": "string"
+    },
+    "fontFamily": {
+      "type": "string",
+      "default": "inherit"
+    },
+    "fontSize": {
+      "type": "number"
+    },
+    "navPadding": {
+      "type": "string",
+      "default": "regular"
+    },
+    "noCollapse": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "modfarm-navigation-menu-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

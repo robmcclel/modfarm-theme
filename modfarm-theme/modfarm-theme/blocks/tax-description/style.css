@@ -1,0 +1,77 @@
+.mf-taxdesc { 
+  margin: 2rem 0; 
+  --mf-taxdesc-img-size: 240px; /* default if not provided inline */
+}
+
+.mf-taxdesc__inner {
+  display: grid;
+  grid-template-columns: var(--mf-taxdesc-img-size) 1fr; /* lock avatar column */
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* Ensure the image column never stretches wider than the avatar */
+.mf-taxdesc__image {
+  width: var(--mf-taxdesc-img-size);
+}
+
+/* Catch whatever WP outputs (img alone, linked img, figure img, picture img, etc.) */
+.mf-taxdesc__image img,
+.mf-taxdesc__image a img,
+.mf-taxdesc__image figure img,
+.mf-taxdesc__image picture img {
+  width: var(--mf-taxdesc-img-size);
+  height: var(--mf-taxdesc-img-size);
+  object-fit: cover;
+  display: block;
+}
+
+/* Shape handling (driven by render.php class) */
+.mf-taxdesc--shape-circle .mf-taxdesc__image img,
+.mf-taxdesc--shape-circle .mf-taxdesc__image a img,
+.mf-taxdesc--shape-circle .mf-taxdesc__image figure img,
+.mf-taxdesc--shape-circle .mf-taxdesc__image picture img,
+.mf-taxdesc--shape-circle .mf-taxdesc__image .mf-taxdesc-avatar--fallback {
+  border-radius: 9999px;
+}
+
+.mf-taxdesc--shape-square .mf-taxdesc__image img,
+.mf-taxdesc--shape-square .mf-taxdesc__image a img,
+.mf-taxdesc--shape-square .mf-taxdesc__image figure img,
+.mf-taxdesc--shape-square .mf-taxdesc__image picture img,
+.mf-taxdesc--shape-square .mf-taxdesc__image .mf-taxdesc-avatar--fallback {
+  border-radius: 0;
+}
+
+.mf-taxdesc--shape-rounded .mf-taxdesc__image img,
+.mf-taxdesc--shape-rounded .mf-taxdesc__image a img,
+.mf-taxdesc--shape-rounded .mf-taxdesc__image figure img,
+.mf-taxdesc--shape-rounded .mf-taxdesc__image picture img,
+.mf-taxdesc--shape-rounded .mf-taxdesc__image .mf-taxdesc-avatar--fallback {
+  border-radius: 16px;
+}
+
+/* Prevent content column overflow quirks in CSS grid */
+.mf-taxdesc__content { min-width: 0; }
+
+.mf-taxdesc__description p { margin: 0 0 .8rem 0; }
+
+/* Fallback letter avatar */
+.mf-taxdesc__image .mf-taxdesc-avatar--fallback {
+  width: var(--mf-taxdesc-img-size);
+  height: var(--mf-taxdesc-img-size);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: clamp(1.5rem, calc(var(--mf-taxdesc-img-size) / 3), 3rem);
+  line-height: 1;
+  background: #eee;
+  color: #222;
+}
+
+/* Mobile stack */
+@media (max-width: 640px) {
+  .mf-taxdesc__inner { grid-template-columns: 1fr; }
+  .mf-taxdesc__image { width: auto; order: 1; }
+  .mf-taxdesc__content { order: 2; }
+}

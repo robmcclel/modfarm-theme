@@ -1,0 +1,39 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/book-details",
+  "title": "Book Details",
+  "description": "Displays detailed metadata and taxonomy fields for the current book.",
+  "category": "modfarm-book-page",
+  "icon": "media-document",
+  "keywords": ["books", "details", "metadata", "modfarm"],
+  "supports": {
+    "html": false
+  },
+  "attributes": {
+    "show_publication_date": { "type": "boolean", "default": false },
+    "show_pages": { "type": "boolean", "default": false },
+    "show_isbn": { "type": "boolean", "default": false },
+    "show_asin": { "type": "boolean", "default": false },
+    "show_publisher": { "type": "boolean", "default": false },
+    "show_edition": { "type": "boolean", "default": false },
+
+    "show_audiobook_publisher": { "type": "boolean", "default": false },
+    "show_audiobook_narrator": { "type": "boolean", "default": false },
+    "show_audiobook_duration": { "type": "boolean", "default": false },
+    "show_audiobook_publication_date": { "type": "boolean", "default": false },
+
+    "show_translator": { "type": "boolean", "default": false },
+    "show_editor": { "type": "boolean", "default": false },
+    "show_reading_order": { "type": "boolean", "default": false },
+    "show_series_position": { "type": "boolean", "default": false },
+
+    "show_format": { "type": "boolean", "default": false },
+    "show_genre": { "type": "boolean", "default": false },
+    "show_series_name": { "type": "boolean", "default": false },
+    "show_universe": { "type": "boolean", "default": false }
+  },
+  "usesContext": ["postId"],
+  "editorScript": "modfarm-book-details-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

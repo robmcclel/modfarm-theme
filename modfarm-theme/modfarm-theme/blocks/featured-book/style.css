@@ -1,0 +1,158 @@
+/* ============================================================
+   Featured Book Block (front)
+   - Uses ModFarm Book Page Button tokens (mfb-bp-*)
+   - Only overrides button layout so they can sit inline
+   
+   Explicit border primitives so this block does not depend
+   on Book Page Buttons stylesheet being loaded
+   ============================================================ */
+
+.mftb {
+  --mftb-gap: 20px;
+  --mftb-cover-w: 350px;
+
+  /* corners (defaults) */
+  --mftb-cover-radius: 0;   /* square cover by default */
+  --mftb-btn-radius: 0;     /* square buttons by default */
+
+  display: grid;
+  grid-template-columns: var(--mftb-cover-w) 1fr;
+  gap: var(--mftb-gap);
+  align-items: start;
+}
+
+/* flip layout */
+.mftb.is-right { grid-template-columns: 1fr var(--mftb-cover-w); }
+.mftb.is-right .mftb__media { order: 2; }
+.mftb.is-right .mftb__body  { order: 1; }
+
+.mftb__media { width: var(--mftb-cover-w); }
+
+/* corner toggles */
+.mftb.has-cover-rounded { --mftb-cover-radius: 8px; }
+.mftb.has-btn-rounded   { --mftb-btn-radius: 6px; }
+.mftb.has-btn-pill      { --mftb-btn-radius: 9999px; }
+
+/* cover */
+.mftb__cover {
+  border-radius: var(--mftb-cover-radius);
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.mftb__cover.--missing {
+  border-radius: var(--mftb-cover-radius);
+}
+
+/* type */
+.mftb__kicker {
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 700;
+  opacity: .9;
+  margin: 0 0 10px;
+}
+.mftb__headline {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.4rem);
+  line-height: 1.15;
+  font-weight: 800;
+}
+.mftb__subhead  { margin: 0 0 14px; font-weight: 600; opacity: .85; }
+.mftb__desc     { margin: 0 0 16px; }
+
+/* Ensure paragraph spacing looks good when wpautop() is used */
+.mftb__desc > p { margin: 0 0 .8em; }
+.mftb__desc > p:last-child { margin-bottom: 0; }
+
+/* actions row */
+.mftb__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ------------------------------------------------------------
+   Buttons: reuse global Book Page Button token system
+   (a.book-page-button styles live elsewhere)
+   Here we override layout so they sit inline in the hero.
+   ------------------------------------------------------------ */
+.mftb .mftb__actions > a.book-page-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: auto !important;      /* defeat any 85%/100% width elsewhere */
+  margin: 0 !important;        /* remove global 10px auto */
+  padding: 14px 22px !important;
+
+  flex: 0 0 auto;              /* keep side-by-side */
+  min-height: 44px;
+
+  text-decoration: none;
+  box-sizing: border-box;
+
+  /* NEW: ensure borders actually render even if global button CSS isn't loaded */
+  border-style: solid;
+  border-width: var(--mfb-bp-btn-border-width, 1px);
+}
+
+/* Map Featured Book corner toggles into the global override var */
+.mftb .mftb__actions > a.book-page-button {
+  --mfb-bp-override-radius: 0px; /* square default */
+  border-radius: var(--mfb-bp-override-radius);
+}
+.mftb.has-btn-rounded .mftb__actions > a.book-page-button {
+  --mfb-bp-override-radius: 6px;
+}
+.mftb.has-btn-pill .mftb__actions > a.book-page-button {
+  --mfb-bp-override-radius: 9999px;
+}
+
+/* ------------------------------------------------------------
+   Variant mapping (matches your render.php output):
+   - primary => is-primary
+   - outline => is-secondary
+   Plus legacy shim for is-outline if any old markup exists.
+   ------------------------------------------------------------ */
+
+/* Legacy shim: treat old is-outline as secondary */
+.mftb .mftb__actions > a.book-page-button.is-outline,
+.mftb .mftb__actions > a.book-page-button.is-secondary {
+  background-color: var(--mfb-bp-override-bg, var(--mfb-bp-secondary-bg, transparent));
+  color:            var(--mfb-bp-override-fg, var(--mfb-bp-secondary-fg, #222222));
+  border-color:     var(--mfb-bp-override-border, var(--mfb-bp-secondary-border, #222222));
+}
+
+.mftb .mftb__actions > a.book-page-button.is-primary {
+  background-color: var(--mfb-bp-override-bg, var(--mfb-bp-primary-bg, #f2b100));
+  color:            var(--mfb-bp-override-fg, var(--mfb-bp-primary-fg, #111111));
+  border-color:     var(--mfb-bp-override-border, var(--mfb-bp-primary-border, #f2b100));
+}
+
+/* dark variant (text only; button colors remain token-driven) */
+.mftb.is-dark .mftb__headline,
+.mftb.is-dark .mftb__kicker,
+.mftb.is-dark .mftb__subhead,
+.mftb.is-dark .mftb__desc { color: #fff; }
+
+/* responsive */
+@media (max-width: 860px) {
+  .mftb { grid-template-columns: 1fr; }
+  .mftb__media {
+    width: 70%;
+    margin-right: auto;
+    margin-left: auto;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .mftb__media { width: 100%; }
+
+  .mftb .mftb__actions > a.book-page-button {
+    flex: 1 1 100%;
+    width: 100% !important; /* stack nicely on narrow screens */
+  }
+}

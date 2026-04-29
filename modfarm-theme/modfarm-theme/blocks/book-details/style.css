@@ -1,0 +1,34 @@
+/* === Book Details Block Styles === */
+
+.mfs-book-details {
+  color: var(--mf-body-text, #111);
+}
+
+.mfs-book-details dl {
+  margin: 0;
+  padding: 0;
+}
+
+.mfs-book-details dt,
+.mfs-book-details dd {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.mfs-book-details dt::after {
+  content: ": ";
+  font-weight: 600;
+}
+
+.mfs-book-details dd::after {
+  content: "\A"; /* line break */
+  white-space: pre;
+}
+
+/* Mobile-friendly fallback */
+@media (max-width: 600px) {
+	.mfs-book-details dl {
+		grid-template-columns: 1fr;
+	}
+}

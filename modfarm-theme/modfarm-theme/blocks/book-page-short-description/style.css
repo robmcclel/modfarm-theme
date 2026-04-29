@@ -1,0 +1,17 @@
+.mfb-short-description {
+  margin: 20px 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.mfb-short-description--align-left {
+  text-align: left;
+}
+
+.mfb-short-description--align-center {
+  text-align: center;
+}
+
+.mfb-short-description--align-right {
+  text-align: right;
+}

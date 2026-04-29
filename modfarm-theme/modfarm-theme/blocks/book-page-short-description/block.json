@@ -1,0 +1,38 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/book-page-short-description",
+  "title": "Book Page Short Description",
+  "category": "modfarm-book-page",
+  "icon": "excerpt-view",
+  "description": "Displays the book's short description from BMS meta.",
+  "supports": {
+    "html": false,
+    "align": false
+  },
+  "attributes": {
+    "overrideText": {
+      "type": "string",
+      "default": ""
+    },
+    "showIfEmpty": {
+      "type": "boolean",
+      "default": false
+    },
+    "textAlign": {
+      "type": "string",
+      "default": "left"
+    },
+    "fontSize": {
+      "type": "number",
+      "default": 18
+    },
+    "fontWeight": {
+      "type": "string",
+      "default": "400"
+    }
+
+  },
+  "editorScript": "modfarm-book-page-short-description-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

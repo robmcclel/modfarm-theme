@@ -1,0 +1,17 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/simple-tab",
+  "title": "Tab",
+  "parent": ["modfarm/simple-tabs"],
+  "category": "layout",
+  "icon": "tag",
+  "description": "A single tab inside Simple Tabs.",
+  "supports": { "html": false, "className": true },
+  "attributes": {
+    "label":  { "type": "string",  "default": "Tab" },
+    "_active":{ "type": "boolean", "default": false }
+  },
+  "editorScript": "modfarm-simple-tab-editor",
+  "editorStyle": "file:./editor.css",
+  "style": "file:./style.css"
+}

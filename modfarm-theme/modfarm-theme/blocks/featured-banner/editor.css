@@ -1,0 +1,219 @@
+/* Keep editor preview looking like frontend */
+.block-editor-page .editor-styles-wrapper .mfbn{
+  margin: 20px 0;
+}
+/* Featured Banner (mfbb-*) */
+
+.mfbb{
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0; /* square-first */
+  margin: 20px 0;
+
+  background-size: cover;
+  background-position: 50% 50%;
+  padding-top: 60px;
+  padding-bottom: 60px;
+}
+
+/* Optional: make alignfull truly full bleed */
+.wp-block-modfarm-featured-banner.alignfull{
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+  max-width: 100vw;
+}
+
+/* Overlay sits above background but below content */
+.mfbb__overlay{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Content wrapper must inherit the banner min-height to allow vertical centering */
+.mfbb__inner{
+  position: relative;
+  z-index: 2;
+
+  max-width: 1100px;
+  margin-inline: auto;
+
+  /* This is the key to vertical centering when minHeight changes */
+  min-height: inherit;
+
+  padding: 28px 18px;
+
+  display: flex;
+  align-items: center; /* vertical center within min-height */
+  justify-content: space-between;
+  gap: 26px;
+}
+
+/* body */
+.mfbb__body{
+  flex: 1 1 auto;
+  color: #fff;
+  max-width: 600px;
+}
+
+/* Text alignment (set on root) */
+.mfbb.is-text-left  .mfbb__body{ text-align:left; }
+.mfbb.is-text-center .mfbb__body{ text-align:center; }
+.mfbb.is-text-right .mfbb__body{ text-align:right; }
+
+.mfbb__kicker{
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 13px;
+  opacity: 0.95;
+  margin: 0 0 10px 0;
+}
+
+/* Headline should not look like a link */
+.mfbb__headline{
+  margin: 0 0 10px 0;
+  font-size: clamp(28px, 3.4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: inherit;
+}
+
+.mfbb__headline a{
+  color: inherit;
+  text-decoration: none;
+}
+
+.mfbb__headline a:hover{
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.mfbb__subhead{
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+.mfbb__desc{
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.5;
+  opacity: 0.97;
+}
+
+.mfbb__desc p{ margin: 0 0 10px 0; }
+.mfbb__desc p:last-child{ margin-bottom: 0; }
+
+.mfbb__actions{
+  margin-top: 14px;
+}
+
+/* Button alignment (set on root) */
+.mfbb.is-btn-left  .mfbb__actions{ justify-content:flex-start; }
+.mfbb.is-btn-center .mfbb__actions{ justify-content:center; }
+.mfbb.is-btn-right .mfbb__actions{ justify-content:flex-end; }
+
+/* media */
+.mfbb__media{
+  flex: 0 0 auto;
+  width: min(var(--mfbb-media-width, 350px), 34vw);
+  display: block;
+}
+
+.mfbb__cover-link{ display:block; }
+
+.mfbb__cover{
+  display: block;
+  width: 100%;
+  height: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  border-radius: 0;
+}
+
+.mfbb.has-cover-rounded .mfbb__cover{
+  border-radius: 16px;
+}
+
+/* If mediaMode=card renders a full book card, do NOT fight its internal CSS */
+.mfbb__media .mfb-card,
+.mfbb__media .mfb-ui-card,
+.mfbb__media .modfarm-book-card{
+  width: 100%;
+}
+
+/* Layout direction */
+.mfbb.mfbb--media-left .mfbb__inner{
+  flex-direction: row-reverse;
+}
+
+
+/* No-media mode */
+.mfbb.mfbb--no-media .mfbb__inner{
+  display:flex;
+  align-items:center;
+}
+
+.mfbb.mfbb--no-media .mfbb__body{
+  max-width: 600px;
+}
+
+
+/* ---------- Mobile stacking like Featured Book ---------- */
+@media (max-width: 780px){
+
+  .mfbb__inner{
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start; /* we want “content flow” on mobile */
+    gap: 16px;
+    padding: 18px 14px;
+  }
+
+  /* Media goes first */
+  .mfbb__media{
+    order: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Text goes second */
+  .mfbb__body{
+    order: 1;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* IMPORTANT: do not clamp/hide anything on mobile */
+  .mfbb__desc{
+    display: block;
+    max-width: 65ch;
+  }
+
+  /* Cover image sizing: centered, not squashed */
+  .mfbb__cover-link{
+    display: block;
+    width: min(320px, 80vw);
+    margin: 0 auto;
+  }
+
+  .mfbb__cover{
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* If using ModFarm card mode, keep it centered and constrained */
+  .mfbb__media .mfb-card,
+  .mfbb__media .mfb-ui-card,
+  .mfbb__media .modfarm-book-card{
+    width: min(360px, 90vw);
+    margin: 0 auto;
+  }
+}

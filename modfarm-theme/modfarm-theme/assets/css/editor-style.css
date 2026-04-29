@@ -1,0 +1,61 @@
+/* Editor Styles — Matches Theme Frontend */
+
+
+body.block-editor-page {
+  font-family: var(--mf-body-font, 'Inter', sans-serif);
+  color: var(--mf-body-text, #111111);
+  background-color: var(--mf-background, #ffffff);
+}
+
+.editor-styles-wrapper {
+  padding: 2rem;
+  font-size: 18px;
+  line-height: 1.875;
+}
+
+.editor-styles-wrapper h1,
+.editor-styles-wrapper h2,
+.editor-styles-wrapper h3,
+.editor-styles-wrapper h4,
+.editor-styles-wrapper h5,
+.editor-styles-wrapper h6 {
+  font-family: var(--mf-heading-font, 'Merriweather', serif);
+  color: var(--mf-header-text, #222222);
+}
+
+a {
+  color: var(--mf-link-color, #0066cc);
+}
+
+.wp-block {
+  max-width: var(--mf-content-width, 1200px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.wp-block[data-align="wide"] {
+  max-width: 1280px;
+}
+
+.wp-block[data-align="full"] {
+  max-width: none;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.btn {
+  background-color: var(--mf-button-bg, #336699);
+  color: var(--mf-button-text, #ffffff);
+  padding: 0.75em 1.5em;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.aspect-portrait {
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}

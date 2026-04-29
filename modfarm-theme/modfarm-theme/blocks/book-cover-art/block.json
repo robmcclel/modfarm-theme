@@ -1,0 +1,30 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/book-cover-art",
+  "title": "Book Page Cover",
+  "category": "modfarm-book-page",
+  "icon": "format-image",
+  "description": "Displays the selected cover art format for the current book.",
+  "textdomain": "modfarm",
+  "attributes": {
+    "coverType": {
+      "type": "string",
+      "default": "cover_ebook"
+    },
+    "alignment": {
+      "type": "string",
+      "default": "center"
+    },
+    "customAlt": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "usesContext": [ "postId", "postType" ],
+  "editorScript": "modfarm-book-cover-art-editor",
+  "editorStyle": "file:./editor.css",
+  "style": "file:./style.css",
+  "supports": {
+  "html": false
+  }
+}

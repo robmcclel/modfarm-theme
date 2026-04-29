@@ -1,0 +1,165 @@
+.modfarm-settings-wrap {
+  max-width: 1100px;
+}
+
+/* Shell layout */
+.modfarm-settings-shell {
+  margin-top: 20px;
+  border-radius: 8px;
+  background: #f8f8f8;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+/* Top tabs */
+.mf-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  background: #fdfdfd;
+}
+
+.mf-tab {
+  border: none;
+  background: transparent;
+  padding: 12px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin: 0;
+}
+
+.mf-tab.is-active {
+  border-bottom-color: #2271b1;
+  font-weight: 600;
+  background: #fff;
+}
+
+.mf-tab:hover {
+  background: #f3f4f5;
+}
+
+/* Panels */
+.mf-tab-panels {
+  background: #fff;
+}
+
+.mf-tab-panel {
+  display: none;
+}
+
+.mf-tab-panel.is-active {
+  display: block;
+}
+
+.mf-panel-inner {
+  padding: 24px 24px 28px;
+}
+
+.mf-panel-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.mf-panel-intro {
+  margin: 0 0 20px;
+  color: #666;
+  max-width: 640px;
+}
+
+/* Two-column grid */
+.mf-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1.4fr);
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mf-settings-main {
+  min-width: 0;
+}
+
+.mf-settings-preview {
+  min-width: 0;
+}
+
+/* Groups */
+.mf-settings-group + .mf-settings-group {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.mf-group-title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #555;
+}
+
+/* Form table tweaks */
+.mf-form-table {
+  margin-top: 8px;
+}
+
+.mf-form-table th {
+  width: 200px;
+}
+
+/* Preview card generic */
+.mf-preview-card {
+  border-radius: 12px;
+  background: #f3f4f5;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.08);
+}
+
+.mf-preview-cover {
+  width: 100%;
+  aspect-ratio: 3/4;
+  background: linear-gradient(135deg, #94a3b8, #475569);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+/* Book-specific preview */
+.mf-preview-card--book .mf-preview-cover--book {
+  width: 100%;
+  aspect-ratio: 2/3;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+}
+
+.mf-preview-meta {
+  padding-top: 4px;
+}
+
+.mf-preview-title {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.mf-preview-author {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+.mf-preview-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .mf-settings-grid {
+    grid-template-columns: 1fr;
+  }
+}

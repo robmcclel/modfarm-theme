@@ -1,0 +1,27 @@
+/* Book Details editor styles */
+
+.mfs-book-details {
+	color: #111 !important;
+}
+
+.mfs-book-details dl {
+	margin: 0;
+	padding: 0;
+}
+
+.mfs-book-details dt,
+.mfs-book-details dd {
+	display: inline;
+	margin: 0;
+	padding: 0;
+}
+
+.mfs-book-details dt::after {
+	content: ": ";
+	font-weight: 600;
+}
+
+.mfs-book-details dd::after {
+	content: "\A";
+	white-space: pre;
+}

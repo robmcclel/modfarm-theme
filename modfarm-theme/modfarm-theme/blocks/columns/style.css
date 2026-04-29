@@ -1,0 +1,36 @@
+/* === CSS Updates === */
+/* These go in both editor.css and style.css */
+
+.mf-columns {
+    display: flex;
+    flex-wrap: wrap;         /* Allows wrapping on small screens */
+    gap: 1rem;               /* Optional: spacing between columns */
+    padding: 0px;
+	min-height: 120px;
+	cursor: pointer;
+}
+
+.mf-columns {
+	padding: 0px;
+	min-height: 60px;
+	cursor: pointer;
+}
+
+
+.mf-columns-wrapper {
+  width: 100%;
+}
+.mf-width-900 {
+  max-width: 900px;
+}
+.mf-width-700 {
+  max-width: 700px;
+}
+.mf-columns-wrapper.align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+.mf-columns-wrapper.align-left {
+  margin-left: 0;
+  margin-right: auto;
+}

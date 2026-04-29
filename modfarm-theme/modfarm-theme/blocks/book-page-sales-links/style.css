@@ -1,0 +1,71 @@
+/* Style CSS for Book Page Sales Links */
+
+.mf-sales-links {
+  text-align: center;
+}
+
+.mf-sales-links .intro {
+  font-family: 'Open Sans', sans-serif;
+  margin: 10px 0px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.mf-retailer-icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 10px;
+  column-gap: 10px;
+  margin: 10px 0px;
+}
+
+.retailer-square-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  width: auto;
+  flex: 0 1 auto;
+}
+
+.retailer-square-button:hover {
+  transform: scale(1.05);
+}
+
+.retailer-square-button img {
+  object-fit: contain;
+  background-color: #fff;
+  display: block;
+  border-radius: 4px;
+}
+
+.retailer-label {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* === Sales Links alignment (Book Page Sales Links) === */
+.mfsales .mfsales__row{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;              /* or whatever your current spacing token is */
+}
+
+/* Defaults to left */
+.mfsales--align-left  .mfsales__row{ justify-content: flex-start; }
+.mfsales--align-center .mfsales__row{ justify-content: center; }
+.mfsales--align-right  .mfsales__row{ justify-content: flex-end; }
+
+/* If your buttons/images are block-level, allow natural sizing when centered/right */
+.mfsales .mfsales__row a,
+.mfsales .mfsales__row img{
+  display: flex;
+}

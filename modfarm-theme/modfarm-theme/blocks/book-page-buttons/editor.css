@@ -1,0 +1,43 @@
+/* Book Page Buttons editor styles */
+/* Mirror frontend button styles in the editor preview */
+
+.mfs-align-left { text-align: left; }
+.mfs-align-center { text-align: center; }
+.mfs-align-right { text-align: right; }
+
+a.book-page-button {
+  /* Fallbacks if tokens are missing */
+  --_bp-border-w: var(--mfb-bp-btn-border-width, 1px);
+  --_bp-radius:   var(--mfb-bp-override-radius, var(--mfb-bp-btn-radius, 0px));
+
+  border-width: var(--_bp-border-w);
+  border-style: solid;
+  border-radius: var(--_bp-radius);
+
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+
+  display: block;
+  padding: 18px 30px;
+  margin: 10px auto;
+  text-align: center;
+  width: 85%;
+
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Primary (filled) */
+a.book-page-button.is-primary {
+  background-color: var(--mfb-bp-override-bg, var(--mfb-bp-primary-bg, #f2b100));
+  color:            var(--mfb-bp-override-fg, var(--mfb-bp-primary-fg, #111111));
+  border-color:     var(--mfb-bp-override-border, var(--mfb-bp-primary-border, #f2b100));
+}
+
+/* Secondary (outline) */
+a.book-page-button.is-secondary {
+  background-color: var(--mfb-bp-override-bg, var(--mfb-bp-secondary-bg, transparent));
+  color:            var(--mfb-bp-override-fg, var(--mfb-bp-secondary-fg, #222222));
+  border-color:     var(--mfb-bp-override-border, var(--mfb-bp-secondary-border, #222222));
+}

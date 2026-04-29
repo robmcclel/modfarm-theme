@@ -1,0 +1,29 @@
+/* === Simple Single Row Footer === */
+footer.wp-block-group.alignfull {
+  padding: 2rem 1rem;
+  font-size: 0.95rem;
+}
+
+footer .wp-block-columns {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+footer .wp-block-column {
+  display: flex;
+  align-items: center;
+}
+
+footer .wp-block-site-title {
+  margin: 0;
+}
+
+footer .wp-block-navigation {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+footer .wp-block-social-links {
+  margin-left: 1rem;
+  justify-content: flex-end;
+}

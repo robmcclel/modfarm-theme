@@ -1,0 +1,300 @@
+/*
+Theme Name: ModFarm Theme
+Theme URI: https://modfarmdesign.com
+Author: ModFarm
+Author URI: https://modfarmdesign.com
+Description: Clean, block-forward author theme scaffold.
+Version: 1.1.4
+Requires at least: 6.4
+Tested up to: 6.9
+Requires PHP: 7.4
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: modfarm-author
+Tags: full-site-editing, block-theme, books, authors, publishers, customizable
+*/
+
+/* =====================================
+   Base Styles and Resets
+   ===================================== */
+html {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+  background-color: #fff;
+  color: #222;
+  font-family: var(--modfarm-font-body, "Open Sans", sans-serif);
+  font-size: 18px;
+  line-height: 1.875;
+  margin: 0;
+}
+
+a {
+  color: var(--modfarm-color-accent, #008080);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover,
+a:focus {
+  color: #000;
+}
+
+/* =====================================
+   Layout Containers
+   ===================================== */
+.wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.site-header,
+.site-footer {
+  background: #fff;
+  padding: 20px 0;
+}
+
+/* === Base Alignment === */
+.wp-block {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.75;
+}
+
+/* Default content width for unconstrained blocks */
+.site-main > *:not(.alignwide):not(.alignfull) {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+}
+
+/* === Default Width for Unaligned Content === */
+.site-main > *:not(.alignwide):not(.alignfull) {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+/* === Wide Alignment === */
+.alignwide,
+.wp-block.alignwide,
+.wp-block-group.alignwide,
+.site-inner > .alignwide,
+.site-inner > .wp-block-group.alignwide,
+.is-layout-constrained.alignwide {
+  width: 100vw;
+  max-width: var(--wp--style--global--wide-size, 1400px);
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  box-sizing: border-box;
+}
+
+/* === Full Alignment === */
+.alignfull,
+.wp-block.alignfull,
+.wp-block-group.alignfull,
+.is-layout-constrained .alignfull {
+  /*width: 100%;
+  max-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box;
+  padding-left: 1rem;
+  padding-right: 1rem;*/
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  box-sizing: border-box;
+}
+
+
+/* === ALIGNMENT FIX FOR PATTERN-BASED LAYOUTS === */
+
+.wp-block[class*="alignwide"],
+.wp-block-group.alignwide {
+  width: 100vw;
+  max-width: var(--wp--style--global--wide-size, 1400px);
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  box-sizing: border-box;
+}
+
+/* === ALIGNWIDE: CONSTRAIN BUT EXPAND === */
+.wp-block.alignwide,
+.wp-block-group.alignwide,
+.alignwide {
+  max-width: var(--wp--style--global--wide-size, 1400px);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* === Alignment Fixes for Block Theme Layouts === */
+
+body {
+  overflow-x: hidden;
+}
+
+
+/* Wide alignment */
+.alignwide {
+  max-width: var(--wp--style--global--wide-size, 1400px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  box-sizing: border-box;
+}
+
+/* Fix image overflow inside full/wide blocks */
+img,
+.wp-block-cover__image-background {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Optional: reset legacy theme containers */
+.site,
+.site-content,
+.site-main {
+  max-width: unset;
+  padding: 0;
+  margin: 0;
+  width: auto;
+}
+
+
+/* =====================================
+   Block Alignment and Spacing
+   ===================================== */
+.wp-block {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.75;
+}
+
+.site-inner > .alignwide,
+.site-inner > .wp-block-group.alignwide {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  max-width: 1400px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  box-sizing: border-box;
+}
+
+/* Break constraint inside wide group blocks */
+.is-layout-constrained.alignwide {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+}
+
+.is-layout-constrained.alignwide img,
+.is-layout-constrained.alignwide .wp-block {
+  max-width: 100%;
+}
+
+
+/* === Force alignfull to truly go full width, even inside constrained layouts === */
+.is-layout-constrained .alignfull,
+.wp-block.alignfull {
+  width: 100vw !important;
+  max-width: none !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  box-sizing: border-box;
+}
+
+
+
+/* =====================================
+   Content Styling
+   ===================================== */
+.entry-content blockquote {
+  font-family: var(--mf-heading-font, serif);
+  font-size: 2rem;
+  font-style: italic;
+  font-weight: 600;
+  margin: 2rem auto;
+  line-height: 1.6;
+  border-left: 4px solid var(--mf-primary, #336699);
+  padding-left: 1.5rem;
+  color: var(--mf-body-text, #111);
+}
+
+.modfarm-header-logo-column {
+    max-width: 250px;
+    min-width: 120px;
+    display: flex;
+    justify-content: center;
+}
+
+.modfarm-header-flex-row .modfarm-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.modfarm-header-left,
+.modfarm-header-right {
+    flex: 1 1 0%;
+    display: flex;
+    align-items: center;
+}
+
+.modfarm-header-center {
+    flex: 0 0 auto;
+    min-width: 120px;
+    max-width: 250px;
+    text-align: center;
+}
+
+.modfarm-header-center .wp-block-site-logo,
+.modfarm-header-center .wp-block-site-title {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.wp-block-image.aligncenter img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.wp-block-image.aligncenter {
+    text-align: center;
+}
+
+/* Fix Gutenberg centered images being forced to display:table */
+figure.wp-block-image.aligncenter {
+  display: flex !important;              /* override table */
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+/* ensure the image itself centers regardless of inline width */
+figure.wp-block-image.aligncenter > img,
+figure.wp-block-image.aligncenter img {
+  display: inline-block;
+}

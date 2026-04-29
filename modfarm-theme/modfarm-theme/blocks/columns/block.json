@@ -1,0 +1,45 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/columns",
+  "title": "Modfarm Columns",
+  "category": "modfarm",
+  "icon": "columns",
+  "description": "Responsive two-column layout with stack and reverse options.",
+  "supports": {
+    "html": false,
+    "anchor": true,
+    "reusable": false,
+    "layout": {
+    "type": "flex"
+  }
+  },
+  "attributes": {
+    "layout": {
+      "type": "string",
+      "default": "50-50"
+    },
+    "gap": {
+      "type": "string",
+      "default": "gap-20"
+    },
+    "align": {
+      "type": "boolean",
+      "default": false
+    },
+    "stack": {
+      "type": "boolean",
+      "default": true
+    },
+    "reverse": {
+      "type": "boolean",
+      "default": false
+    },
+    "valign": {
+      "type": "string",
+      "default": "valign-top"
+    }
+  },
+  "editorScript": "modfarm-columns-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

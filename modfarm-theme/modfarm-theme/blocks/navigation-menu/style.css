@@ -1,0 +1,246 @@
+/* === ModFarm Navigation Styles (navigation-menu) === */
+
+/* BAR */
+.mfs-nav{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  width:100%;margin-left:auto;margin-right:auto;padding:1.25rem 2rem;box-sizing:border-box;gap:1rem;
+  background-color:var(--mf-nav-bg);color:var(--mf-nav-color);
+  font-family:var(--mf-nav-font);font-size:var(--mf-nav-font-size);
+}
+
+/* Footer Variant */
+.mfs-nav-footer{justify-content:center;padding:1rem 2rem;font-size:.9rem;}
+.mfs-nav-footer .site-title,.mfs-nav-footer .wp-block-site-logo{display:none;}
+
+.modfarm-header-flex-row{position:relative;}
+
+/* LAYOUT: split */
+.mfs-nav-split{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;width:100%;gap:1rem;
+}
+.mfs-nav-left,.mfs-nav-right{
+  flex:1 1 0;max-width:45%;min-width:0;display:flex;flex-wrap:wrap;overflow:visible;
+}
+.mfs-nav-left{justify-content:flex-start;}
+.mfs-nav-right{justify-content:flex-end;}
+.mfs-nav-left .mfs-nav-menu,.mfs-nav-right .mfs-nav-menu{flex-wrap:wrap;justify-content:flex-start;}
+
+/* LAYOUT: center slot (used by split center) */
+.mfs-nav-center{
+  flex:0 0 auto;min-width:0;width:max-content;margin:0 1rem;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  z-index:0;pointer-events:none !important;white-space:nowrap;
+  position:absolute;left:50%;transform:translateX(-50%);flex-shrink:0;
+}
+/* brand inside center remains clickable */
+.mfs-nav-center .mfs-brand,
+.mfs-nav-center .mfs-brand__link,
+.mfs-nav-center .mfs-brand *{ pointer-events:auto; }
+
+/* MENUS */
+.mfs-nav-menu{display:flex;flex-wrap:wrap;gap:.5rem;list-style:none;margin:0;padding:0;}
+.mfs-nav-menu li{position:relative;overflow:visible;}
+.mfs-nav-left .mfs-nav-menu > li > a,
+.mfs-nav-right .mfs-nav-menu > li > a{ position:relative; z-index:2; } /* above center slot */
+.mfs-nav-menu li a{
+  color:inherit;text-decoration:none;font-weight:600;font:var(--mf-nav-font);font-size:var(--mf-nav-font-size);
+  padding:.25rem .5rem;transition:color .2s ease;
+}
+.mfs-nav-menu li a:hover,
+.mfs-nav-menu li a:focus,
+.mfs-nav-menu li a:active{color:var(--mf-nav-hover-color);}
+
+/* SUBMENUS (desktop/keyboard) */
+.mfs-nav-menu li.menu-item-has-children > a::after{content:"▾";font-size:.6rem;margin-left:.4rem;}
+.mfs-nav-menu li .sub-menu{
+  display:none;position:absolute;top:100%;left:0;min-width:220px;background:var(--submenu-bg);color:var(--submenu-color);
+  box-shadow:0 4px 10px rgba(0,0,0,.1);z-index:1001;padding:.5rem 0;
+}
+.mfs-nav-menu li:hover > .sub-menu,
+.mfs-nav-menu li:focus-within > .sub-menu{ display:block; }
+.mfs-nav-menu li.submenu-align-right > .sub-menu{left:auto;right:0;}
+.mfs-nav-menu .sub-menu li{display:block;white-space:nowrap;}
+.mfs-nav-menu .sub-menu a{
+  display:block;padding:.5rem 1rem;background:var(--submenu-bg);color:var(--submenu-color);
+  font:var(--mf-nav-font);font-size:var(--mf-nav-font-size);transition:background .3s ease,color .3s ease;
+}
+.mfs-nav-menu .sub-menu a:hover{color:var(--mf-nav-hover-color);}
+
+/* TITLE (used when no brand media) */
+.site-title{font-size:1.5rem;font-weight:bold;color:inherit;text-decoration:none;}
+.mfs-nav-simple .site-title{margin-right:auto;}
+
+/* SIMPLE layout: brand left, menu right with buffer */
+.mfs-nav-simple .mfs-brand{margin-right:auto;}
+.mfs-nav-simple .mfs-nav-menu{margin-left:1rem;}
+
+/* ALIGNMENT helpers (simple layout) */
+.mfs-nav-simple.align-left{justify-content:flex-start;}
+.mfs-nav-simple.align-center{justify-content:center;}
+.mfs-nav-simple.align-right{justify-content:flex-end;}
+
+/* BRAND (logo/icon + optional title) */
+.mfs-brand{
+  display:inline-flex;align-items:center;gap:var(--mfs-brand-gap,8px);line-height:1;color:inherit;
+}
+.mfs-brand__link{
+  display:inline-flex;align-items:center;text-decoration:none;color:inherit;
+  gap:var(--mfs-brand-gap,8px);
+}
+.mfs-brand img,
+.mfs-brand .custom-logo{
+  display:block;height:auto!important;width:auto!important;
+  max-width:var(--mfs-brand-maxw,none);max-height:var(--mfs-brand-maxh,none);
+}
+.mfs-brand__text{font-weight:700;font-size:18px;line-height:1.1;}
+
+/* TOGGLE */
+.mfs-nav-toggle{
+  display:none;font-size:2rem;background:none;border:none;color:inherit;cursor:pointer;z-index:1001;position:relative;
+}
+
+/* OVERLAY (mobile) */
+.mfs-nav-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);color:#fff;
+  display:none;flex-direction:column;align-items:center;justify-content:center;z-index:2000;padding:2rem;
+  transition:all .3s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.mfs-nav-overlay.active{display:flex;}
+
+/* Kill desktop dropdown behavior inside overlay */
+.mfs-nav-overlay .sub-menu{
+  display:none;position:static!important;visibility:visible;opacity:1;transform:none;box-shadow:none;
+  margin-top:.5rem;padding-left:1rem;border-left:2px solid rgba(255,255,255,.1);
+}
+.mfs-nav-overlay .mfs-nav-menu-vertical .sub-menu{display:none;flex-direction:column;}
+.mfs-nav-overlay .mfs-nav-menu-vertical li > a{
+  display:flex;align-items:center;justify-content:center;min-height:44px;line-height:1.2;color:inherit;
+}
+.mfs-nav-overlay .menu-item.open > .sub-menu{display:block;}
+.mfs-nav-overlay .menu-item-has-children > a{position:relative;padding-right:2rem;}
+.mfs-nav-overlay .menu-item-has-children > a::after{
+  content:"▸"!important;position:relative;margin-left:.5rem;right:0;top:0;transform:none!important;
+}
+.mfs-nav-overlay .menu-item.open > a::after{content:"▾"!important;transform:none!important;}
+.mfs-nav-close{
+  position:absolute;top:1rem;right:1.5rem;font-size:2rem;background:none;border:none;color:#fff;cursor:pointer;
+}
+
+/* Overlay vertical stack */
+.mfs-nav-menu-vertical{
+  list-style:none;padding:0;margin:2rem 0;display:flex;flex-direction:column;gap:1.5rem;align-items:center;
+}
+.mfs-nav-menu-vertical li{width:100%;text-align:center;}
+.mfs-nav-menu-vertical a{color:#fff;font-size:1.5rem;text-decoration:none;}
+.mfs-nav-menu-vertical .sub-menu{
+  display:none;flex-direction:column;padding-left:1rem;border-left:2px solid rgba(255,255,255,.1);margin-top:.5rem;
+}
+.mfs-nav-menu-vertical .menu-item.open > .sub-menu{display:flex;}
+.mfs-nav-menu-vertical .menu-item-has-children > a::after{content:"▸";display:inline-block;margin-left:.5rem;transition:transform .3s;}
+.mfs-nav-menu-vertical .menu-item.open > a::after{transform:rotate(90deg);}
+
+/* Optional: slide animation for overlay submenus */
+.mfs-nav-overlay .sub-menu{max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .3s ease;opacity:0;}
+.mfs-nav-overlay .menu-item.open > .sub-menu{max-height:500px;opacity:1;}
+
+/* PADDING PRESETS */
+.nav-padding-compact{padding:.5rem 1rem;}
+.nav-padding-regular{padding:1.25rem 2rem;}
+.nav-padding-spacious{padding:2rem 3rem;}
+
+/* Transparent Variant */
+.nav-transparent{background-color:transparent!important;border:none;}
+
+/* Admin Bar Offset */
+body.admin-bar .mfs-nav-close{top:calc(1rem + var(--wp-admin-bar-height,32px));}
+
+/* DESKTOP & KEYBOARD OPEN */
+.mfs-nav-menu li:hover > .sub-menu,
+.mfs-nav-menu li:focus-within > .sub-menu{ display:block; z-index:1001; }
+
+/* === No-collapse variant (stays expanded on mobile) === */
+@media (max-width: 768px) {
+  .mfs-nav--no-collapse {
+    flex-direction: row;align-items: center;justify-content: space-between;
+  }
+  /* keep menus visible */
+  .mfs-nav--no-collapse .mfs-nav-left,
+  .mfs-nav--no-collapse .mfs-nav-right,
+  .mfs-nav--no-collapse .mfs-nav-menu{
+    display:flex !important;flex-wrap:wrap;
+  }
+  /* disable center fixed behavior */
+  .mfs-nav--no-collapse .mfs-nav-center{
+    position:static !important;transform:none !important;flex:0 0 auto;margin:0 1rem;text-align:center;
+  }
+  /* hide mobile UI */
+  .mfs-nav--no-collapse .mfs-nav-toggle,
+  .mfs-nav--no-collapse .mfs-nav-overlay{display:none !important;}
+}
+
+/* ===========================================
+   No-collapse: preserve alignment on tablets,
+   center on phones
+   ------------------------------------------- */
+
+/* Undo earlier generic centering in no-collapse */
+@media (max-width: 1024px) {
+  .mfs-nav--no-collapse.mfs-nav-simple { justify-content: unset !important; }
+  .mfs-nav--no-collapse .mfs-nav-center { text-align: inherit !important; justify-content: inherit !important; }
+}
+
+/* TABLETS (601–1024px): honor simpleAlign exactly */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .mfs-nav--no-collapse.mfs-nav-simple.align-left   { justify-content:flex-start !important; }
+  .mfs-nav--no-collapse.mfs-nav-simple.align-center { justify-content:center !important; }
+  .mfs-nav--no-collapse.mfs-nav-simple.align-right  { justify-content:flex-end !important; }
+
+  .mfs-nav--no-collapse.mfs-nav-simple .mfs-nav-menu{
+    justify-content:inherit !important;text-align:inherit !important;
+  }
+
+  /* Keep SPLIT intent */
+  .mfs-nav--no-collapse.mfs-nav-split .mfs-nav-left  { justify-content:flex-start !important; }
+  .mfs-nav--no-collapse.mfs-nav-split .mfs-nav-right { justify-content:flex-end !important; }
+}
+
+/* PHONES (<=600px): center only here */
+@media (max-width: 600px) {
+  .mfs-nav--no-collapse.mfs-nav-simple{ justify-content:center !important; }
+  .mfs-nav--no-collapse.mfs-nav-simple .mfs-nav-menu,
+  .mfs-nav--no-collapse.mfs-nav-simple .mfs-nav-center{
+    justify-content:center !important;text-align:center !important;
+  }
+}
+
+/* TOUCH / coarse pointers: use .open instead of :hover (JS toggles it) */
+@media (hover: none), (pointer: coarse){
+  .mfs-nav-menu li > .sub-menu{ display:none; }
+  .mfs-nav-menu li.open > .sub-menu{ display:block; z-index:1001; }
+  .mfs-nav-menu li.menu-item-has-children > a::after{ transition:transform .2s ease; }
+  .mfs-nav-menu li.open > a::after{ transform:rotate(180deg); }
+}
+
+/* RESPONSIVE tweaks */
+@media (min-width:769px) and (max-width:1200px){
+  .mfs-nav-left .mfs-nav-menu li,
+  .mfs-nav-right .mfs-nav-menu li{
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+  }
+}
+
+/* Default mobile collapse behavior (for collapsible instances) */
+@media (max-width:768px){
+  .mfs-nav{
+    flex-direction:row;align-items:center;justify-content:space-between;padding:1rem;
+    width:100vw;max-width:100vw;margin:0;box-sizing:border-box;background-color:var(--mf-nav-bg);color:var(--mf-nav-color);
+  }
+  .mfs-nav-toggle{display:block;order:2;margin-left:auto;font-size:1.5rem;background:none;border:none;color:inherit;cursor:pointer;z-index:1001;padding:.5rem 1rem;}
+  .mfs-nav-footer .mfs-nav-toggle{order:3;margin-left:auto;margin-right:auto;}
+  .mfs-nav-left,.mfs-nav-right,.mfs-nav-menu{display:none;}
+  /* center area becomes the left-aligned brand on mobile */
+  .mfs-nav-center{
+    position:static;transform:none;flex:1;padding:0;text-align:left;justify-content:flex-start;align-items:center;margin-right:auto;
+    width:auto;pointer-events:auto;
+  }
+}

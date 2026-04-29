@@ -1,0 +1,29 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/book-page-audio",
+  "title": "Book Page Audio Sample",
+  "category": "modfarm-theme",
+  "icon": "format-audio",
+  "description": "Standalone audio sample using the same controls/classes as Multi-Tax & Book Cards.",
+  "supports": { "html": false, "align": ["wide", "full"] },
+  "attributes": {
+    "titleText":        { "type": "string",  "default": "Listen To A Sample" },
+    "label-size":   { "type": "string", "default": "16px" },
+    "label-weight": { "type": "string", "default": "600" },
+
+    "samplebtn-text":   { "type": "string",  "default": "Play Sample" },
+    "samplebtn-bg":     { "type": "string",  "default": "" },
+    "samplebtn-fg":     { "type": "string",  "default": "" },
+    "samplebtn-border": { "type": "string",  "default": "" },
+    "sample-shape":     { "type": "string",  "default": "pill" },
+
+    "button-align":     { "type": "string",  "default": "center" },
+
+    "className":        { "type": "string",  "default": "" },
+    
+    "showAdvanced": { "type": "boolean", "default": false }
+  },
+  "editorScript": "modfarm-book-page-audio-editor",
+  "style": "file:./assets/css/book-cards.css",
+  "editorStyle": "file:./assets/css/book-cards.css"
+}

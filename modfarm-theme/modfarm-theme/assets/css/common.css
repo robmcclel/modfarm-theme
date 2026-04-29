@@ -1,0 +1,257 @@
+/* ===========================
+   Default CSS Variable Fallbacks
+   These can be overridden via PHP injection in wp_head
+   =========================== */
+
+:root {
+  --mf-primary: #336699;
+  --mf-header-text: #111111;
+  --mf-body-text: #111111;
+  --mf-link-color: #0066cc;
+  --mf-button-bg: #336699;
+  --mf-button-text: #ffffff;
+  --mf-heading-font: 'Merriweather', serif;
+  --mf-body-font: 'Inter', sans-serif;
+  --mf-content-width: 1200px;
+  --mf-background: #ffffff;
+  --mf-spacing-sm: 0.5rem;
+  --mf-spacing-md: 1rem;
+  --mf-spacing-lg: 2rem;
+}
+
+/* Allow local WP text colors to affect normal content */
+.wp-block-group.has-text-color :is(
+  h1, h2, h3, h4, h5, h6,
+  p, li, ul, ol,
+  blockquote, cite,
+  figcaption
+) {
+  color: inherit !important;
+}
+
+/* Keep book-card primary buttons using their own token */
+.wp-block-group.has-text-color .mfb-button {
+  color: var(--mfb-btn-fg, var(--mf-button-text, #ffffff)) !important;
+}
+
+/* Keep audio/sample buttons using their own token */
+.wp-block-group.has-text-color .mfb-audio .mfb-button.mfb-audio-cta {
+  color: var(--mfb-sample-fg, #222) !important;
+}
+
+/* Keep normal WP buttons styled as buttons */
+.wp-block-group.has-text-color .wp-block-button__link,
+.wp-block-group.has-text-color .wp-element-button,
+.wp-block-group.has-text-color .book-card-button,
+.wp-block-group.has-text-color .btn,
+.wp-block-group.has-text-color a.book-page-button {
+  color: var(--mf-button-text, #ffffff) !important;
+}
+
+/* Basic Site Styles */
+body {
+  background-color: var(--mf-background, #ffffff);
+  color: var(--mf-body-text, #111);
+  font-family: var(--mf-body-font, sans-serif);
+}
+
+a {
+  color: var(--mf-link-color, #0066cc);
+}
+
+.site-header,
+.site-footer {
+  background-color: var(--mf-primary, #336699);
+  color: var(--mf-header-text, #ffffff);
+}
+
+.wrap {
+  max-width: var(--mf-content-width, 1200px);
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.site-main > .wrap {
+  max-width: var(--mf-content-width, 1200px);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  color: var(--mf-header-text, #ffffff);
+  text-decoration: none;
+  line-height: 1.25;
+}
+
+.site-title a {
+  color: var(--mf-header-text, #ffffff);
+  text-decoration: none;
+}
+
+.entry-header {
+  margin-bottom: var(--mf-spacing-md);
+}
+
+.entry-title {
+  font-size: 2rem;
+  font-family: var(--mf-heading-font, serif);
+  color: var(--mf-header-text, #222);
+}
+
+.entry-content {
+  font-family: var(--mf-body-font, sans-serif);
+  color: var(--mf-body-text, #111);
+}
+
+.entry-meta {
+  font-size: 0.9rem;
+  color: var(--mf-secondary, #888);
+  margin-bottom: var(--mf-spacing-sm);
+}
+
+.entry-footer {
+  margin-top: var(--mf-spacing-lg);
+  font-size: 0.9rem;
+  color: var(--mf-secondary, #888);
+}
+
+.post-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--mf-spacing-lg);
+  font-size: 0.9rem;
+}
+
+.post-categories,
+.post-tags {
+  margin-top: var(--mf-spacing-sm);
+  color: var(--mf-secondary, #888);
+}
+
+/* Book Card Styling */
+.modfarm-book-card {
+  text-align: center;
+  margin-bottom: var(--mf-spacing-lg);
+  font-family: var(--mf-body-font);
+}
+.book-cover {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.book-card-button {
+  display: inline-block;
+  margin-top: var(--mf-spacing-sm);
+  padding: var(--mf-spacing-sm) var(--mf-spacing-md);
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 3px;
+  font-size: 0.9em;
+  background-color: var(--mf-button-bg);
+  color: var(--mf-button-text);
+}
+
+.book-card-button {
+  background-color: var(--mf-button-bg);
+  color: var(--mf-button-text);
+}
+
+/* Utility Helpers */
+.text-center {
+  text-align: center;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+.aspect-portrait {
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+
+/* Button Variants */
+.btn {
+  display: inline-block;
+  font-weight: 600;
+  padding: 0.75em 1.5em;
+  text-align: center;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+  background-color: var(--mf-button-bg);
+  color: var(--mf-button-text);
+}
+
+.btn-red {
+  background-color: #ca0003;
+  color: #fff;
+}
+
+.btn-accent {
+  background-color: var(--mf-link-color);
+  color: #fff;
+}
+
+/* Device Styling */
+/* Base: match any element whose class contains "device-" */
+[class*="device-"]{
+  /* Defaults (you can tweak these site-wide) */
+  --bw: 24px;              /* border width (bezel thickness) */
+  --br: 18px;              /* corner radius */
+  --frame: #101113;        /* bezel color */
+  --outline: transparent;  /* outline color */
+  --outline-w: 0px;        /* 0 = no outline */
+  --shadow: none;
+
+  display:inline-block;
+  box-sizing:border-box;
+  border: var(--bw) solid var(--frame);
+  border-radius: calc(var(--br) + var(--bw));
+  outline: var(--outline-w) solid var(--outline);
+  outline-offset: 0;
+  box-shadow: var(--shadow);
+  overflow:hidden;               /* clip inner corners */
+  background:#0000;              /* keep transparent around image */
+}
+
+/* If applied directly to <img>, this gives the inner "screen" corner */
+[class*="device-"]{
+  /* Images are replaced elements, so the border-radius clips content */
+}
+
+/* ---- FRAME COLOR presets ---- */
+[class*="device-light"]  { --frame:#f7f8fa; }
+[class*="device-dark"]   { --frame:#101113; }
+[class*="device-silver"] { --frame:#d9dadf; }
+[class*="device-rose"]   { --frame:#e6c6c6; }
+
+/* ---- OUTLINE toggle + colors ---- */
+[class*="outline-"] { --outline-w:1px; }       /* outline on if any outline-* is present */
+[class*="outline-blue"]     { --outline:#3a6ff7; }
+[class*="outline-darkblue"] { --outline:#1f3a93; }
+[class*="outline-slate"]    { --outline:#3a3f45; }
+[class*="outline-gray"]     { --outline:#cbd1d8; }
+[class*="outline-black"]    { --outline:#000; }
+[class*="outline-white"]    { --outline:#fff; }
+
+/* --- SHADOW options --- */
+/* no shadow: match “…-noshadow” at end or in the middle */
+[class$="-noshadow"],
+[class*="-noshadow-"] { --shadow: none !important; }
+
+/* shadow: match “…-shadow” (not “…-noshadow”) */
+[class$="-shadow"],
+[class*="-shadow-"]   { --shadow: 0 8px 24px rgba(0,0,0,.28); }
+
+/* (Optional) alternate shadow strengths if you ever want them: */
+/* [class*="shadow-sm"] { --shadow:0 4px 14px rgba(0,0,0,.14); } */
+/* [class*="shadow-lg"] { --shadow:0 12px 32px rgba(0,0,0,.35); } */
+
+/* --- Responsive: AUTO stacks vertically under 720px --- */
+@media (max-width: 720px) {
+    [class*="device-"]{
+    --bw: 12px;
+    --br: 4px;
+    }
+}

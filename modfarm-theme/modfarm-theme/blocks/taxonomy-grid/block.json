@@ -1,0 +1,40 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/taxonomy-grid",
+  "title": "Taxonomy Grid",
+  "category": "modfarm-theme",
+  "icon": "index-card",
+  "description": "Present taxonomy terms in an organized, image-forward grid with A–Z TOC, sorting, parent/child options, and pagination.",
+  "keywords": ["taxonomy", "grid", "series", "authors", "genres", "directory"],
+  "supports": { "html": false, "align": ["wide", "full"], "anchor": true },
+  "attributes": {
+    "taxonomy":         { "type": "string",  "default": "book-series" },
+    "displayMode":      { "type": "string",  "default": "all" },
+    "parentId":         { "type": "number",  "default": 0 },
+    "hideParents":      { "type": "boolean", "default": false },
+
+    "columns":          { "type": "number",  "default": 4 },
+    "perPage":          { "type": "number",  "default": 24 },
+    "enablePagination": { "type": "boolean", "default": true },
+    "pageFromQuery":    { "type": "boolean", "default": true }, 
+    "page":             { "type": "number",  "default": 1 },
+
+    "orderBy":          { "type": "string",  "default": "name_asc" },
+    "showTOC":          { "type": "boolean", "default": true },
+
+    "primaryImageSource":  { "type": "string", "default": "archive_default_image" },
+    "fallbackImageSource": { "type": "string", "default": "first_cover_in_series" },
+
+    "shape":            { "type": "string",  "default": "square" }, 
+    "aspectRatioOpt":   { "type": "string",  "default": "1/1" },
+
+    "hideEmpty":        { "type": "boolean", "default": true },
+    "showCounts":       { "type": "boolean", "default": false },
+    "gutter":           { "type": "number",  "default": 16 },
+
+    "pubDateMetaKey":   { "type": "string",  "default": "publication_date" } 
+  },
+  "editorScript": "modfarm-taxonomy-grid-editor",
+  "style": "file:style.css",
+  "editorStyle": "file:editor.css"
+}

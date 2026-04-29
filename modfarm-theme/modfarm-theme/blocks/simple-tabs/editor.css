@@ -1,0 +1,6 @@
+/* Keep editor parity: show nav clearly */
+.block-editor-page .mf-tabs__nav{ margin-bottom: 10px; }
+.block-editor-page .mf-tabs__empty{
+  padding: 14px;
+  border: 1px dashed #cdcdcd;
+}

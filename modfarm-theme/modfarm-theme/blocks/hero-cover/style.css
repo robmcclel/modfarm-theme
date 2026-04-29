@@ -1,0 +1,91 @@
+.modfarm-hero-cover__content{
+  display: flow-root; /* prevents margin collapsing out of the container */
+}
+
+.mf-hero-cover{
+  position: relative;
+  width: 100%;
+  display: block;
+  overflow: hidden;
+}
+
+.mf-hero-cover__overlay{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mf-hero-cover__content{
+  position: relative;
+  z-index: 2;
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+
+.mf-hero-cover__note{
+  position:absolute;
+  left:12px;
+  bottom:12px;
+  z-index:3;
+  font-size:12px;
+  opacity:.75;
+  background:rgba(0,0,0,.35);
+  padding:6px 10px;
+  border-radius:6px;
+  pointer-events:none;
+  color:#fff;
+}
+
+.wp-block-modfarm-hero-cover .modfarm-hero-cover{
+  position: relative;
+  overflow: hidden;
+}
+
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__overlay{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content{
+  position: relative;
+  z-index: 5;
+
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+
+  display: flow-root;
+}
+
+/* Default hero text to white for readability */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content,
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content *{
+  color: #fff;
+}
+
+/* Links too */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__content a{
+  color: #fff;
+  text-decoration-color: currentColor;
+}
+
+/* The block wrapper IS the container in many dynamic blocks */
+.wp-block-modfarm-hero-cover{
+  position: relative;
+  overflow: hidden;
+}
+
+/* If you also output .modfarm-hero-cover as the same element or nested, cover both */
+.wp-block-modfarm-hero-cover.modfarm-hero-cover,
+.wp-block-modfarm-hero-cover .modfarm-hero-cover{
+  position: relative;
+  overflow: hidden;
+}
+
+/* Overlay must be pinned to the hero container */
+.wp-block-modfarm-hero-cover .modfarm-hero-cover__overlay{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}

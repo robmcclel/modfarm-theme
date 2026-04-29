@@ -1,0 +1,19 @@
+/* Book Page • Audio Sample — alignment helpers ONLY (everything else from book-cards.css) */
+
+.mfb-audio--align-center .mfb-button.mfb-audio-cta,
+.mfb-audio--align-right  .mfb-button.mfb-audio-cta {
+  width: auto !important;      /* override shared 99% so alignment is visible */
+  display: inline-block;       /* shrink-to-fit */
+  min-width: 12rem;            /* optional: gives a nice button width */
+}
+
+/* Make alignment visible for sample CTA + label */
+.mfb-audio--align-center { text-align: center; }
+.mfb-audio--align-right  { text-align: right;  }
+
+.mfb-audio--align-center .mfb-button.mfb-audio-cta,
+.mfb-audio--align-right  .mfb-button.mfb-audio-cta {
+  width: auto !important;
+  display: inline-block;
+  min-width: 12rem;
+}

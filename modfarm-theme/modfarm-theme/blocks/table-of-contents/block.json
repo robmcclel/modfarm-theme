@@ -1,0 +1,29 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/table-of-contents",
+  "title": "Table of Contents",
+  "category": "modfarm-theme",
+  "icon": "list-view",
+  "description": "Auto-build a linked table of contents from on-page headings.",
+  "keywords": ["toc", "table of contents", "headings", "anchors"],
+  "supports": {
+    "html": false,
+    "align": false,
+    "color": { "text": true, "background": false, "link": true },
+    "typography": { "fontSize": true, "lineHeight": true }
+  },
+  "attributes": {
+    "includeH2":   { "type": "boolean", "default": true },
+    "includeH3":   { "type": "boolean", "default": true },
+    "includeH4":   { "type": "boolean", "default": false },
+    "slugCase":    { "type": "string",  "default": "lower",   "enum": ["lower", "preserve"] },
+    "columns":     { "type": "number",  "default": 1 },
+    "align":       { "type": "string",  "default": "left",    "enum": ["left", "center", "right"] },
+    "listStyle":   { "type": "string",  "default": "plain",   "enum": ["plain", "bulleted", "numbered"] },
+    "title":       { "type": "string",  "default": "" }
+  },
+  "editorScript": "modfarm-table-of-contents-editor",
+  "viewScript": "file:./view.js",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

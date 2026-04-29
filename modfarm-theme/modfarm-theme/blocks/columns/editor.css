@@ -1,0 +1,104 @@
+/* === CSS Updates === */
+/* These go in both editor.css and style.css */
+
+/* Base visibility + layout for ModFarm Columns */
+.mf-columns {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+}
+
+.wp-container-mf-columns-layout {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--style--block-gap, 1.5em);
+}
+
+/* Each column gets ~50% width with padding and a dashed border */
+.mf-column {
+	width: 45%;
+	min-height: 100px;
+	padding: 10px;
+	border: 2px dashed #ccc;
+	box-sizing: border-box;
+	position: relative;
+}
+
+/* Optional: add a subtle placeholder message for empty columns */
+.mf-column:empty::before {
+	content: 'Drop content here';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	color: #aaa;
+	font-style: italic;
+	pointer-events: none;
+}
+
+.wp-block-modfarm-columns {
+	border: 2px dashed #ccc;
+	padding: 20px;
+	min-height: 100px;
+	position: relative;
+}
+
+.wp-block-modfarm-columns:before {
+	content: 'ModFarm Columns Block';
+	color: #999;
+	font-size: 12px;
+	position: absolute;
+	top: 4px;
+	left: 10px;
+	background: #fff;
+	padding: 0 4px;
+	z-index: 2;
+}
+
+.mf-column:empty {
+	border: 1px dashed #999;
+	min-height: 80px;
+}
+
+.mf-columns.is-selected {
+	outline: 2px solid #007cba;
+}
+
+
+.mf-columns.is-selected {
+	outline: 2px solid #007cba;
+}
+
+.mf-columns-wrapper {
+  width: 100%;
+}
+.mf-width-900 {
+  max-width: 900px;
+}
+.mf-width-700 {
+  max-width: 700px;
+}
+.mf-columns-wrapper.align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+.mf-columns-wrapper.align-left {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+
+/* === Mobile Overrides for ModFarm Columns === */
+@media (max-width: 768px) {
+  .mf-columns.stack-mobile {
+    flex-direction: column;
+  }
+
+  .mf-columns.stack-mobile.reverse-mobile {
+    flex-direction: column-reverse;
+  }
+
+  .mf-column {
+    width: 100%;
+  }
+}

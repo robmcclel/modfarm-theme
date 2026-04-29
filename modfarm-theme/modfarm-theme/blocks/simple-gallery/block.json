@@ -1,0 +1,33 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/simple-gallery",
+  "title": "Simple Gallery",
+  "category": "modfarm-theme",
+  "icon": "format-gallery",
+  "description": "Clean grid gallery with Media Library selection and built-in lightbox.",
+  "keywords": ["gallery", "images", "lightbox"],
+  "supports": { "html": false, "align": false },
+  "editorScript": "modfarm-simple-gallery-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css",
+
+  "attributes": {
+    "images": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id":  { "type": "integer" },
+          "url": { "type": "string" },
+          "alt": { "type": "string" }
+        }
+      }
+    },
+    "columns":  { "type": "number",  "default": 3 },
+    "size":     { "type": "string",  "default": "medium" },
+    "linkMode": { "type": "string",  "default": "lightbox" },
+    "responsive": { "type": "boolean", "default": true },
+    "visibleCount": { "type": "number", "default": 0 }
+  }
+}

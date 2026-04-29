@@ -1,0 +1,15 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/content-slot",
+  "title": "Content Slot",
+  "category": "modfarm-theme",
+  "icon": "media-text",
+  "description": "Design-time slot for page/post body. Visible outline in editor; acts as the importer target.",
+  "supports": { "html": false, "align": false },
+  "attributes": {
+    "slot": { "type": "string", "default": "main" },
+    "acceptImport": { "type": "boolean", "default": true }
+  },
+  "editorScript": "modfarm-content-slot-editor",
+  "editorStyle": "file:editor.css"
+}

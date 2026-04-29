@@ -1,0 +1,12 @@
+/* Available Format Icons (editor) */
+.mfi-icons{
+  display:flex;
+  align-items:center;
+  gap: var(--mfi-gap, 8px);
+  color: var(--mfi-color, currentColor);
+}
+.mfi-icons .mfi{
+  display:inline-flex;
+  width: var(--mfi-size, 20px);
+  height: var(--mfi-size, 20px);
+}

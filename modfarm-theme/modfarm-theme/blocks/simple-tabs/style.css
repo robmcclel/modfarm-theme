@@ -1,0 +1,98 @@
+.mf-tabs {
+  /* Defaults if user doesn’t set colors */
+  --mf-tab-bg: transparent;
+  --mf-tab-text: #222;
+  --mf-tab-border: #222;
+
+  --mf-tab-bg-active: transparent;
+  --mf-tab-text-active: #222;
+  --mf-tab-border-active: #222;
+}
+
+/* NAV wrapper */
+.mf-tabs__nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+}
+.mf-tabs__nav::-webkit-scrollbar { height: 6px; }
+.mf-tabs__nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.2); }
+
+/* Alignment */
+.mf-tabs--align-left .mf-tabs__nav { justify-content: flex-start; }
+.mf-tabs--align-center .mf-tabs__nav { justify-content: center; }
+.mf-tabs--align-right .mf-tabs__nav { justify-content: flex-end; }
+
+/* Button base */
+.mf-tabs__btn {
+  appearance: none;
+  background: var(--mf-tab-bg);
+  color: var(--mf-tab-text);
+  border: 1px solid var(--mf-tab-border);
+  padding: 14px 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Active */
+.mf-tabs__btn.is-active {
+  background: var(--mf-tab-bg-active);
+  color: var(--mf-tab-text-active);
+  border-color: var(--mf-tab-border-active);
+}
+
+/* Shapes */
+.mf-tabs--shape-square .mf-tabs__btn { border-radius: 0; }
+.mf-tabs--shape-rounded .mf-tabs__btn { border-radius: 10px; }
+.mf-tabs--shape-pill .mf-tabs__btn { border-radius: 9999px; }
+
+/* Optional equal width */
+.mf-tabs--equal .mf-tabs__btn {
+  flex: 1 1 0;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Optional chevron */
+.mf-tabs__chev {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+/* Panels */
+.mf-tabs__panels {
+  margin-top: 16px;
+}
+
+/* Panels: hide everything by default, show only active */
+.mf-tabs .mf-tab-panel {
+  display: none;
+}
+
+.mf-tabs .mf-tab-panel.is-active {
+  display: block;
+}
+
+/* Optional safety: if aria-hidden is used */
+.mf-tabs .mf-tab-panel[aria-hidden="true"] {
+  display: none;
+}
+.mf-tabs .mf-tab-panel[aria-hidden="false"] {
+  display: block;
+}
+
+
+/* Basic responsive: keep scroll, reduce padding */
+@media (max-width: 640px) {
+  .mf-tabs__btn { padding: 12px 14px; }
+  .mf-tabs__nav { gap: 10px; }
+}

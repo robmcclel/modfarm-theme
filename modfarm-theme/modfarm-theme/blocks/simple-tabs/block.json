@@ -1,0 +1,39 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/simple-tabs",
+  "title": "Simple Tabs",
+  "category": "modfarm-theme",
+  "icon": "index-card",
+  "description": "Tabbed content container. Add Tab Panels inside.",
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+  "tabs": { "type": "array", "default": [] },
+  "activeIndex": { "type": "number", "default": 0 },
+  "defaultActiveIndex": { "type": "number", "default": 0 },
+
+  "navAlign": { "type": "string", "default": "left" },
+  "variant": { "type": "string", "default": "underline" },
+  "equalWidth": { "type": "boolean", "default": false },
+
+  "tabShape": { "type": "string", "default": "rounded" },
+
+  "tabBg": { "type": "string", "default": "" },
+  "tabText": { "type": "string", "default": "" },
+  "tabBorder": { "type": "string", "default": "" },
+
+  "tabBgActive": { "type": "string", "default": "" },
+  "tabTextActive": { "type": "string", "default": "" },
+  "tabBorderActive": { "type": "string", "default": "" },
+
+  "showChevron": { "type": "boolean", "default": false }
+},
+
+  "editorScript": "modfarm-simple-tabs-editor",
+  "viewScript": "file:./view.js",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}
