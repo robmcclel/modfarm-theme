@@ -31,7 +31,7 @@
       version: { type: 'number', default: 1 }
     },
     edit: (props) => {
-      const { attributes, setAttributes } = props;
+      const { attributes, setAttributes, isSelected } = props;
       const { slot, origin, pattern, locked, version } = attributes;
       const zoneLabel = SLOT_LABELS[slot] || 'Zone';
       const replacementState = locked ? 'Locked / exempt from PPB replacement' : 'Eligible for PPB replacement';
@@ -71,29 +71,32 @@
                 const parsed = parseInt(value, 10);
                 setAttributes({ version: Number.isFinite(parsed) && parsed > 0 ? parsed : 1 });
               }
-            })
+            }),
+            el(Notice, {
+              status: locked ? 'warning' : 'info',
+              isDismissible: false,
+              className: 'mf-zone-block__inspector-note'
+            }, replacementState),
+            pattern
+              ? el(Notice, {
+                  status: 'info',
+                  isDismissible: false,
+                  className: 'mf-zone-block__inspector-note'
+                }, `Pattern source: ${pattern}`)
+              : el(Notice, {
+                  status: 'warning',
+                  isDismissible: false,
+                  className: 'mf-zone-block__inspector-note'
+                }, 'Pattern source not recorded for this zone.')
           )
         ),
-        el('div', useBlockProps({ className: `mf-zone-block mf-zone-block--${slot}` }),
+        el('div', useBlockProps({ className: `mf-zone-block mf-zone-block--${slot}${isSelected ? ' is-selected' : ''}` }),
           el('div', { className: 'mf-zone-block__header' },
+            el('span', { className: 'mf-zone-block__rule' }),
             el('strong', { className: 'mf-zone-block__title' }, zoneLabel),
-            el('span', { className: 'mf-zone-block__state' }, replacementState)
+            locked ? el('span', { className: 'mf-zone-block__badge' }, 'Locked') : null
           ),
-          pattern
-            ? el(Notice, {
-                status: 'info',
-                isDismissible: false,
-                className: 'mf-zone-block__notice'
-              }, `Pattern source: ${pattern}`)
-            : el(Notice, {
-                status: 'warning',
-                isDismissible: false,
-                className: 'mf-zone-block__notice'
-              }, 'Pattern source not recorded for this zone.'),
-          el('div', { className: 'mf-zone-block__meta' },
-            el('span', null, `Origin: ${origin || 'unspecified'}`),
-            el('span', null, `Version: ${version || 1}`)
-          ),
+          isSelected ? el('div', { className: 'mf-zone-block__hint' }, replacementState) : null,
           el('div', { className: 'mf-zone-block__content' },
             el(InnerBlocks, {
               templateLock: false,

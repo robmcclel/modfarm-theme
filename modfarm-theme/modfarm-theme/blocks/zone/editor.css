@@ -1,58 +1,79 @@
 .mf-zone-block {
-  border: 2px dashed #506174;
-  border-radius: 8px;
-  padding: 14px;
-  margin: 12px 0;
-  background: linear-gradient(180deg, rgba(80, 97, 116, 0.07), rgba(80, 97, 116, 0.02));
+  margin: 18px 0;
+  padding: 0;
+  background: transparent;
 }
 
 .mf-zone-block__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
   align-items: center;
-  margin-bottom: 10px;
+  margin: 0 0 10px;
+}
+
+.mf-zone-block__rule {
+  display: block;
+  border-top: 2px dotted currentColor;
+  opacity: 0.38;
+  min-width: 24px;
 }
 
 .mf-zone-block__title {
-  font-size: 14px;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5f6b76;
+}
+
+.mf-zone-block__badge {
+  font-size: 10px;
+  line-height: 1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: #6b5a00;
+  background: rgba(138, 90, 0, 0.10);
+  border-radius: 999px;
+  padding: 4px 7px;
 }
 
-.mf-zone-block__state {
-  font-size: 12px;
-  color: #425466;
-}
-
-.mf-zone-block__notice {
-  margin: 0 0 10px 0;
-}
-
-.mf-zone-block__meta {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 12px;
-  font-size: 12px;
-  color: #425466;
+.mf-zone-block__hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: #6a7784;
 }
 
 .mf-zone-block__content {
-  min-height: 40px;
+  min-height: 20px;
+}
+
+.mf-zone-block__inspector-note {
+  margin-top: 12px;
+}
+
+.mf-zone-block.is-selected .mf-zone-block__rule,
+.block-editor-block-list__block.is-selected .mf-zone-block__rule {
+  opacity: 0.75;
+}
+
+.mf-zone-block.is-selected .mf-zone-block__title,
+.block-editor-block-list__block.is-selected .mf-zone-block__title {
+  color: #1f2933;
 }
 
 .mf-zone-block--header {
-  border-color: #2d6a4f;
+  color: #2d6a4f;
 }
 
 .mf-zone-block--body {
-  border-color: #8a5a00;
+  color: #8a5a00;
 }
 
 .mf-zone-block--footer {
-  border-color: #7b2cbf;
+  color: #7b2cbf;
 }
 
 .mf-zone-block--data {
-  border-color: #005f73;
+  color: #005f73;
 }
