@@ -10,11 +10,8 @@ add_action('init', function () {
         'book-cover-art'             => 'modfarm_render_book_cover_art_block',
         'book-page-audio'            => 'modfarm_render_book_page_audio_block',
         'book-page-buttons'          => 'modfarm_render_book_page_buttons_block',
-        'book-page-title'            => 'modfarm_render_book_page_title_block',
         'book-page-description'      => 'modfarm_render_book_page_description_block',
-        'book-page-author-books'     => 'modfarm_render_book_page_author_books_block',
         'book-page-series'           => 'modfarm_render_book_page_series_block',
-        'book-page-series-list'      => 'modfarm_render_book_page_series_list_block',
         'book-page-sales-links'      => 'modfarm_render_book_page_sales_links_block',
         'book-author-credit'         => 'modfarm_render_book_author_credit_block',
         'book-details'               => 'modfarm_render_book_details_block',
@@ -23,10 +20,6 @@ add_action('init', function () {
         'series-nav'                 => 'modfarm_render_series_nav_block',
         'book-page-short-description' => 'modfarm_render_book_page_short_description_block',
         'hero-cover'                 => 'modfarm_render_hero_cover_block',
-
-        // Footer blocks
-        'footer-three-column'        => 'modfarm_render_footer_three_column_block',
-        'footer-two-row'             => 'modfarm_render_footer_two_row_block',
 
         // Author/utility blocks
         'multi-tax-format'           => 'modfarm_render_multi_tax_format_block',
