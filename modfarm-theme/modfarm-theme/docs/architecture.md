@@ -155,7 +155,7 @@ The repository now visibly supports three PPB-related content models:
 2. render-time composition for archives and hybrid singular rendering
 3. explicit zone wrappers available for future zoned PPB storage
 
-At the moment, the zone wrapper exists as infrastructure for Phase 2 and does not replace the current models automatically.
+At the moment, the zone wrapper is used for newly assembled singular PPB content and remains non-destructive toward existing legacy content.
 
 ## Archive System
 

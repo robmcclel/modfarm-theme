@@ -57,6 +57,10 @@ User-created `wp_block` patterns are also re-registered under `user/*` slugs in 
 - content is currently empty
 - a hybrid/body bypass does not prevent assembly
 
+Current Phase 2 direction now adds explicit `modfarm/zone` wrappers when new singular PPB content is assembled.
+
+This does not migrate older content automatically.
+
 ### Hybrid Mode
 
 [singular-hybrid.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/singular-hybrid.php) uses:
@@ -133,7 +137,7 @@ Current behavior:
 - no visible frontend wrapper, label, spacing, or PPB terminology is added
 - editor view shows a visible boundary and management information
 
-This block exists as infrastructure for future zone-based workflows. Current PPB assembly and existing content are not automatically rewritten to use it.
+This block exists as infrastructure for future zone-based workflows. Existing content is not automatically rewritten to use it, but newly assembled singular PPB content can store explicit zones.
 
 ## Zone Detection
 

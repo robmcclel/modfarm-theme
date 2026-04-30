@@ -699,6 +699,32 @@ function modfarm_setup_theme_defaults() {
     set_theme_mod('archive_footer_pattern', 'modfarm/footer-simple');
 }
 
+/**
+ * Serialize a PPB-managed content region as an explicit ModFarm zone block.
+ *
+ * New PPB-created singular content should store replaceable header/body/footer
+ * regions as visible editor zones while remaining frontend-invisible.
+ */
+function modfarm_ppb_build_zone_markup(string $slot, string $content, array $meta = []): string {
+    $attrs = array_filter([
+        'slot'    => $slot,
+        'origin'  => $meta['origin']  ?? 'ppb',
+        'pattern' => $meta['pattern'] ?? '',
+        'locked'  => !empty($meta['locked']),
+        'version' => isset($meta['version']) ? (int) $meta['version'] : 1,
+    ], static function ($value, $key) {
+        if ($key === 'locked') {
+            return true;
+        }
+        return $value !== '';
+    }, ARRAY_FILTER_USE_BOTH);
+
+    $json = wp_json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $inner = trim($content);
+
+    return "<!-- wp:modfarm/zone {$json} -->\n{$inner}\n<!-- /wp:modfarm/zone -->";
+}
+
 
 add_action('wp_insert_post', 'modfarm_assemble_post_layout_on_insert', 10, 3);
 
@@ -758,7 +784,17 @@ function modfarm_assemble_post_layout_on_insert($post_id, $post, $update) {
 
     if ($body === '') return;
 
-    $assembled = trim($header . "\n\n" . $body . "\n\n" . $footer);
+    $assembled = implode("\n\n", [
+        modfarm_ppb_build_zone_markup('header', $header, [
+            'pattern' => $header_slug,
+        ]),
+        modfarm_ppb_build_zone_markup('body', $body, [
+            'pattern' => $body_slug,
+        ]),
+        modfarm_ppb_build_zone_markup('footer', $footer, [
+            'pattern' => $footer_slug,
+        ]),
+    ]);
 
     remove_action('wp_insert_post', 'modfarm_assemble_post_layout_on_insert', 10);
     wp_update_post([
