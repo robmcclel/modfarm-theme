@@ -56,14 +56,14 @@ if (!function_exists('mf_get_ppb_chrome_slugs_for_post')) {
     switch ($post->post_type) {
       case 'page':
         return [
-          'header' => $opts['page_header_pattern']  ?? 'modfarm/modfarm-page-header',
-          'footer' => $opts['page_footer_pattern']  ?? 'modfarm/modfarm-page-footer',
+          'header' => $opts['page_header_pattern']  ?? 'modfarm/page-header-basic-left',
+          'footer' => $opts['page_footer_pattern']  ?? 'modfarm/footer-simple',
         ];
       case 'post':
       default:
         return [
-          'header' => $opts['post_header_pattern']  ?? 'modfarm/modfarm-post-header',
-          'footer' => $opts['post_footer_pattern']  ?? 'modfarm/modfarm-post-footer',
+          'header' => $opts['post_header_pattern']  ?? 'modfarm/post-header-basic-left',
+          'footer' => $opts['post_footer_pattern']  ?? 'modfarm/post-footer-simple-comments',
         ];
     }
   }
@@ -77,11 +77,11 @@ get_header(); // ok if empty; theme may still use it for shell markup
   if ($post instanceof WP_Post) {
     $slugs = mf_get_ppb_chrome_slugs_for_post($post);
 
-    // HEADER: PPB pattern, else fall back to template-part "mf-header"
+    // HEADER: PPB pattern, else fall back to template-part "header"
     $header = mf_resolve_pattern_content($slugs['header']);
     echo $header !== ''
       ? do_blocks($header)
-      : do_blocks('<!-- wp:template-part {"slug":"mf-header","area":"header"} /-->');
+      : do_blocks('<!-- wp:template-part {"slug":"header","area":"header"} /-->');
 
     // BODY: classic content
     if (have_posts()) : while (have_posts()) : the_post(); ?>
@@ -98,11 +98,11 @@ get_header(); // ok if empty; theme may still use it for shell markup
       </article>
     <?php endwhile; endif;
 
-    // FOOTER: PPB pattern, else fall back to template-part "mf-footer"
+    // FOOTER: PPB pattern, else fall back to template-part "footer"
     $footer = mf_resolve_pattern_content($slugs['footer']);
     echo $footer !== ''
       ? do_blocks($footer)
-      : do_blocks('<!-- wp:template-part {"slug":"mf-footer","area":"footer"} /-->');
+      : do_blocks('<!-- wp:template-part {"slug":"footer","area":"footer"} /-->');
   }
   ?>
 </main>

@@ -518,9 +518,9 @@ function modfarm_get_archive_patterns() {
     $opts = get_option('modfarm_theme_settings', []);
 
     // Defaults (from settings UI, with safe fallbacks)
-    $default_header = $opts['archive_header_pattern'] ?? 'modfarm/archive-header-default';
-    $default_body   = $opts['archive_body_pattern']   ?? 'modfarm/archive-body-default';
-    $default_footer = $opts['archive_footer_pattern'] ?? 'modfarm/archive-footer-default';
+    $default_header = $opts['archive_header_pattern'] ?? 'modfarm/archive-header-basic';
+    $default_body   = $opts['archive_body_pattern']   ?? 'modfarm/basic-archive-layout';
+    $default_footer = $opts['archive_footer_pattern'] ?? 'modfarm/footer-simple';
 
     // Known taxonomy override keys (your current settings fields)
     $taxonomy_overrides = [
@@ -555,9 +555,9 @@ function modfarm_get_archive_patterns() {
 
 
 function modfarm_setup_theme_defaults() {
-    set_theme_mod('archive_body_pattern', 'modfarm/archive-body-default');
-    set_theme_mod('archive_header_pattern', 'modfarm/archive-header-default');
-    set_theme_mod('archive_footer_pattern', 'modfarm/archive-footer-default');
+    set_theme_mod('archive_body_pattern', 'modfarm/basic-archive-layout');
+    set_theme_mod('archive_header_pattern', 'modfarm/archive-header-basic');
+    set_theme_mod('archive_footer_pattern', 'modfarm/footer-simple');
 }
 
 
@@ -585,22 +585,22 @@ function modfarm_assemble_post_layout_on_insert($post_id, $post, $update) {
 
     switch ($type) {
         case 'page':
-            $header_slug = $options['page_header_pattern'] ?? 'modfarm/modfarm-page-header';
+            $header_slug = $options['page_header_pattern'] ?? 'modfarm/page-header-basic-left';
             $body_slug   = $options['page_body_pattern']   ?? '';
-            $footer_slug = $options['page_footer_pattern'] ?? 'modfarm/modfarm-page-footer';
+            $footer_slug = $options['page_footer_pattern'] ?? 'modfarm/footer-simple';
             break;
 
         case 'post':
-            $header_slug = $options['post_header_pattern'] ?? 'modfarm/modfarm-post-header';
+            $header_slug = $options['post_header_pattern'] ?? 'modfarm/post-header-basic-left';
             $body_slug   = $options['post_body_pattern']   ?? '';
-            $footer_slug = $options['post_footer_pattern'] ?? 'modfarm/modfarm-post-footer';
+            $footer_slug = $options['post_footer_pattern'] ?? 'modfarm/post-footer-simple-comments';
             break;
 
         case 'book':
         case 'modfarm_book':
-            $header_slug = $options['book_header_pattern'] ?? 'modfarm/modfarm-book-header';
+            $header_slug = $options['book_header_pattern'] ?? 'modfarm/book-header-basic-left';
             $body_slug   = $options['book_body_pattern']   ?? '';
-            $footer_slug = $options['book_footer_pattern'] ?? 'modfarm/modfarm-book-footer';
+            $footer_slug = $options['book_footer_pattern'] ?? 'modfarm/footer-simple';
             break;
 
         default:
@@ -658,9 +658,9 @@ function modfarm_render_archive_page() {
     $opts = get_option('modfarm_theme_settings', []);
 
     // Defaults from Settings UI (with hard fallbacks)
-    $header_slug = $opts['archive_header_pattern'] ?? 'modfarm/archive-header-default';
-    $body_slug   = $opts['archive_body_pattern']   ?? 'modfarm/archive-body-default';
-    $footer_slug = $opts['archive_footer_pattern'] ?? 'modfarm/archive-footer-default';
+    $header_slug = $opts['archive_header_pattern'] ?? 'modfarm/archive-header-basic';
+    $body_slug   = $opts['archive_body_pattern']   ?? 'modfarm/basic-archive-layout';
+    $footer_slug = $opts['archive_footer_pattern'] ?? 'modfarm/footer-simple';
 
     // Known taxonomy overrides (current UI fields)
     $known_overrides = [
@@ -721,15 +721,15 @@ add_action('after_switch_theme', function () {
     $changed = false;
 
     if (empty($opts['archive_header_pattern'])) {
-        $opts['archive_header_pattern'] = 'modfarm/archive-header-default';
+        $opts['archive_header_pattern'] = 'modfarm/archive-header-basic';
         $changed = true;
     }
     if (empty($opts['archive_body_pattern'])) {
-        $opts['archive_body_pattern'] = 'modfarm/archive-body-default';
+        $opts['archive_body_pattern'] = 'modfarm/basic-archive-layout';
         $changed = true;
     }
     if (empty($opts['archive_footer_pattern'])) {
-        $opts['archive_footer_pattern'] = 'modfarm/archive-footer-default';
+        $opts['archive_footer_pattern'] = 'modfarm/footer-simple';
         $changed = true;
     }
 

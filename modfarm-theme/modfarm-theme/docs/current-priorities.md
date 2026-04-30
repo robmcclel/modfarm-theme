@@ -36,6 +36,27 @@ These are not done here, but they appear to be the first low-risk engineering fo
 4. Remove or quarantine stale legacy artifacts after confirming they are unused.
 5. Add a lightweight validation step for blocks and patterns.
 
+## Canonical Fallback Defaults
+
+The current canonical PPB fallback defaults should be treated as:
+
+- archive header: `modfarm/archive-header-basic`
+- archive body: `modfarm/basic-archive-layout`
+- archive footer: `modfarm/footer-simple`
+- page header: `modfarm/page-header-basic-left`
+- page footer: `modfarm/footer-simple`
+- post header: `modfarm/post-header-basic-left`
+- post footer: `modfarm/post-footer-simple-comments`
+- book header: `modfarm/book-header-basic-left`
+- book footer: `modfarm/footer-simple`
+
+Hybrid template-part fallbacks should be treated as:
+
+- header part slug: `header`
+- footer part slug: `footer`
+
+Blank body defaults for page, post, and book remain unchanged.
+
 ## Areas That Need Confirmation Before Functional Refactors
 
 - `functions.php` pattern defaults

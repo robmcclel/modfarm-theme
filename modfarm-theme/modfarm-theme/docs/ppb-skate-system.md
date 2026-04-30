@@ -106,6 +106,27 @@ The safest visible interpretation is:
 - Content-slot block: [blocks/content-slot](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/content-slot)
 - Hybrid singular rendering: [singular-hybrid.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/singular-hybrid.php)
 
+## Canonical Fallback Defaults
+
+The repository now has a concrete canonical fallback set for unresolved or unset PPB defaults:
+
+- archive header: `modfarm/archive-header-basic`
+- archive body: `modfarm/basic-archive-layout`
+- archive footer: `modfarm/footer-simple`
+- page header: `modfarm/page-header-basic-left`
+- page footer: `modfarm/footer-simple`
+- post header: `modfarm/post-header-basic-left`
+- post footer: `modfarm/post-footer-simple-comments`
+- book header: `modfarm/book-header-basic-left`
+- book footer: `modfarm/footer-simple`
+
+For hybrid singular rendering, the template-part fallback slugs are:
+
+- `header`
+- `footer`
+
+Blank body defaults remain intentionally unchanged.
+
 ## Known Unknowns
 
 - TODO: define PPB acronym explicitly once confirmed from a source inside the ModFarm codebase.
