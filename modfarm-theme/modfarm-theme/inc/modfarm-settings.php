@@ -2,7 +2,7 @@
 /**
  * ModFarm Theme Settings Panel
  *
- * DROP-IN VERSION (with PPB pattern dropdowns filtered by Pattern Category “lanes”)
+ * DROP-IN VERSION (with PPB pattern dropdowns filtered by Pattern Category Ã¢â‚¬Å“lanesÃ¢â‚¬Â)
  */
 
 /**
@@ -16,7 +16,7 @@ function modfarm_register_settings() {
         'modfarm_sanitize_settings'
     );
 
-    // Legacy sections – kept for compatibility but not used by do_settings_sections().
+    // Legacy sections Ã¢â‚¬â€œ kept for compatibility but not used by do_settings_sections().
     add_settings_section('modfarm_section_colors',      'Colors',                     null, 'modfarm_theme_settings');
     add_settings_section('modfarm_section_fonts',       'Fonts',                      null, 'modfarm_theme_settings');
     add_settings_section('modfarm_section_navigation',  'Navigation',                 null, 'modfarm_theme_settings');
@@ -34,7 +34,7 @@ function modfarm_register_settings() {
     modfarm_add_color_field('background_color',    'Site Background Color',     'modfarm_section_colors');
     modfarm_add_color_field('secondary_color',     'Secondary Color',           'modfarm_section_colors');
 
-    // === Book Cards & Buttons – COLORS (already working) ===
+    // === Book Cards & Buttons Ã¢â‚¬â€œ COLORS (already working) ===
     add_settings_field(
         'book_card_button_bg_color',
         'Primary Button Background',
@@ -100,7 +100,7 @@ function modfarm_register_settings() {
         ['id' => 'book_card_pagination_accent_color']
     );
 
-    // === Book Cards & Buttons – SHAPE / LAYOUT / EFFECT ===
+    // === Book Cards & Buttons Ã¢â‚¬â€œ SHAPE / LAYOUT / EFFECT ===
     add_settings_field(
         'book_card_cover_shape',
         'Cover Shape (Default)',
@@ -182,7 +182,7 @@ function modfarm_register_settings() {
         ]
     );
 
-    // === Book Cards & Buttons – VISIBILITY TOGGLES ===
+    // === Book Cards & Buttons Ã¢â‚¬â€œ VISIBILITY TOGGLES ===
     add_settings_field(
         'book_card_hide_title',
         'Hide Title on Book Cards',
@@ -367,7 +367,7 @@ function modfarm_register_settings() {
     add_settings_field('nav_icon_max_height', 'Icon Max Height (px)', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id'=>'nav_icon_max_height']);
 
     // Brand spacing
-    add_settings_field('nav_brand_gap', 'Brand Icon–Title Gap (px)', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id'=>'nav_brand_gap']);
+    add_settings_field('nav_brand_gap', 'Brand IconÃ¢â‚¬â€œTitle Gap (px)', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id'=>'nav_brand_gap']);
 
     add_settings_field('nav_transparent', 'Transparent Background', 'modfarm_checkbox_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id' => 'nav_transparent']);
 
@@ -583,20 +583,21 @@ function modfarm_get_registered_patterns_for_field(string $field_id): array {
 }
 
 /**
- * Pattern dropdown (PPB selector) – now category-scoped by lane map.
+ * Pattern dropdown (PPB selector) Ã¢â‚¬â€œ now category-scoped by lane map.
  */
 function modfarm_pattern_dropdown($args) {
     $id      = $args['id'];
     $options = get_option('modfarm_theme_settings');
     $value   = $options[$id] ?? '';
+    $selected_value = modfarm_ppb_normalize_admin_pattern_value($value);
 
     $patterns = modfarm_get_registered_patterns_for_field($id);
 
     echo '<select name="modfarm_theme_settings[' . esc_attr($id) . ']">';
-    echo '<option value="">' . esc_html__('— None —', 'modfarm') . '</option>';
+    echo '<option value="default"' . selected($selected_value, 'default', false) . '>' . esc_html__('Default', 'modfarm') . '</option>';
 
     foreach ($patterns as $slug => $title) {
-        echo '<option value="' . esc_attr($slug) . '" ' . selected($value, $slug, false) . '>' . esc_html($title) . '</option>';
+        echo '<option value="' . esc_attr($slug) . '" ' . selected($selected_value, $slug, false) . '>' . esc_html($title) . '</option>';
     }
 
     echo '</select>';
@@ -606,6 +607,23 @@ function modfarm_pattern_dropdown($args) {
     if (!empty($map[$id])) {
         echo '<p class="description">Showing patterns in: <code>' . esc_html($map[$id]) . '</code></p>';
     }
+}
+
+/**
+ * Normalize PPB admin dropdown values so legacy blank/none states show as the
+ * explicit "Default" choice in the UI.
+ */
+function modfarm_ppb_normalize_admin_pattern_value($value): string {
+    if (!is_string($value)) {
+        return 'default';
+    }
+
+    $normalized = strtolower(trim($value, " \t\n\r\0\x0B-—"));
+    if ($normalized === '' || $normalized === 'none' || $normalized === 'default') {
+        return 'default';
+    }
+
+    return $value;
 }
 
 
@@ -663,7 +681,7 @@ function modfarm_sanitize_settings($settings) {
         'archive_body_pattern_book_authors',
         'archive_footer_pattern',
 
-        // Book Cards & Buttons – colors
+        // Book Cards & Buttons Ã¢â‚¬â€œ colors
         'book_card_button_bg_color',
         'book_card_button_text_color',
         'book_card_button_border_color',
@@ -674,14 +692,14 @@ function modfarm_sanitize_settings($settings) {
         'book_card_pagination_surface_color',
         'book_card_pagination_text_color',
 
-        // Book Cards & Buttons – shape/layout/effect
+        // Book Cards & Buttons Ã¢â‚¬â€œ shape/layout/effect
         'book_card_cover_shape',
         'book_card_button_shape',
         'book_card_sample_shape',
         'book_card_cta_mode',
         'book_card_shadow_style',
 
-        // Book Cards & Buttons – visibility toggles
+        // Book Cards & Buttons Ã¢â‚¬â€œ visibility toggles
         'book_card_hide_title',
         'book_card_hide_series',
         'book_card_hide_primary_button',
@@ -721,6 +739,14 @@ function modfarm_sanitize_settings($settings) {
 
             default:
                 $clean[$key] = sanitize_text_field($val);
+        }
+
+        // Normalize placeholder/default values so runtime fallback logic can apply.
+        if (str_contains($key, '_pattern')) {
+            $normalized = strtolower(trim((string) $clean[$key], " \t\n\r\0\x0B-Ã¢â‚¬â€"));
+            if ($normalized === '' || $normalized === 'none' || $normalized === 'default') {
+                $clean[$key] = '';
+            }
         }
     }
 
@@ -971,7 +997,7 @@ function modfarm_render_settings_page() {
                                                 <td><?php modfarm_text_field(['id' => 'nav_icon_max_height']); ?></td>
                                             </tr>
                                             <tr>
-                                                <th scope="row"><label>Brand Icon–Title Gap (px)</label></th>
+                                                <th scope="row"><label>Brand IconÃ¢â‚¬â€œTitle Gap (px)</label></th>
                                                 <td><?php modfarm_text_field(['id' => 'nav_brand_gap']); ?></td>
                                             </tr>
                                             <tr>
@@ -981,7 +1007,7 @@ function modfarm_render_settings_page() {
 
                                             <tr>
                                               <th scope="row"><label style="font-weight:800;">Footer Navigation</label></th>
-                                              <td><em>Separate styling for footer menus so header “hero” settings don’t break footer visibility.</em></td>
+                                              <td><em>Separate styling for footer menus so header Ã¢â‚¬Å“heroÃ¢â‚¬Â settings donÃ¢â‚¬â„¢t break footer visibility.</em></td>
                                             </tr>
 
                                             <tr>
@@ -1380,7 +1406,7 @@ function modfarm_render_settings_page() {
                                         <div class="mf-preview-cover"></div>
                                         <div class="mf-preview-meta">
                                             <div class="mf-preview-title">Apply Layout</div>
-                                            <div class="mf-preview-author">Header · Body · Footer</div>
+                                            <div class="mf-preview-author">Header Ã‚Â· Body Ã‚Â· Footer</div>
                                         </div>
                                     </div>
                                 </aside>
@@ -1435,7 +1461,7 @@ add_action('admin_enqueue_scripts', 'modfarm_admin_enqueue_scripts');
 
 
 /**
- * Bridge ModFarm Theme Settings → Book Card CSS design tokens.
+ * Bridge ModFarm Theme Settings Ã¢â€ â€™ Book Card CSS design tokens.
  * (unchanged)
  */
 function modfarm_output_book_card_design_tokens() {
@@ -1458,7 +1484,7 @@ function modfarm_output_book_card_design_tokens() {
     $sample_text       = $opts['book_card_sample_text_color']     ?? $body_text;
     $sample_border     = $opts['book_card_sample_border_color']   ?? $body_text;
 
-    // Pagination – "single color" first, overrides optional
+    // Pagination Ã¢â‚¬â€œ "single color" first, overrides optional
     $pag_accent_setting  = $opts['book_card_pagination_accent_color']  ?? '';
     $pag_surface_setting = $opts['book_card_pagination_surface_color'] ?? '';
     $pag_text_setting    = $opts['book_card_pagination_text_color']    ?? '';
@@ -1502,7 +1528,7 @@ function modfarm_output_book_card_design_tokens() {
 }
 
 /**
- * Bridge ModFarm Theme Settings → Global semantic color tokens (Primary/Secondary/Button).
+ * Bridge ModFarm Theme Settings Ã¢â€ â€™ Global semantic color tokens (Primary/Secondary/Button).
  * Used by Block Styles (Group + Button) and general theme helpers.
  */
 function modfarm_output_global_color_tokens() {
@@ -1646,7 +1672,7 @@ add_action('wp_head', 'modfarm_output_book_card_design_tokens', 20);
 add_action('admin_head', 'modfarm_output_book_card_design_tokens');
 
 /**
- * Bridge ModFarm Theme Settings → Book Page Button design tokens.
+ * Bridge ModFarm Theme Settings Ã¢â€ â€™ Book Page Button design tokens.
  */
 function modfarm_output_book_page_button_design_tokens() {
     $opts = get_option('modfarm_theme_settings', []);

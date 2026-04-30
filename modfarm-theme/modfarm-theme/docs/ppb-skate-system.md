@@ -114,10 +114,13 @@ The repository now has a concrete canonical fallback set for unresolved or unset
 - archive body: `modfarm/basic-archive-layout`
 - archive footer: `modfarm/footer-simple`
 - page header: `modfarm/page-header-basic-left`
+- page body: `modfarm/page-clear`
 - page footer: `modfarm/footer-simple`
 - post header: `modfarm/post-header-basic-left`
+- post body: `modfarm/post-body-basic`
 - post footer: `modfarm/post-footer-simple-comments`
 - book header: `modfarm/book-header-basic-left`
+- book body: `modfarm/book-plain-left-series-left`
 - book footer: `modfarm/footer-simple`
 
 For hybrid singular rendering, the template-part fallback slugs are:
@@ -125,7 +128,11 @@ For hybrid singular rendering, the template-part fallback slugs are:
 - `header`
 - `footer`
 
-Blank body defaults remain intentionally unchanged.
+The current canonical fallback model includes usable body defaults for page, post, book, and archive PPB rendering.
+
+In the ModFarm Settings UI, the intended user-facing fallback choice is `Default`.
+
+Legacy blank values and older `none`-style placeholders should be treated the same as `Default` and resolve to the canonical PPB defaults above.
 
 ## Known Unknowns
 

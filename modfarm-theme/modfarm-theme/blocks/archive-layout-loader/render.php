@@ -5,17 +5,26 @@ function modfarm_render_archive_layout_loader_block($attributes) {
 
     //error_log('[ModFarm] Archive layout block triggered');
 
-    $options = get_option('modfarm_theme_settings') ?? [];
+    $options = get_option('modfarm_theme_settings', []);
 
-    $header = $options['archive_header_pattern'] ?? null;
-    $body   = $options['archive_body_pattern'] ?? null;
-    $footer = $options['archive_footer_pattern'] ?? null;
+    // Fresh or unused PPB settings must still render a usable archive layout.
+    $header = function_exists('modfarm_ppb_resolve_pattern_slug')
+        ? modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $options['archive_header_pattern'] ?? null, $options)
+        : ($options['archive_header_pattern'] ?? null);
+    $body = function_exists('modfarm_ppb_resolve_pattern_slug')
+        ? modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $options['archive_body_pattern'] ?? null, $options)
+        : ($options['archive_body_pattern'] ?? null);
+    $footer = function_exists('modfarm_ppb_resolve_pattern_slug')
+        ? modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $options['archive_footer_pattern'] ?? null, $options)
+        : ($options['archive_footer_pattern'] ?? null);
 
     if (is_tax()) {
         $taxonomy = get_queried_object()->taxonomy;
         $tax_key = 'archive_body_pattern_' . $taxonomy;
         if (!empty($options[$tax_key])) {
-            $body = $options[$tax_key];
+            $body = function_exists('modfarm_ppb_resolve_pattern_slug')
+                ? modfarm_ppb_resolve_pattern_slug($tax_key, $options[$tax_key], $options)
+                : $options[$tax_key];
             error_log("[ModFarm] ✅ Taxonomy-specific override found for $taxonomy");
         }
     }

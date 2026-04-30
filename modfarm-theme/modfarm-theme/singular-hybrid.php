@@ -56,14 +56,22 @@ if (!function_exists('mf_get_ppb_chrome_slugs_for_post')) {
     switch ($post->post_type) {
       case 'page':
         return [
-          'header' => $opts['page_header_pattern']  ?? 'modfarm/page-header-basic-left',
-          'footer' => $opts['page_footer_pattern']  ?? 'modfarm/footer-simple',
+          'header' => function_exists('modfarm_ppb_resolve_pattern_slug')
+            ? modfarm_ppb_resolve_pattern_slug('page_header_pattern', $opts['page_header_pattern'] ?? null, $opts)
+            : ($opts['page_header_pattern']  ?? 'modfarm/page-header-basic-left'),
+          'footer' => function_exists('modfarm_ppb_resolve_pattern_slug')
+            ? modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $opts['page_footer_pattern'] ?? null, $opts)
+            : ($opts['page_footer_pattern']  ?? 'modfarm/footer-simple'),
         ];
       case 'post':
       default:
         return [
-          'header' => $opts['post_header_pattern']  ?? 'modfarm/post-header-basic-left',
-          'footer' => $opts['post_footer_pattern']  ?? 'modfarm/post-footer-simple-comments',
+          'header' => function_exists('modfarm_ppb_resolve_pattern_slug')
+            ? modfarm_ppb_resolve_pattern_slug('post_header_pattern', $opts['post_header_pattern'] ?? null, $opts)
+            : ($opts['post_header_pattern']  ?? 'modfarm/post-header-basic-left'),
+          'footer' => function_exists('modfarm_ppb_resolve_pattern_slug')
+            ? modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $opts['post_footer_pattern'] ?? null, $opts)
+            : ($opts['post_footer_pattern']  ?? 'modfarm/post-footer-simple-comments'),
         ];
     }
   }

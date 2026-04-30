@@ -487,6 +487,115 @@ add_action('init', function () {
 }, 9);
 
 
+/**
+ * Canonical PPB fallback defaults.
+ *
+ * Fresh sites and sites with unused PPB settings must still resolve to
+ * usable patterns, even when the settings UI stores empty or placeholder values.
+ */
+function modfarm_ppb_canonical_defaults(): array {
+    return [
+        'archive_header_pattern'            => 'modfarm/archive-header-basic',
+        'archive_body_pattern'              => 'modfarm/basic-archive-layout',
+        'archive_footer_pattern'            => 'modfarm/footer-simple',
+        'archive_body_pattern_book_series'  => 'modfarm/basic-archive-layout',
+        'archive_body_pattern_book_genre'   => 'modfarm/basic-archive-layout',
+        'archive_body_pattern_book_authors' => 'modfarm/basic-archive-layout',
+        'book_header_pattern'               => 'modfarm/book-header-basic-left',
+        'book_body_pattern'                 => 'modfarm/book-plain-left-series-left',
+        'book_footer_pattern'               => 'modfarm/footer-simple',
+        'page_header_pattern'               => 'modfarm/page-header-basic-left',
+        'page_body_pattern'                 => 'modfarm/page-clear',
+        'page_footer_pattern'               => 'modfarm/footer-simple',
+        'post_header_pattern'               => 'modfarm/post-header-basic-left',
+        'post_body_pattern'                 => 'modfarm/post-body-basic',
+        'post_footer_pattern'               => 'modfarm/post-footer-simple-comments',
+    ];
+}
+
+/**
+ * Treat empty strings, null, "none", "default", and UI placeholders as missing.
+ */
+function modfarm_ppb_normalize_slug($slug): string {
+    if (!is_string($slug)) {
+        return '';
+    }
+
+    $slug = trim($slug);
+    if ($slug === '') {
+        return '';
+    }
+
+    $normalized = strtolower(trim($slug, " \t\n\r\0\x0B-—"));
+    if ($normalized === '' || $normalized === 'none' || $normalized === 'default') {
+        return '';
+    }
+
+    return $slug;
+}
+
+/**
+ * Check whether a PPB slug resolves to a registered pattern or user pattern.
+ */
+function modfarm_ppb_pattern_exists(string $slug): bool {
+    $slug = modfarm_ppb_normalize_slug($slug);
+    if ($slug === '') {
+        return false;
+    }
+
+    if (str_starts_with($slug, 'user/')) {
+        $post_name = substr($slug, 5);
+        $post = get_page_by_path($post_name, OBJECT, 'wp_block');
+        return $post && is_string($post->post_content) && strpos($post->post_content, '<!-- wp:') !== false;
+    }
+
+    if (function_exists('get_block_pattern')) {
+        $p = get_block_pattern($slug);
+        if (is_array($p) && !empty($p['content'])) {
+            return true;
+        }
+    }
+
+    if (class_exists('WP_Block_Patterns_Registry')) {
+        $reg = WP_Block_Patterns_Registry::get_instance();
+        if ($reg && method_exists($reg, 'get_registered')) {
+            $p = $reg->get_registered($slug);
+            if (is_array($p) && !empty($p['content'])) return true;
+            if (is_object($p) && !empty($p->content))   return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Resolve a PPB setting key to a usable pattern slug.
+ *
+ * This ensures fresh installs and unused settings fall back to canonical
+ * patterns instead of rendering blank output.
+ */
+function modfarm_ppb_resolve_pattern_slug(string $key, $raw_value = null, ?array $options = null): string {
+    $defaults = modfarm_ppb_canonical_defaults();
+    $options  = is_array($options) ? $options : get_option('modfarm_theme_settings', []);
+
+    if ($raw_value === null) {
+        $raw_value = $options[$key] ?? null;
+    }
+
+    $candidate = modfarm_ppb_normalize_slug($raw_value);
+    if ($candidate !== '' && modfarm_ppb_pattern_exists($candidate)) {
+        return $candidate;
+    }
+
+    $fallback = modfarm_ppb_normalize_slug($defaults[$key] ?? '');
+    if ($fallback !== '' && modfarm_ppb_pattern_exists($fallback)) {
+        return $fallback;
+    }
+
+    return '';
+}
+
+
 function modfarm_detect_archive_image_type($taxonomy) {
     $map = [
         'book_audio'     => 'audiobook',
@@ -517,16 +626,15 @@ function modfarm_detect_archive_image_type($taxonomy) {
 function modfarm_get_archive_patterns() {
     $opts = get_option('modfarm_theme_settings', []);
 
-    // Defaults (from settings UI, with safe fallbacks)
-    $default_header = $opts['archive_header_pattern'] ?? 'modfarm/archive-header-basic';
-    $default_body   = $opts['archive_body_pattern']   ?? 'modfarm/basic-archive-layout';
-    $default_footer = $opts['archive_footer_pattern'] ?? 'modfarm/footer-simple';
+    // Fresh or unused sites must resolve to usable archive patterns.
+    $default_header = modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $opts['archive_header_pattern'] ?? null, $opts);
+    $default_body   = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $opts['archive_body_pattern'] ?? null, $opts);
+    $default_footer = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
 
-    // Known taxonomy override keys (your current settings fields)
     $taxonomy_overrides = [
-        'book_series'  => $opts['archive_body_pattern_book_series']  ?? '',
-        'book_genre'   => $opts['archive_body_pattern_book_genre']   ?? '',
-        'book_authors' => $opts['archive_body_pattern_book_authors'] ?? '',
+        'book_series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
+        'book_genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
+        'book_authors' => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
     ];
 
     /**
@@ -537,8 +645,11 @@ function modfarm_get_archive_patterns() {
     foreach ($opts as $k => $v) {
         if (!is_string($k) || !str_starts_with($k, 'archive_body_pattern__')) continue;
         $tax = substr($k, strlen('archive_body_pattern__'));
-        if ($tax && is_string($v) && $v !== '') {
-            $taxonomy_overrides[$tax] = $v;
+        if ($tax) {
+            $resolved = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $v, $opts);
+            if ($resolved !== '') {
+                $taxonomy_overrides[$tax] = $resolved;
+            }
         }
     }
 
@@ -580,27 +691,27 @@ function modfarm_assemble_post_layout_on_insert($post_id, $post, $update) {
     if ($existing !== '') return;
 
     $type     = $post->post_type;
-    $options  = get_option('modfarm_theme_settings');
+    $options  = get_option('modfarm_theme_settings', []);
     $registry = WP_Block_Patterns_Registry::get_instance();
 
     switch ($type) {
         case 'page':
-            $header_slug = $options['page_header_pattern'] ?? 'modfarm/page-header-basic-left';
-            $body_slug   = $options['page_body_pattern']   ?? '';
-            $footer_slug = $options['page_footer_pattern'] ?? 'modfarm/footer-simple';
+            $header_slug = modfarm_ppb_resolve_pattern_slug('page_header_pattern', $options['page_header_pattern'] ?? null, $options);
+            $body_slug   = modfarm_ppb_resolve_pattern_slug('page_body_pattern', $options['page_body_pattern'] ?? null, $options);
+            $footer_slug = modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $options['page_footer_pattern'] ?? null, $options);
             break;
 
         case 'post':
-            $header_slug = $options['post_header_pattern'] ?? 'modfarm/post-header-basic-left';
-            $body_slug   = $options['post_body_pattern']   ?? '';
-            $footer_slug = $options['post_footer_pattern'] ?? 'modfarm/post-footer-simple-comments';
+            $header_slug = modfarm_ppb_resolve_pattern_slug('post_header_pattern', $options['post_header_pattern'] ?? null, $options);
+            $body_slug   = modfarm_ppb_resolve_pattern_slug('post_body_pattern', $options['post_body_pattern'] ?? null, $options);
+            $footer_slug = modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $options['post_footer_pattern'] ?? null, $options);
             break;
 
         case 'book':
         case 'modfarm_book':
-            $header_slug = $options['book_header_pattern'] ?? 'modfarm/book-header-basic-left';
-            $body_slug   = $options['book_body_pattern']   ?? '';
-            $footer_slug = $options['book_footer_pattern'] ?? 'modfarm/footer-simple';
+            $header_slug = modfarm_ppb_resolve_pattern_slug('book_header_pattern', $options['book_header_pattern'] ?? null, $options);
+            $body_slug   = modfarm_ppb_resolve_pattern_slug('book_body_pattern', $options['book_body_pattern'] ?? null, $options);
+            $footer_slug = modfarm_ppb_resolve_pattern_slug('book_footer_pattern', $options['book_footer_pattern'] ?? null, $options);
             break;
 
         default:
@@ -657,16 +768,16 @@ function modfarm_render_archive_page() {
 
     $opts = get_option('modfarm_theme_settings', []);
 
-    // Defaults from Settings UI (with hard fallbacks)
-    $header_slug = $opts['archive_header_pattern'] ?? 'modfarm/archive-header-basic';
-    $body_slug   = $opts['archive_body_pattern']   ?? 'modfarm/basic-archive-layout';
-    $footer_slug = $opts['archive_footer_pattern'] ?? 'modfarm/footer-simple';
+    // Fresh or unused archive settings must still render usable defaults.
+    $header_slug = modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $opts['archive_header_pattern'] ?? null, $opts);
+    $body_slug   = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $opts['archive_body_pattern'] ?? null, $opts);
+    $footer_slug = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
 
     // Known taxonomy overrides (current UI fields)
     $known_overrides = [
-        'book_series'  => $opts['archive_body_pattern_book_series']  ?? '',
-        'book_genre'   => $opts['archive_body_pattern_book_genre']   ?? '',
-        'book_authors' => $opts['archive_body_pattern_book_authors'] ?? '',
+        'book_series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
+        'book_genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
+        'book_authors' => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
     ];
 
     // Generic override support: archive_body_pattern__{taxonomy}
@@ -674,8 +785,11 @@ function modfarm_render_archive_page() {
     foreach ($opts as $k => $v) {
         if (!is_string($k) || !str_starts_with($k, 'archive_body_pattern__')) continue;
         $tax = substr($k, strlen('archive_body_pattern__'));
-        if ($tax && is_string($v) && $v !== '') {
-            $generic_overrides[$tax] = $v;
+        if ($tax) {
+            $resolved = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $v, $opts);
+            if ($resolved !== '') {
+                $generic_overrides[$tax] = $resolved;
+            }
         }
     }
 
@@ -717,20 +831,16 @@ function modfarm_render_archive_page() {
  */
 add_action('after_switch_theme', function () {
     $opts = get_option('modfarm_theme_settings', []);
+    $defaults = modfarm_ppb_canonical_defaults();
 
     $changed = false;
 
-    if (empty($opts['archive_header_pattern'])) {
-        $opts['archive_header_pattern'] = 'modfarm/archive-header-basic';
-        $changed = true;
-    }
-    if (empty($opts['archive_body_pattern'])) {
-        $opts['archive_body_pattern'] = 'modfarm/basic-archive-layout';
-        $changed = true;
-    }
-    if (empty($opts['archive_footer_pattern'])) {
-        $opts['archive_footer_pattern'] = 'modfarm/footer-simple';
-        $changed = true;
+    foreach ($defaults as $key => $fallback) {
+        $current = modfarm_ppb_normalize_slug($opts[$key] ?? null);
+        if ($current === '' || !modfarm_ppb_pattern_exists($current)) {
+            $opts[$key] = $fallback;
+            $changed = true;
+        }
     }
 
     if ($changed) {

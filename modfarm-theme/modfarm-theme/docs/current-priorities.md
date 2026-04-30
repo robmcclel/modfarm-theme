@@ -44,10 +44,13 @@ The current canonical PPB fallback defaults should be treated as:
 - archive body: `modfarm/basic-archive-layout`
 - archive footer: `modfarm/footer-simple`
 - page header: `modfarm/page-header-basic-left`
+- page body: `modfarm/page-clear`
 - page footer: `modfarm/footer-simple`
 - post header: `modfarm/post-header-basic-left`
+- post body: `modfarm/post-body-basic`
 - post footer: `modfarm/post-footer-simple-comments`
 - book header: `modfarm/book-header-basic-left`
+- book body: `modfarm/book-plain-left-series-left`
 - book footer: `modfarm/footer-simple`
 
 Hybrid template-part fallbacks should be treated as:
@@ -55,7 +58,11 @@ Hybrid template-part fallbacks should be treated as:
 - header part slug: `header`
 - footer part slug: `footer`
 
-Blank body defaults for page, post, and book remain unchanged.
+Fresh, unused, blank, and invalid PPB settings should resolve to these canonical defaults instead of rendering blank output.
+
+The ModFarm Settings dropdown state for this behavior should be presented as `Default`, not `None`.
+
+Legacy blank values and older `none`-style placeholders should continue to resolve to the same canonical defaults for compatibility.
 
 ## Areas That Need Confirmation Before Functional Refactors
 
