@@ -134,6 +134,8 @@ In the ModFarm Settings UI, the intended user-facing fallback choice is `Default
 
 Legacy blank values and older `none`-style placeholders should be treated the same as `Default` and resolve to the canonical PPB defaults above.
 
+Legacy unprefixed book body slugs should resolve to the canonical `modfarm/...` forms for compatibility with older settings values.
+
 ## Known Unknowns
 
 - TODO: define PPB acronym explicitly once confirmed from a source inside the ModFarm codebase.

@@ -1,11 +1,11 @@
 <?php
 /**
  * Pattern: Book Standard No Image Right Series Center
- * Slug: book-standard-no-image-right-series-center
+ * Slug: modfarm/book-standard-no-image-right-series-center
  */
 
 return [
-  'slug'       => 'book-standard-no-image-right-series-center',
+  'slug'       => 'modfarm/book-standard-no-image-right-series-center',
   'title'      => 'Book Standard No Image Right Series Center',
   'categories' => [ 'modfarm-book-body' ],
   'content'    => <<<'HTML'

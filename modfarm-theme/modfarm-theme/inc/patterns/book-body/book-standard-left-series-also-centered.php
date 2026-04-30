@@ -1,11 +1,11 @@
 <?php
 /**
  * Pattern: Book Standard Left Series Also Centered
- * Slug: book-standard-left-series-also-centered
+ * Slug: modfarm/book-standard-left-series-also-centered
  */
 
 return [
-  'slug'       => 'book-standard-left-series-also-centered',
+  'slug'       => 'modfarm/book-standard-left-series-also-centered',
   'title'      => 'Book Standard Left Series Also Centered',
   'categories' => [ 'modfarm-book-body' ],
   'content'    => <<<'HTML'

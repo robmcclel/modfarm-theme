@@ -1,11 +1,11 @@
 <?php
 /**
  * Pattern: Book Plain Left Series Left
- * Slug: book-plain-left-series-left
+ * Slug: modfarm/book-plain-left-series-left
  */
 
 return [
-  'slug'       => 'book-plain-left-series-left',
+  'slug'       => 'modfarm/book-plain-left-series-left',
   'title'      => 'Book Plain Left Series Left',
   'categories' => [ 'modfarm-book-body' ],
   'content'    => <<<'HTML'

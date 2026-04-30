@@ -1,11 +1,11 @@
 <?php
 /**
  * Pattern: Book Standard No Image Left Series Left
- * Slug: book-standard-no-image-left-series-left
+ * Slug: modfarm/book-standard-no-image-left-series-left
  */
 
 return [
-  'slug'       => 'book-standard-no-image-left-series-left',
+  'slug'       => 'modfarm/book-standard-no-image-left-series-left',
   'title'      => 'Book Standard No Image Left Series Left',
   'categories' => [ 'modfarm-book-body' ],
   'content'    => <<<'HTML'

@@ -1,11 +1,11 @@
 <?php
 /**
  * Pattern: Book Marquee Desc Aud Series Also 3col Left
- * Slug: book-marquee-desc-aud-series-also-3col-left
+ * Slug: modfarm/book-marquee-desc-aud-series-also-3col-left
  */
 
 return [
-  'slug'       => 'book-marquee-desc-aud-series-also-3col-left',
+  'slug'       => 'modfarm/book-marquee-desc-aud-series-also-3col-left',
   'title'      => 'Book Marquee Desc Aud Series Also 3col Left',
   'categories' => [ 'modfarm-book-body' ],
   'content'    => <<<'HTML'

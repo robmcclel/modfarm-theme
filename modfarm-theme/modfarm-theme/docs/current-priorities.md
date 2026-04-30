@@ -64,6 +64,8 @@ The ModFarm Settings dropdown state for this behavior should be presented as `De
 
 Legacy blank values and older `none`-style placeholders should continue to resolve to the same canonical defaults for compatibility.
 
+Legacy unprefixed book body slugs should continue to resolve to the canonical `modfarm/...` forms during the naming transition.
+
 ## Areas That Need Confirmation Before Functional Refactors
 
 - `functions.php` pattern defaults

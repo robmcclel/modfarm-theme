@@ -514,6 +514,28 @@ function modfarm_ppb_canonical_defaults(): array {
 }
 
 /**
+ * Map legacy PPB slugs to the canonical slugs currently registered in the theme.
+ */
+function modfarm_ppb_legacy_slug_map(): array {
+    return [
+        'book-marquee-desc-aud-series-also-3col-centered' => 'modfarm/book-marquee-desc-aud-series-also-3col-centered',
+        'book-marquee-desc-aud-series-also-3col-left-1'   => 'modfarm/book-marquee-desc-aud-series-also-3col-left-1',
+        'book-marquee-desc-aud-series-also-3col-left'     => 'modfarm/book-marquee-desc-aud-series-also-3col-left',
+        'book-plain-left-series-also-centered'            => 'modfarm/book-plain-left-series-also-centered',
+        'book-plain-left-series-also-left'                => 'modfarm/book-plain-left-series-also-left',
+        'book-plain-left-series-centered'                 => 'modfarm/book-plain-left-series-centered',
+        'book-plain-left-series-left'                     => 'modfarm/book-plain-left-series-left',
+        'book-plain-right-series-also-centered'           => 'modfarm/book-plain-right-series-also-centered',
+        'book-plain-right-series-centered'                => 'modfarm/book-plain-right-series-centered',
+        'book-standard-left-series-also-centered'         => 'modfarm/book-standard-left-series-also-centered',
+        'book-standard-left-series-also-left'             => 'modfarm/book-standard-left-series-also-left',
+        'book-standard-no-image-left-series-left'         => 'modfarm/book-standard-no-image-left-series-left',
+        'book-standard-no-image-right-series-center'      => 'modfarm/book-standard-no-image-right-series-center',
+        'book-standard-right-series-also-centered'        => 'modfarm/book-standard-right-series-also-centered',
+    ];
+}
+
+/**
  * Treat empty strings, null, "none", "default", and UI placeholders as missing.
  */
 function modfarm_ppb_normalize_slug($slug): string {
@@ -529,6 +551,11 @@ function modfarm_ppb_normalize_slug($slug): string {
     $normalized = strtolower(trim($slug, " \t\n\r\0\x0B-—"));
     if ($normalized === '' || $normalized === 'none' || $normalized === 'default') {
         return '';
+    }
+
+    $legacy_map = modfarm_ppb_legacy_slug_map();
+    if (isset($legacy_map[$slug])) {
+        return $legacy_map[$slug];
     }
 
     return $slug;

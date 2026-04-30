@@ -623,6 +623,13 @@ function modfarm_ppb_normalize_admin_pattern_value($value): string {
         return 'default';
     }
 
+    if (function_exists('modfarm_ppb_normalize_slug')) {
+        $mapped = modfarm_ppb_normalize_slug($value);
+        if ($mapped !== '') {
+            return $mapped;
+        }
+    }
+
     return $value;
 }
 
@@ -746,6 +753,11 @@ function modfarm_sanitize_settings($settings) {
             $normalized = strtolower(trim((string) $clean[$key], " \t\n\r\0\x0B-Ã¢â‚¬â€"));
             if ($normalized === '' || $normalized === 'none' || $normalized === 'default') {
                 $clean[$key] = '';
+            } elseif (function_exists('modfarm_ppb_normalize_slug')) {
+                $mapped = modfarm_ppb_normalize_slug($clean[$key]);
+                if ($mapped !== '') {
+                    $clean[$key] = $mapped;
+                }
             }
         }
     }
