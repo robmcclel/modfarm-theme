@@ -366,6 +366,7 @@ require_once get_template_directory() . '/inc/modfarm-settings.php';
 require_once get_template_directory() . '/inc/archive-settings.php';
 require_once get_template_directory() . '/inc/query-books.php';
 require_once get_template_directory() . '/inc/render-helpers.php';
+require_once get_template_directory() . '/inc/ppb-zone-detector.php';
 
 
 add_action('wp_enqueue_scripts', function () {

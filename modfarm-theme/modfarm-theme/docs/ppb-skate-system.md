@@ -104,7 +104,53 @@ The safest visible interpretation is:
 - Pattern registration: [functions.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php)
 - Archive loader block: [blocks/archive-layout-loader](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/archive-layout-loader)
 - Content-slot block: [blocks/content-slot](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/content-slot)
+- Zone wrapper block: [blocks/zone](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/zone)
+- Zone detector helper: [inc/ppb-zone-detector.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/inc/ppb-zone-detector.php)
 - Hybrid singular rendering: [singular-hybrid.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/singular-hybrid.php)
+
+## Explicit Zone Support
+
+The repository now includes an explicit `modfarm/zone` block intended for Phase 2 PPB and future Skate workflows.
+
+Visible zone attributes:
+
+- `slot`
+- `origin`
+- `pattern`
+- `locked`
+- `version`
+
+Supported slot values are intended to be:
+
+- `header`
+- `body`
+- `footer`
+- `data`
+
+Current behavior:
+
+- frontend renders only inner blocks
+- no visible frontend wrapper, label, spacing, or PPB terminology is added
+- editor view shows a visible boundary and management information
+
+This block exists as infrastructure for future zone-based workflows. Current PPB assembly and existing content are not automatically rewritten to use it.
+
+## Zone Detection
+
+The zone detector helper parses `post_content` and reports:
+
+- whether content is zoned
+- which zones exist
+- whether the body zone contains `modfarm/content-slot`
+- whether content appears legacy PPB or plain
+
+Current intended use:
+
+- planning and admin tooling
+- future local PPB manager behavior
+- future Apply All safety checks
+
+It does not alter rendering or migrate content by itself.
 
 ## Canonical Fallback Defaults
 

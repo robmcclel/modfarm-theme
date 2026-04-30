@@ -84,6 +84,36 @@ Visible block groups include:
 
 Many are dynamic blocks using `render.php`.
 
+### Zone Layer
+
+The repository now contains an explicit zone wrapper block:
+
+- [blocks/zone](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/zone)
+
+Visible intent of this block:
+
+- identify PPB-managed regions explicitly in `post_content`
+- support future header/body/footer/data replacement workflows
+- remain invisible on the frontend by rendering only inner blocks
+- provide editor-only clarity about which content region is PPB-controlled
+
+The current implementation does not change existing PPB assembly or migrate existing content.
+
+### Zone Detection
+
+A read-only detector helper now exists in:
+
+- [inc/ppb-zone-detector.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/inc/ppb-zone-detector.php)
+
+The helper reports:
+
+- whether content is zoned
+- which zones exist
+- whether the body zone contains `modfarm/content-slot`
+- whether content appears to be legacy PPB or plain content
+
+This is an analysis/helper surface only. It does not rewrite content or alter routing.
+
 ## Pattern System
 
 Pattern files live under [inc/patterns](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/inc/patterns).
@@ -117,6 +147,16 @@ Visible pattern zones:
 
 This is the clearest visible PPB control surface in the repo.
 
+## Current PPB Storage Models
+
+The repository now visibly supports three PPB-related content models:
+
+1. insert-time composition into `post_content` for pages, posts, and books
+2. render-time composition for archives and hybrid singular rendering
+3. explicit zone wrappers available for future zoned PPB storage
+
+At the moment, the zone wrapper exists as infrastructure for Phase 2 and does not replace the current models automatically.
+
 ## Archive System
 
 Archive rendering appears to combine three pieces:
@@ -143,3 +183,4 @@ Several blocks mention these helpers directly in comments or includes.
 - TODO: determine whether archive routing uses `archive-defunct.php` anywhere or whether it is fully replaced by block templates.
 - TODO: determine which slugs are intended to be canonical defaults for header/body/footer patterns.
 - TODO: determine whether any "Skate" runtime exists outside this repo and only interfaces here through settings or filters.
+- TODO: determine the future migration rule for converting legacy PPB content into explicit `modfarm/zone` wrappers.

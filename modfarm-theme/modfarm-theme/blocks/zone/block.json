@@ -1,0 +1,38 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/zone",
+  "title": "ModFarm Zone",
+  "category": "modfarm-theme",
+  "icon": "screenoptions",
+  "description": "Invisible frontend wrapper for PPB and Skate content zones.",
+  "supports": {
+    "html": false,
+    "align": false,
+    "anchor": false,
+    "customClassName": false
+  },
+  "attributes": {
+    "slot": {
+      "type": "string",
+      "default": "body"
+    },
+    "origin": {
+      "type": "string",
+      "default": "ppb"
+    },
+    "pattern": {
+      "type": "string",
+      "default": ""
+    },
+    "locked": {
+      "type": "boolean",
+      "default": false
+    },
+    "version": {
+      "type": "number",
+      "default": 1
+    }
+  },
+  "editorScript": "modfarm-zone-editor",
+  "editorStyle": "file:editor.css"
+}
