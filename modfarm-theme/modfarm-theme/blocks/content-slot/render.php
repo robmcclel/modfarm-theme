@@ -55,16 +55,32 @@ if (!function_exists('modfarm_render_content_slot_block')) {
 
           if ($raw !== '') {
             $blocks = parse_blocks($raw);
+            if (function_exists('modfarm_ppb_normalize_parsed_blocks')) {
+              $blocks = modfarm_ppb_normalize_parsed_blocks($blocks);
+            }
 
             // Recursively drop any modfarm/content-slot blocks
             $strip_slots = function(array $blocks) use (&$strip_slots) {
               $out = [];
               foreach ($blocks as $b) {
+                if (!is_array($b)) {
+                  continue;
+                }
+
                 $name = isset($b['blockName']) ? $b['blockName'] : null;
                 if ($name === 'modfarm/content-slot') {
                   // Skip the slot entirely (and its inner content), to avoid recursion
                   continue;
                 }
+                $b['attrs'] = is_array($b['attrs'] ?? null) ? $b['attrs'] : [];
+                $b['innerBlocks'] = !empty($b['innerBlocks']) && is_array($b['innerBlocks']) ? $b['innerBlocks'] : [];
+                $b['innerHTML'] = isset($b['innerHTML']) && is_string($b['innerHTML']) ? $b['innerHTML'] : '';
+                $b['innerContent'] = !empty($b['innerContent']) && is_array($b['innerContent'])
+                  ? array_values(array_filter($b['innerContent'], static function ($item) {
+                    return $item === null || is_string($item);
+                  }))
+                  : [];
+
                 if (!empty($b['innerBlocks'])) {
                   $b['innerBlocks'] = $strip_slots($b['innerBlocks']);
                 }

@@ -56,11 +56,45 @@ function modfarm_ppb_is_slot_markup_empty(string $html): bool {
 }
 
 /**
+ * Normalize parsed block trees so downstream serialize/walk operations never
+ * receive null or malformed block entries.
+ */
+function modfarm_ppb_normalize_parsed_blocks(array $blocks): array {
+    $normalized = [];
+
+    foreach ($blocks as $block) {
+        if (!is_array($block)) {
+            continue;
+        }
+
+        $normalized_block = $block;
+        $normalized_block['blockName'] = $block['blockName'] ?? null;
+        $normalized_block['attrs'] = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+        $normalized_block['innerBlocks'] = !empty($block['innerBlocks']) && is_array($block['innerBlocks'])
+            ? modfarm_ppb_normalize_parsed_blocks($block['innerBlocks'])
+            : [];
+        $normalized_block['innerHTML'] = isset($block['innerHTML']) && is_string($block['innerHTML'])
+            ? $block['innerHTML']
+            : '';
+        $normalized_block['innerContent'] = !empty($block['innerContent']) && is_array($block['innerContent'])
+            ? array_values(array_filter($block['innerContent'], static function ($item) {
+                return $item === null || is_string($item);
+            }))
+            : [];
+
+        $normalized[] = $normalized_block;
+    }
+
+    return $normalized;
+}
+
+/**
  * Extract non-empty portable slot payloads from a parsed block tree.
  *
  * Returns an array keyed by slot ID.
  */
 function modfarm_ppb_extract_slot_payloads_from_blocks(array $blocks, string $current_zone = ''): array {
+    $blocks = modfarm_ppb_normalize_parsed_blocks($blocks);
     $payloads = [];
 
     foreach ($blocks as $block) {
@@ -116,7 +150,7 @@ function modfarm_ppb_extract_slot_payloads_from_content(string $content): array 
         return [];
     }
 
-    return modfarm_ppb_extract_slot_payloads_from_blocks($blocks);
+    return modfarm_ppb_extract_slot_payloads_from_blocks(modfarm_ppb_normalize_parsed_blocks($blocks));
 }
 
 /**
