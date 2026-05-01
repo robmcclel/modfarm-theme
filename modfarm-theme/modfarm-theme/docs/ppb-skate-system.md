@@ -275,6 +275,17 @@ Current preview execution rules:
 - locked zones are skipped
 - slot content is treated as preserved portable content, not disposable layout chrome
 
+Current settings-page execution rules:
+
+- Apply Previewed Change is enabled only after a successful preview
+- a confirmation step is required before execution
+- execution is currently limited to Header and Footer zones
+- execution applies only to Zoned content
+- locked zones are skipped
+- legacy and unzoned content are skipped
+- portable slot payloads are preserved during header/footer replacement
+- Body execution is not enabled here yet
+
 ## Canonical Fallback Defaults
 
 The repository now has a concrete canonical fallback set for unresolved or unset PPB defaults:

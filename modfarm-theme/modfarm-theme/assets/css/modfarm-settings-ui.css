@@ -209,6 +209,25 @@
   margin-top: 18px;
 }
 
+.mf-ppb-preview-execute {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #dcdcde;
+  border-radius: 10px;
+  background: #fcfcfc;
+}
+
+.mf-ppb-preview-confirm {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.mf-ppb-preview-confirm input {
+  margin-top: 3px;
+}
+
 .mf-ppb-preview-report {
   border: 1px solid #e5e7eb;
   border-radius: 12px;

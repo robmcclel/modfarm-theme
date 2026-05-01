@@ -53,6 +53,10 @@
   const runButton = document.getElementById('mf-ppb-preview-run');
   const feedback = document.getElementById('mf-ppb-preview-feedback');
   const results = document.getElementById('mf-ppb-preview-results');
+  const executeWrap = document.getElementById('mf-ppb-preview-execute');
+  const confirmInput = document.getElementById('mf-ppb-preview-confirm');
+  const applyButton = document.getElementById('mf-ppb-preview-apply');
+  let lastPreviewReport = null;
 
   function getPatternOptions() {
     const contentType = contentTypeSelect ? contentTypeSelect.value : '';
@@ -65,6 +69,19 @@
     feedback.textContent = message || '';
     feedback.classList.toggle('is-error', Boolean(isError));
     feedback.classList.toggle('is-active', Boolean(message));
+  }
+
+  function resetExecutionState() {
+    lastPreviewReport = null;
+    if (executeWrap) {
+      executeWrap.hidden = true;
+    }
+    if (confirmInput) {
+      confirmInput.checked = false;
+    }
+    if (applyButton) {
+      applyButton.disabled = true;
+    }
   }
 
   function populatePatternSelect() {
@@ -81,6 +98,7 @@
       if (patternNote) {
         patternNote.textContent = messages.noPatterns || '';
       }
+      resetExecutionState();
       return;
     }
 
@@ -98,6 +116,7 @@
     if (patternNote) {
       patternNote.textContent = '';
     }
+    resetExecutionState();
   }
 
   async function runPreview() {
@@ -106,6 +125,7 @@
       if (results) {
         results.innerHTML = '';
       }
+      resetExecutionState();
       return;
     }
 
@@ -136,13 +156,82 @@
       }
 
       setFeedback('');
+      lastPreviewReport = data.data && data.data.report ? data.data.report : null;
       if (results) {
         results.innerHTML = data.data && data.data.html ? data.data.html : '';
+      }
+      const canExecute = !!lastPreviewReport
+        && ['header', 'footer'].includes(String(lastPreviewReport.zone || ''))
+        && Number((lastPreviewReport.totals || {}).will_update || 0) > 0;
+      if (executeWrap) {
+        executeWrap.hidden = !canExecute;
+      }
+      if (confirmInput) {
+        confirmInput.checked = false;
+      }
+      if (applyButton) {
+        applyButton.disabled = true;
       }
     } catch (error) {
       setFeedback(error && error.message ? error.message : (messages.error || 'Preview could not be generated.'), true);
       if (results) {
         results.innerHTML = '';
+      }
+      resetExecutionState();
+    } finally {
+      runButton.disabled = false;
+    }
+  }
+
+  async function runExecution() {
+    if (!lastPreviewReport || !['header', 'footer'].includes(String(lastPreviewReport.zone || ''))) {
+      setFeedback(messages.executionUnavailable || 'Apply All execution is currently available for Header and Footer zones only.', true);
+      return;
+    }
+
+    if (!confirmInput || !confirmInput.checked) {
+      setFeedback(messages.confirmRequired || 'Confirm the change before applying it.', true);
+      return;
+    }
+
+    setFeedback(messages.executing || 'Applying the previewed change...');
+    runButton.disabled = true;
+    if (applyButton) {
+      applyButton.disabled = true;
+    }
+
+    const payload = new window.URLSearchParams();
+    payload.set('action', 'modfarm_ppb_apply_all_execute');
+    payload.set('nonce', config.executeNonce || '');
+    payload.set('contentType', String(lastPreviewReport.content_type || contentTypeSelect.value));
+    payload.set('zone', String(lastPreviewReport.zone || zoneSelect.value));
+    payload.set('pattern', String(lastPreviewReport.pattern || patternSelect.value));
+
+    try {
+      const response = await window.fetch(config.ajaxUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        },
+        body: payload.toString(),
+      });
+      const data = await response.json();
+
+      if (!data || !data.success) {
+        const message = data && data.data && data.data.message ? data.data.message : (messages.error || 'Preview could not be generated.');
+        throw new Error(message);
+      }
+
+      setFeedback('');
+      if (results) {
+        results.innerHTML = data.data && data.data.html ? data.data.html : '';
+      }
+      resetExecutionState();
+    } catch (error) {
+      setFeedback(error && error.message ? error.message : (messages.error || 'Preview could not be generated.'), true);
+      if (applyButton) {
+        applyButton.disabled = false;
       }
     } finally {
       runButton.disabled = false;
@@ -154,6 +243,7 @@
       populatePatternSelect();
       setFeedback('');
       if (results) results.innerHTML = '';
+      resetExecutionState();
     });
   }
 
@@ -162,11 +252,19 @@
       populatePatternSelect();
       setFeedback('');
       if (results) results.innerHTML = '';
+      resetExecutionState();
     });
   }
 
   if (runButton) {
     runButton.addEventListener('click', runPreview);
+  }
+
+  if (confirmInput && applyButton) {
+    confirmInput.addEventListener('change', () => {
+      applyButton.disabled = !confirmInput.checked;
+    });
+    applyButton.addEventListener('click', runExecution);
   }
 
   populatePatternSelect();

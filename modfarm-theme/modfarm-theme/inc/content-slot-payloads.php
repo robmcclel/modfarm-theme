@@ -286,6 +286,123 @@ function modfarm_ppb_hydrate_empty_slots_in_content(string $content, array $stor
 }
 
 /**
+ * Resolve a zone slot from parsed attrs while honoring the block default.
+ */
+function modfarm_ppb_get_zone_slot_from_attrs(array $attrs): string {
+    if (function_exists('modfarm_get_zone_slot_from_block_attrs')) {
+        return modfarm_get_zone_slot_from_block_attrs($attrs);
+    }
+
+    $slot = isset($attrs['slot']) && is_string($attrs['slot']) ? trim($attrs['slot']) : '';
+    return $slot !== '' ? $slot : 'body';
+}
+
+/**
+ * Replace one zoned PPB region while preserving matching portable slot payloads.
+ *
+ * Returns true only when the post content was actually updated.
+ */
+function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target_zone, string $pattern_slug): bool {
+    if ($post_id <= 0 || !in_array($target_zone, ['header', 'footer'], true)) {
+        return false;
+    }
+
+    $post = get_post($post_id);
+    if (!$post instanceof WP_Post) {
+        return false;
+    }
+
+    $pattern_content = function_exists('modfarm_ppb_get_pattern_content_by_slug')
+        ? modfarm_ppb_get_pattern_content_by_slug($pattern_slug)
+        : '';
+    if ($pattern_content === '') {
+        return false;
+    }
+
+    $original_content = (string) $post->post_content;
+    if (trim($original_content) === '') {
+        return false;
+    }
+
+    $blocks = parse_blocks($original_content);
+    if (empty($blocks) || !function_exists('serialize_blocks')) {
+        return false;
+    }
+
+    $changed = false;
+    $harvested_payloads = [];
+    $walk = function (array $blocks) use (&$walk, $target_zone, $pattern_slug, &$changed, &$harvested_payloads): array {
+        $updated = [];
+
+        foreach ($blocks as $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+
+            $name = $block['blockName'] ?? null;
+            $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+            $inner_blocks = is_array($block['innerBlocks'] ?? null) ? $block['innerBlocks'] : [];
+
+            if ($name === 'modfarm/zone' && modfarm_ppb_get_zone_slot_from_attrs($attrs) === $target_zone) {
+                $harvested_payloads = modfarm_ppb_merge_slot_payloads(
+                    $harvested_payloads,
+                    modfarm_ppb_extract_slot_payloads_from_blocks($inner_blocks, $target_zone)
+                );
+
+                $incoming_blocks = parse_blocks($pattern_slug !== '' ? modfarm_ppb_get_pattern_content_by_slug($pattern_slug) : '');
+                $incoming_changed = false;
+                $incoming_blocks = modfarm_ppb_hydrate_empty_slots_in_blocks($incoming_blocks, $harvested_payloads, $incoming_changed);
+
+                $block['attrs'] = array_merge($attrs, [
+                    'slot' => $target_zone,
+                    'pattern' => $pattern_slug,
+                ]);
+                $block['innerBlocks'] = $incoming_blocks;
+                $block['innerHTML'] = '';
+                $block['innerContent'] = [];
+                $changed = true;
+                $updated[] = $block;
+                continue;
+            }
+
+            if (!empty($inner_blocks)) {
+                $block['innerBlocks'] = $walk($inner_blocks);
+            }
+
+            $updated[] = $block;
+        }
+
+        return $updated;
+    };
+
+    $updated_blocks = modfarm_ppb_normalize_parsed_blocks($walk($blocks));
+    if (!$changed) {
+        return false;
+    }
+
+    if (!empty($harvested_payloads)) {
+        $meta_key = modfarm_ppb_slot_payload_meta_key();
+        $existing = get_post_meta($post_id, $meta_key, true);
+        $merged = modfarm_ppb_merge_slot_payloads(is_array($existing) ? $existing : [], $harvested_payloads);
+        update_post_meta($post_id, $meta_key, $merged);
+    }
+
+    $updated_content = serialize_blocks($updated_blocks);
+    if ($updated_content === $original_content) {
+        return false;
+    }
+
+    remove_action('save_post', 'modfarm_ppb_sync_slot_payloads_on_save', 20);
+    wp_update_post([
+        'ID' => $post_id,
+        'post_content' => $updated_content,
+    ]);
+    add_action('save_post', 'modfarm_ppb_sync_slot_payloads_on_save', 20, 3);
+
+    return true;
+}
+
+/**
  * Save portable content-slot payloads for supported post types.
  */
 function modfarm_ppb_sync_slot_payloads_on_save(int $post_id, WP_Post $post, bool $update): void {

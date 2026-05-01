@@ -789,6 +789,98 @@ function modfarm_render_ppb_apply_all_preview_markup(array $report): string {
 }
 
 /**
+ * Render a compact execution summary for Apply All header/footer runs.
+ */
+function modfarm_render_ppb_apply_all_result_markup(array $result): string {
+    $totals = $result['totals'] ?? [];
+    $content_type_label = modfarm_get_ppb_apply_all_content_types()[$result['content_type'] ?? ''] ?? ucfirst((string) ($result['content_type'] ?? 'Items'));
+    $zone_label = ucfirst((string) ($result['zone'] ?? 'zone'));
+    $pattern_slug = (string) ($result['pattern'] ?? '');
+    $updated_items = $result['updated_items'] ?? [];
+    $failed_items = $result['failed_items'] ?? [];
+
+    ob_start();
+    ?>
+    <div class="mf-ppb-preview-report mf-ppb-preview-report--result">
+        <div class="mf-ppb-preview-header">
+            <div>
+                <h4>Apply Result</h4>
+                <p>
+                    <?php echo esc_html($content_type_label); ?> ·
+                    <?php echo esc_html($zone_label); ?> Zone ·
+                    <?php echo esc_html($pattern_slug); ?>
+                </p>
+            </div>
+        </div>
+
+        <div class="mf-ppb-preview-stats">
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Updated</span>
+                <strong><?php echo esc_html((string) ($totals['updated'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Skipped locked</span>
+                <strong><?php echo esc_html((string) ($totals['skipped_locked'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Skipped legacy/unzoned</span>
+                <strong><?php echo esc_html((string) ($totals['skipped_legacy'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Slot content preserved</span>
+                <strong><?php echo esc_html((string) ($totals['slot_content_preserved'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Potential conflicts</span>
+                <strong><?php echo esc_html((string) ($totals['potential_conflicts'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Failed</span>
+                <strong><?php echo esc_html((string) ($totals['failed'] ?? 0)); ?></strong>
+            </div>
+        </div>
+
+        <?php if (!empty($updated_items)) : ?>
+            <div class="mf-ppb-preview-list">
+                <h5>Updated items</h5>
+                <ul class="mf-ppb-preview-items">
+                    <?php foreach ($updated_items as $item) : ?>
+                        <li class="mf-ppb-preview-item">
+                            <div class="mf-ppb-preview-item__top">
+                                <strong><?php echo esc_html($item['title'] ?? 'Untitled'); ?></strong>
+                                <span class="mf-ppb-preview-pill is-update">Updated</span>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($failed_items)) : ?>
+            <div class="mf-ppb-preview-list">
+                <h5>Failed items</h5>
+                <ul class="mf-ppb-preview-items">
+                    <?php foreach ($failed_items as $item) : ?>
+                        <li class="mf-ppb-preview-item">
+                            <div class="mf-ppb-preview-item__top">
+                                <strong><?php echo esc_html($item['title'] ?? 'Untitled'); ?></strong>
+                                <span class="mf-ppb-preview-pill is-skip">Failed</span>
+                            </div>
+                            <?php if (!empty($item['message'])) : ?>
+                                <div class="mf-ppb-preview-item__notes"><?php echo esc_html($item['message']); ?></div>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
+/**
  * AJAX preview endpoint for read-only Apply All analysis.
  */
 function modfarm_ajax_ppb_apply_all_preview() {
@@ -826,6 +918,90 @@ function modfarm_ajax_ppb_apply_all_preview() {
     ]);
 }
 add_action('wp_ajax_modfarm_ppb_apply_all_preview', 'modfarm_ajax_ppb_apply_all_preview');
+
+/**
+ * AJAX execution endpoint for safe Apply All runs on zoned header/footer only.
+ */
+function modfarm_ajax_ppb_apply_all_execute() {
+    if (!current_user_can('edit_theme_options')) {
+        wp_send_json_error(['message' => __('You do not have permission to run this action.', 'modfarm')], 403);
+    }
+
+    check_ajax_referer('modfarm_ppb_apply_all_execute', 'nonce');
+
+    $content_type = sanitize_key((string) ($_POST['contentType'] ?? ''));
+    $zone = sanitize_key((string) ($_POST['zone'] ?? ''));
+    $pattern = sanitize_text_field(wp_unslash((string) ($_POST['pattern'] ?? '')));
+
+    if (!isset(modfarm_get_ppb_apply_all_content_types()[$content_type])) {
+        wp_send_json_error(['message' => __('Unsupported content type for Apply All.', 'modfarm')], 400);
+    }
+
+    if (!in_array($zone, ['header', 'footer'], true)) {
+        wp_send_json_error(['message' => __('Apply All execution is currently limited to Header and Footer zones.', 'modfarm')], 400);
+    }
+
+    $pattern_matrix = modfarm_get_ppb_apply_all_pattern_matrix();
+    $available_patterns = $pattern_matrix[$content_type][$zone] ?? [];
+    $valid_pattern_values = wp_list_pluck($available_patterns, 'value');
+    if ($pattern === '' || !in_array($pattern, $valid_pattern_values, true)) {
+        wp_send_json_error(['message' => __('Select a valid pattern before applying changes.', 'modfarm')], 400);
+    }
+
+    $preview = modfarm_get_ppb_apply_all_preview_report($content_type, $zone, $pattern);
+    $result = [
+        'content_type' => $content_type,
+        'zone' => $zone,
+        'pattern' => $pattern,
+        'totals' => [
+            'updated' => 0,
+            'skipped_locked' => (int) ($preview['totals']['skipped_locked'] ?? 0),
+            'skipped_legacy' => (int) ($preview['totals']['skipped_legacy'] ?? 0),
+            'slot_content_preserved' => 0,
+            'potential_conflicts' => (int) ($preview['totals']['potential_conflicts'] ?? 0),
+            'failed' => 0,
+        ],
+        'updated_items' => [],
+        'failed_items' => [],
+    ];
+
+    foreach (($preview['items'] ?? []) as $item) {
+        if (($item['action'] ?? '') !== 'will_update') {
+            continue;
+        }
+
+        $post_id = (int) ($item['post_id'] ?? 0);
+        $preserves_slots = !empty($item['zone']['contains_content_slot']);
+        $updated = function_exists('modfarm_ppb_replace_post_zone_with_pattern')
+            ? modfarm_ppb_replace_post_zone_with_pattern($post_id, $zone, $pattern)
+            : false;
+
+        if ($updated) {
+            $result['totals']['updated']++;
+            if ($preserves_slots) {
+                $result['totals']['slot_content_preserved']++;
+            }
+            $result['updated_items'][] = [
+                'post_id' => $post_id,
+                'title' => $item['title'] ?? sprintf('#%d', $post_id),
+            ];
+            continue;
+        }
+
+        $result['totals']['failed']++;
+        $result['failed_items'][] = [
+            'post_id' => $post_id,
+            'title' => $item['title'] ?? sprintf('#%d', $post_id),
+            'message' => __('Replacement did not produce a content change.', 'modfarm'),
+        ];
+    }
+
+    wp_send_json_success([
+        'html' => modfarm_render_ppb_apply_all_result_markup($result),
+        'result' => $result,
+    ]);
+}
+add_action('wp_ajax_modfarm_ppb_apply_all_execute', 'modfarm_ajax_ppb_apply_all_execute');
 
 
 /**
@@ -1647,6 +1823,15 @@ function modfarm_render_settings_page() {
 
                                         <div class="mf-ppb-preview-feedback" id="mf-ppb-preview-feedback" aria-live="polite"></div>
                                         <div class="mf-ppb-preview-results" id="mf-ppb-preview-results"></div>
+                                        <div class="mf-ppb-preview-execute" id="mf-ppb-preview-execute" hidden>
+                                            <label class="mf-ppb-preview-confirm">
+                                                <input type="checkbox" id="mf-ppb-preview-confirm">
+                                                <span>I understand this will update the previewed Header or Footer zones sitewide for matching zoned items only.</span>
+                                            </label>
+                                            <button type="button" class="button button-primary" id="mf-ppb-preview-apply" disabled>
+                                                Apply Previewed Change
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1709,12 +1894,16 @@ function modfarm_admin_enqueue_scripts($hook) {
     wp_localize_script('modfarm-settings-ui', 'modfarmSettingsUi', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'previewNonce' => wp_create_nonce('modfarm_ppb_apply_all_preview'),
+        'executeNonce' => wp_create_nonce('modfarm_ppb_apply_all_execute'),
         'applyAllPatterns' => modfarm_get_ppb_apply_all_pattern_matrix(),
         'messages' => [
             'loading' => __('Scanning matching items...', 'modfarm'),
             'missingPattern' => __('Select a valid pattern before running the preview.', 'modfarm'),
             'noPatterns' => __('No central PPB patterns are registered for this content type and zone yet.', 'modfarm'),
             'error' => __('Preview could not be generated.', 'modfarm'),
+            'executing' => __('Applying the previewed change...', 'modfarm'),
+            'confirmRequired' => __('Confirm the change before applying it.', 'modfarm'),
+            'executionUnavailable' => __('Apply All execution is currently available for Header and Footer zones only.', 'modfarm'),
         ],
     ]);
 }

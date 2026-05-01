@@ -267,6 +267,14 @@ Current visible behavior:
 
 This preview is analysis only. It does not execute a bulk replace yet.
 
+Current execution scope is intentionally narrower than preview:
+
+- execution is enabled for zoned `Header` and `Footer` only
+- execution skips locked zones
+- execution skips legacy and unzoned content
+- matching `content-slot` payloads are harvested and preserved during replacement
+- `Body` remains preview-only at the settings-page level for now
+
 ## Known Architectural Unknowns
 
 - TODO: determine which runtime path is primary for singular books in production.
