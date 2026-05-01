@@ -249,6 +249,24 @@ Current preservation rule:
 
 This is intentionally only the storage foundation. Current runtime rendering still prioritizes the block's own `InnerBlocks` and importer/body fallback behavior.
 
+## Apply All Preview Surface
+
+The ModFarm Settings `Page Layouts` panel now includes a read-only `PPB Control`
+preview section for future Apply All work.
+
+Current visible behavior:
+
+- choose a content type
+- choose a zone
+- choose a replacement pattern from the existing central PPB lanes
+- scan matching items without mutating `post_content`
+- classify each item as `Zoned`, `Hybrid`, `Legacy PPB`, or `Plain`
+- respect locked zones
+- flag `content-slot` presence as preserved portable content
+- flag duplicate slot IDs inside the targeted zone as potential conflicts
+
+This preview is analysis only. It does not execute a bulk replace yet.
+
 ## Known Architectural Unknowns
 
 - TODO: determine which runtime path is primary for singular books in production.

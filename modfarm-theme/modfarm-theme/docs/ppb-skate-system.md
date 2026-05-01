@@ -244,6 +244,35 @@ Current safety model:
 - Plain content is left alone
 - Hybrid treats the body as authored content and only exposes local PPB control for header/footer chrome
 
+## Apply All Preview
+
+The ModFarm Settings `PPB Control` section now has a read-only Apply All preview
+surface.
+
+Current preview scope:
+
+- content type selector
+- zone selector: header, body, footer
+- pattern selector from existing central PPB pattern lanes
+- scan of matching items without changing `post_content`
+
+Current preview report includes:
+
+- total items
+- will update
+- skipped locked
+- skipped legacy/unzoned
+- slot content detected as preserved content
+- duplicate slot IDs as potential conflicts
+
+Current preview execution rules:
+
+- zoned content can preview header/body/footer replacement paths
+- hybrid content can preview header/footer replacement paths only
+- hybrid body is not treated as PPB-managed
+- locked zones are skipped
+- slot content is treated as preserved portable content, not disposable layout chrome
+
 ## Canonical Fallback Defaults
 
 The repository now has a concrete canonical fallback set for unresolved or unset PPB defaults:

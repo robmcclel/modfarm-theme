@@ -633,6 +633,200 @@ function modfarm_ppb_normalize_admin_pattern_value($value): string {
     return $value;
 }
 
+/**
+ * Build supported content-type options for Apply All preview.
+ */
+function modfarm_get_ppb_apply_all_content_types(): array {
+    $types = [
+        'book' => 'Books',
+        'page' => 'Pages',
+        'post' => 'Posts',
+    ];
+
+    if (post_type_exists('offer')) {
+        $types['offer'] = 'Offers';
+    }
+
+    return $types;
+}
+
+/**
+ * Build a lightweight pattern matrix for the Apply All preview UI.
+ */
+function modfarm_get_ppb_apply_all_pattern_matrix(): array {
+    $matrix = [];
+
+    foreach (array_keys(modfarm_get_ppb_apply_all_content_types()) as $post_type) {
+        foreach (['header', 'body', 'footer'] as $zone) {
+            $field_id = function_exists('modfarm_ppb_get_field_id_for_post_zone')
+                ? modfarm_ppb_get_field_id_for_post_zone($post_type, $zone)
+                : '';
+            $matrix[$post_type][$zone] = [];
+
+            if ($field_id === '') {
+                continue;
+            }
+
+            foreach (modfarm_get_registered_patterns_for_field($field_id) as $slug => $title) {
+                $matrix[$post_type][$zone][] = [
+                    'value' => $slug,
+                    'label' => $title,
+                ];
+            }
+        }
+    }
+
+    return $matrix;
+}
+
+/**
+ * Render the Apply All preview report as admin HTML.
+ */
+function modfarm_render_ppb_apply_all_preview_markup(array $report): string {
+    $totals = $report['totals'] ?? [];
+    $items = $report['items'] ?? [];
+    $content_type_label = modfarm_get_ppb_apply_all_content_types()[$report['content_type'] ?? ''] ?? ucfirst((string) ($report['content_type'] ?? 'Items'));
+    $zone_label = ucfirst((string) ($report['zone'] ?? 'zone'));
+    $pattern_slug = (string) ($report['pattern'] ?? '');
+
+    ob_start();
+    ?>
+    <div class="mf-ppb-preview-report">
+        <div class="mf-ppb-preview-header">
+            <div>
+                <h4>Apply All Preview</h4>
+                <p>
+                    <?php echo esc_html($content_type_label); ?> ·
+                    <?php echo esc_html($zone_label); ?> Zone ·
+                    <?php echo $pattern_slug !== '' ? esc_html($pattern_slug) : esc_html__('No pattern selected', 'modfarm'); ?>
+                </p>
+            </div>
+        </div>
+
+        <div class="mf-ppb-preview-stats">
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Total items</span>
+                <strong><?php echo esc_html((string) ($totals['items'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Will update</span>
+                <strong><?php echo esc_html((string) ($totals['will_update'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Skipped locked</span>
+                <strong><?php echo esc_html((string) ($totals['skipped_locked'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Skipped legacy/unzoned</span>
+                <strong><?php echo esc_html((string) ($totals['skipped_legacy'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Slot content detected</span>
+                <strong><?php echo esc_html((string) ($totals['slot_content_detected'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Potential conflicts</span>
+                <strong><?php echo esc_html((string) ($totals['potential_conflicts'] ?? 0)); ?></strong>
+            </div>
+        </div>
+
+        <div class="mf-ppb-preview-list">
+            <h5>Affected items</h5>
+            <?php if (empty($items)) : ?>
+                <p class="description">No matching items were found for this preview.</p>
+            <?php else : ?>
+                <ul class="mf-ppb-preview-items">
+                    <?php foreach ($items as $item) : ?>
+                        <?php
+                        $status_class = 'is-skip';
+                        if (($item['action'] ?? '') === 'will_update') {
+                            $status_class = 'is-update';
+                        } elseif (($item['action'] ?? '') === 'skip_locked') {
+                            $status_class = 'is-locked';
+                        }
+                        $status_label = [
+                            'will_update' => 'Will update',
+                            'skip_locked' => 'Skipped locked',
+                            'skip_legacy' => 'Skipped legacy/unzoned',
+                        ][$item['action'] ?? 'skip_legacy'];
+                        ?>
+                        <li class="mf-ppb-preview-item">
+                            <div class="mf-ppb-preview-item__top">
+                                <strong>
+                                    <?php if (!empty($item['edit_link'])) : ?>
+                                        <a href="<?php echo esc_url($item['edit_link']); ?>"><?php echo esc_html($item['title'] ?? 'Untitled'); ?></a>
+                                    <?php else : ?>
+                                        <?php echo esc_html($item['title'] ?? 'Untitled'); ?>
+                                    <?php endif; ?>
+                                </strong>
+                                <span class="mf-ppb-preview-pill <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status_label); ?></span>
+                            </div>
+                            <div class="mf-ppb-preview-item__meta">
+                                <span><?php echo esc_html($item['content_state'] ?? 'Unknown'); ?></span>
+                                <span><?php echo esc_html($item['layout_mode'] ?? 'Unknown layout'); ?></span>
+                                <span>Status: <?php echo esc_html($item['status'] ?? 'unknown'); ?></span>
+                                <?php if (!empty($item['zone']['locked'])) : ?>
+                                    <span>Locked</span>
+                                <?php endif; ?>
+                                <?php if (!empty($item['zone']['contains_content_slot'])) : ?>
+                                    <span>Content-slot preserved</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (!empty($item['notes'])) : ?>
+                                <div class="mf-ppb-preview-item__notes">
+                                    <?php echo esc_html(implode(' ', $item['notes'])); ?>
+                                </div>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
+/**
+ * AJAX preview endpoint for read-only Apply All analysis.
+ */
+function modfarm_ajax_ppb_apply_all_preview() {
+    if (!current_user_can('edit_theme_options')) {
+        wp_send_json_error(['message' => __('You do not have permission to run this preview.', 'modfarm')], 403);
+    }
+
+    check_ajax_referer('modfarm_ppb_apply_all_preview', 'nonce');
+
+    $content_type = sanitize_key((string) ($_POST['contentType'] ?? ''));
+    $zone = sanitize_key((string) ($_POST['zone'] ?? ''));
+    $pattern = sanitize_text_field(wp_unslash((string) ($_POST['pattern'] ?? '')));
+
+    if (!isset(modfarm_get_ppb_apply_all_content_types()[$content_type])) {
+        wp_send_json_error(['message' => __('Unsupported content type for preview.', 'modfarm')], 400);
+    }
+
+    if (!in_array($zone, ['header', 'body', 'footer'], true)) {
+        wp_send_json_error(['message' => __('Unsupported zone for preview.', 'modfarm')], 400);
+    }
+
+    $pattern_matrix = modfarm_get_ppb_apply_all_pattern_matrix();
+    $available_patterns = $pattern_matrix[$content_type][$zone] ?? [];
+    $valid_pattern_values = wp_list_pluck($available_patterns, 'value');
+
+    if ($pattern === '' || !in_array($pattern, $valid_pattern_values, true)) {
+        wp_send_json_error(['message' => __('Select a valid pattern before running the preview.', 'modfarm')], 400);
+    }
+
+    $report = modfarm_get_ppb_apply_all_preview_report($content_type, $zone, $pattern);
+
+    wp_send_json_success([
+        'html' => modfarm_render_ppb_apply_all_preview_markup($report),
+        'report' => $report,
+    ]);
+}
+add_action('wp_ajax_modfarm_ppb_apply_all_preview', 'modfarm_ajax_ppb_apply_all_preview');
+
 
 /**
  * Sanitization: keep as-is, just aware of all keys.
@@ -1411,6 +1605,49 @@ function modfarm_render_settings_page() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <div class="mf-settings-group">
+                                        <h3 class="mf-group-title">PPB Control</h3>
+                                        <p class="description">
+                                            Preview the impact of a PPB zone replacement across a content type before any Apply All execution exists.
+                                            This preview is read-only and respects locks, hybrid rules, and portable content-slot preservation.
+                                        </p>
+
+                                        <div class="mf-ppb-preview-controls" id="mf-ppb-apply-all-preview">
+                                            <div class="mf-ppb-preview-field">
+                                                <label for="mf-ppb-preview-content-type">Content Type</label>
+                                                <select id="mf-ppb-preview-content-type">
+                                                    <?php foreach (modfarm_get_ppb_apply_all_content_types() as $value => $label) : ?>
+                                                        <option value="<?php echo esc_attr($value); ?>"><?php echo esc_html($label); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+
+                                            <div class="mf-ppb-preview-field">
+                                                <label for="mf-ppb-preview-zone">Zone</label>
+                                                <select id="mf-ppb-preview-zone">
+                                                    <option value="header">Header</option>
+                                                    <option value="body">Body</option>
+                                                    <option value="footer">Footer</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mf-ppb-preview-field mf-ppb-preview-field--pattern">
+                                                <label for="mf-ppb-preview-pattern">Pattern</label>
+                                                <select id="mf-ppb-preview-pattern"></select>
+                                                <p class="description mf-ppb-preview-pattern-note" id="mf-ppb-preview-pattern-note"></p>
+                                            </div>
+
+                                            <div class="mf-ppb-preview-actions">
+                                                <button type="button" class="button button-secondary" id="mf-ppb-preview-run">
+                                                    Preview Impact
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mf-ppb-preview-feedback" id="mf-ppb-preview-feedback" aria-live="polite"></div>
+                                        <div class="mf-ppb-preview-results" id="mf-ppb-preview-results"></div>
+                                    </div>
                                 </div>
 
                                 <aside class="mf-settings-preview">
@@ -1468,6 +1705,18 @@ function modfarm_admin_enqueue_scripts($hook) {
         '1.0.0',
         true
     );
+
+    wp_localize_script('modfarm-settings-ui', 'modfarmSettingsUi', [
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'previewNonce' => wp_create_nonce('modfarm_ppb_apply_all_preview'),
+        'applyAllPatterns' => modfarm_get_ppb_apply_all_pattern_matrix(),
+        'messages' => [
+            'loading' => __('Scanning matching items...', 'modfarm'),
+            'missingPattern' => __('Select a valid pattern before running the preview.', 'modfarm'),
+            'noPatterns' => __('No central PPB patterns are registered for this content type and zone yet.', 'modfarm'),
+            'error' => __('Preview could not be generated.', 'modfarm'),
+        ],
+    ]);
 }
 add_action('admin_enqueue_scripts', 'modfarm_admin_enqueue_scripts');
 

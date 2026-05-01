@@ -103,6 +103,82 @@ function modfarm_zone_tree_contains_content_slot(array $blocks): bool {
 }
 
 /**
+ * Collect all content-slot identifiers from a parsed block tree.
+ */
+function modfarm_collect_content_slot_ids(array $blocks): array {
+    $slot_ids = [];
+
+    foreach ($blocks as $block) {
+        if (!is_array($block)) {
+            continue;
+        }
+
+        $name = $block['blockName'] ?? null;
+        $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+        if ($name === 'modfarm/content-slot') {
+            $slot_id = isset($attrs['slot']) && is_string($attrs['slot']) ? trim($attrs['slot']) : '';
+            if ($slot_id !== '') {
+                $slot_ids[] = $slot_id;
+            }
+        }
+
+        if (!empty($block['innerBlocks']) && is_array($block['innerBlocks'])) {
+            $slot_ids = array_merge($slot_ids, modfarm_collect_content_slot_ids($block['innerBlocks']));
+        }
+    }
+
+    return $slot_ids;
+}
+
+/**
+ * Return duplicate content-slot IDs within a block tree.
+ */
+function modfarm_get_duplicate_content_slot_ids(array $blocks): array {
+    $counts = array_count_values(modfarm_collect_content_slot_ids($blocks));
+    $duplicates = [];
+
+    foreach ($counts as $slot_id => $count) {
+        if ($count > 1) {
+            $duplicates[] = (string) $slot_id;
+        }
+    }
+
+    sort($duplicates);
+
+    return $duplicates;
+}
+
+/**
+ * Find the first zone block for a given slot.
+ */
+function modfarm_find_zone_block_by_slot(array $blocks, string $target_slot): ?array {
+    foreach ($blocks as $block) {
+        if (!is_array($block)) {
+            continue;
+        }
+
+        $name = $block['blockName'] ?? null;
+        $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+
+        if ($name === 'modfarm/zone') {
+            $slot = isset($attrs['slot']) && is_string($attrs['slot']) ? $attrs['slot'] : '';
+            if ($slot === $target_slot) {
+                return $block;
+            }
+        }
+
+        if (!empty($block['innerBlocks']) && is_array($block['innerBlocks'])) {
+            $found = modfarm_find_zone_block_by_slot($block['innerBlocks'], $target_slot);
+            if (is_array($found)) {
+                return $found;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
  * Build a read-only PPB zone summary for editor/admin UI.
  */
 function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type = ''): array {
@@ -153,9 +229,7 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
                         'present' => true,
                         'pattern' => isset($attrs['pattern']) && is_string($attrs['pattern']) ? $attrs['pattern'] : '',
                         'locked' => !empty($attrs['locked']),
-                        'contains_content_slot' => $slot === 'body'
-                            ? modfarm_zone_tree_contains_content_slot($block['innerBlocks'] ?? [])
-                            : false,
+                        'contains_content_slot' => modfarm_zone_tree_contains_content_slot($block['innerBlocks'] ?? []),
                     ];
                 }
             }
@@ -186,6 +260,137 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
         'layout_mode' => modfarm_get_ppb_layout_mode_for_post($post_id, $post_type, $detected),
         'zones' => $zone_details,
     ];
+}
+
+/**
+ * Build a read-only Apply All preview item report for a single post.
+ */
+function modfarm_get_ppb_apply_all_item_preview(int $post_id, string $post_type, string $target_zone): array {
+    $summary = modfarm_get_ppb_zone_summary_for_post($post_id, $post_type);
+    $content = (string) get_post_field('post_content', $post_id);
+    $blocks = parse_blocks($content);
+    $zone_details = $summary['zones'][$target_zone] ?? [
+        'present' => false,
+        'pattern' => '',
+        'locked' => false,
+        'contains_content_slot' => false,
+    ];
+    $layout_mode = (string) ($summary['layout_mode'] ?? '');
+    $is_hybrid = str_starts_with($layout_mode, 'Hybrid');
+    $is_zoned = $summary['content_state'] === 'Zoned';
+    $has_slot_content = false;
+    $duplicate_slot_ids = [];
+    $action = 'skip_legacy';
+    $notes = [];
+
+    if ($is_zoned) {
+        $zone_block = modfarm_find_zone_block_by_slot($blocks, $target_zone);
+        if (is_array($zone_block)) {
+            $zone_inner_blocks = is_array($zone_block['innerBlocks'] ?? null) ? $zone_block['innerBlocks'] : [];
+            $has_slot_content = modfarm_zone_tree_contains_content_slot($zone_inner_blocks);
+            $duplicate_slot_ids = modfarm_get_duplicate_content_slot_ids($zone_inner_blocks);
+        }
+
+        if (!empty($zone_details['locked'])) {
+            $action = 'skip_locked';
+            $notes[] = 'Zone is locked.';
+        } else {
+            $action = 'will_update';
+        }
+    } elseif ($is_hybrid && in_array($target_zone, ['header', 'footer'], true)) {
+        $action = 'will_update';
+        $notes[] = 'Hybrid chrome override path.';
+    } else {
+        $notes[] = $is_hybrid && $target_zone === 'body'
+            ? 'Hybrid body is not PPB-managed.'
+            : 'Content is not zoned.';
+    }
+
+    if ($has_slot_content) {
+        $notes[] = 'Content-slot payloads would be preserved.';
+    }
+
+    if (!empty($duplicate_slot_ids)) {
+        $notes[] = 'Duplicate slot IDs: ' . implode(', ', $duplicate_slot_ids);
+    }
+
+    return [
+        'post_id' => $post_id,
+        'title' => get_the_title($post_id) ?: sprintf('#%d', $post_id),
+        'status' => (string) get_post_status($post_id),
+        'edit_link' => get_edit_post_link($post_id, ''),
+        'content_state' => $summary['content_state'],
+        'layout_mode' => $layout_mode,
+        'zone' => [
+            'present' => !empty($zone_details['present']),
+            'pattern' => (string) ($zone_details['pattern'] ?? ''),
+            'locked' => !empty($zone_details['locked']),
+            'contains_content_slot' => $has_slot_content,
+            'duplicate_slot_ids' => $duplicate_slot_ids,
+        ],
+        'action' => $action,
+        'notes' => $notes,
+    ];
+}
+
+/**
+ * Build a read-only Apply All preview report for one content type + zone.
+ */
+function modfarm_get_ppb_apply_all_preview_report(string $post_type, string $target_zone, string $pattern_slug): array {
+    $report = [
+        'content_type' => $post_type,
+        'zone' => $target_zone,
+        'pattern' => $pattern_slug,
+        'totals' => [
+            'items' => 0,
+            'will_update' => 0,
+            'skipped_locked' => 0,
+            'skipped_legacy' => 0,
+            'slot_content_detected' => 0,
+            'potential_conflicts' => 0,
+        ],
+        'items' => [],
+    ];
+
+    $posts = get_posts([
+        'post_type' => $post_type,
+        'posts_per_page' => -1,
+        'post_status' => ['publish', 'draft', 'pending', 'future', 'private'],
+        'orderby' => 'title',
+        'order' => 'ASC',
+        'fields' => 'ids',
+        'no_found_rows' => true,
+        'suppress_filters' => false,
+    ]);
+
+    foreach ($posts as $post_id) {
+        $item = modfarm_get_ppb_apply_all_item_preview((int) $post_id, $post_type, $target_zone);
+        $report['items'][] = $item;
+        $report['totals']['items']++;
+
+        switch ($item['action']) {
+            case 'will_update':
+                $report['totals']['will_update']++;
+                break;
+            case 'skip_locked':
+                $report['totals']['skipped_locked']++;
+                break;
+            case 'skip_legacy':
+            default:
+                $report['totals']['skipped_legacy']++;
+                break;
+        }
+
+        if (!empty($item['zone']['contains_content_slot'])) {
+            $report['totals']['slot_content_detected']++;
+        }
+
+        if (!empty($item['zone']['duplicate_slot_ids'])) {
+            $report['totals']['potential_conflicts']++;
+        }
+    }
+
+    return $report;
 }
 
 /**
