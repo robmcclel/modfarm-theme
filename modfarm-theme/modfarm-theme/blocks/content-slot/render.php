@@ -59,7 +59,8 @@ if (!function_exists('modfarm_render_content_slot_block')) {
               $blocks = modfarm_ppb_normalize_parsed_blocks($blocks);
             }
 
-            // Recursively drop any modfarm/content-slot blocks
+            // Recursively drop any modfarm/content-slot blocks while keeping
+            // innerContent aligned with innerBlocks for safe serialize_blocks().
             $strip_slots = function(array $blocks) use (&$strip_slots) {
               $out = [];
               foreach ($blocks as $b) {
@@ -82,7 +83,37 @@ if (!function_exists('modfarm_render_content_slot_block')) {
                   : [];
 
                 if (!empty($b['innerBlocks'])) {
-                  $b['innerBlocks'] = $strip_slots($b['innerBlocks']);
+                  $original_children = $b['innerBlocks'];
+                  $filtered_children = $strip_slots($original_children);
+                  $b['innerBlocks'] = $filtered_children;
+
+                  if (!empty($b['innerContent'])) {
+                    $rebuilt_inner_content = [];
+                    $child_index = 0;
+
+                    foreach ($b['innerContent'] as $chunk) {
+                      if ($chunk !== null) {
+                        $rebuilt_inner_content[] = is_string($chunk) ? $chunk : '';
+                        continue;
+                      }
+
+                      $original_child = $original_children[$child_index] ?? null;
+                      $child_index++;
+
+                      if (!is_array($original_child)) {
+                        continue;
+                      }
+
+                      $child_name = $original_child['blockName'] ?? null;
+                      if ($child_name === 'modfarm/content-slot') {
+                        continue;
+                      }
+
+                      $rebuilt_inner_content[] = null;
+                    }
+
+                    $b['innerContent'] = $rebuilt_inner_content;
+                  }
                 }
                 $out[] = $b;
               }
