@@ -325,63 +325,55 @@ function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target
     }
 
     $blocks = parse_blocks($original_content);
-    if (empty($blocks) || !function_exists('serialize_blocks')) {
+    if (empty($blocks) || !function_exists('serialize_blocks') || !function_exists('serialize_block')) {
         return false;
     }
 
     $changed = false;
     $harvested_payloads = [];
-    $walk = function (array $blocks) use (&$walk, $target_zone, $pattern_slug, &$changed, &$harvested_payloads): array {
-        $updated = [];
+    $segments = [];
 
-        foreach ($blocks as $block) {
-            if (!is_array($block)) {
-                continue;
-            }
-
-            $name = $block['blockName'] ?? null;
-            $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
-            $inner_blocks = is_array($block['innerBlocks'] ?? null) ? $block['innerBlocks'] : [];
-
-            if ($name === 'modfarm/zone' && modfarm_ppb_get_zone_slot_from_attrs($attrs) === $target_zone) {
-                $harvested_payloads = modfarm_ppb_merge_slot_payloads(
-                    $harvested_payloads,
-                    modfarm_ppb_extract_slot_payloads_from_blocks($inner_blocks, $target_zone)
-                );
-
-                $incoming_blocks = parse_blocks($pattern_content);
-                $incoming_changed = false;
-                $incoming_blocks = modfarm_ppb_hydrate_empty_slots_in_blocks($incoming_blocks, $harvested_payloads, $incoming_changed);
-                $incoming_markup = serialize_blocks($incoming_blocks);
-                $zone_markup = function_exists('modfarm_ppb_build_zone_markup')
-                    ? modfarm_ppb_build_zone_markup($target_zone, $incoming_markup, [
-                        'origin' => isset($attrs['origin']) && is_string($attrs['origin']) ? $attrs['origin'] : 'ppb',
-                        'pattern' => $pattern_slug,
-                        'locked' => !empty($attrs['locked']),
-                        'version' => isset($attrs['version']) ? (int) $attrs['version'] : 1,
-                    ])
-                    : '';
-                $parsed_zone = $zone_markup !== '' ? parse_blocks($zone_markup) : [];
-                if (!empty($parsed_zone[0]) && is_array($parsed_zone[0])) {
-                    $block = $parsed_zone[0];
-                }
-                $changed = true;
-                $updated[] = $block;
-                continue;
-            }
-
-            if (!empty($inner_blocks)) {
-                $block['innerBlocks'] = $walk($inner_blocks);
-            }
-
-            $updated[] = $block;
+    foreach ($blocks as $block) {
+        if (!is_array($block)) {
+            continue;
         }
 
-        return $updated;
-    };
+        $name = $block['blockName'] ?? null;
+        $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+        $inner_blocks = is_array($block['innerBlocks'] ?? null) ? $block['innerBlocks'] : [];
 
-    $updated_blocks = $walk($blocks);
-    if (!$changed) {
+        if ($name === 'modfarm/zone' && modfarm_ppb_get_zone_slot_from_attrs($attrs) === $target_zone) {
+            $harvested_payloads = modfarm_ppb_merge_slot_payloads(
+                $harvested_payloads,
+                modfarm_ppb_extract_slot_payloads_from_blocks($inner_blocks, $target_zone)
+            );
+
+            $incoming_blocks = parse_blocks($pattern_content);
+            $incoming_changed = false;
+            $incoming_blocks = modfarm_ppb_hydrate_empty_slots_in_blocks($incoming_blocks, $harvested_payloads, $incoming_changed);
+            $incoming_markup = serialize_blocks($incoming_blocks);
+            $zone_markup = function_exists('modfarm_ppb_build_zone_markup')
+                ? modfarm_ppb_build_zone_markup($target_zone, $incoming_markup, [
+                    'origin' => isset($attrs['origin']) && is_string($attrs['origin']) ? $attrs['origin'] : 'ppb',
+                    'pattern' => $pattern_slug,
+                    'locked' => !empty($attrs['locked']),
+                    'version' => isset($attrs['version']) ? (int) $attrs['version'] : 1,
+                ])
+                : '';
+
+            if ($zone_markup === '') {
+                return false;
+            }
+
+            $segments[] = $zone_markup;
+            $changed = true;
+            continue;
+        }
+
+        $segments[] = serialize_block($block);
+    }
+
+    if (!$changed || empty($segments)) {
         return false;
     }
 
@@ -392,7 +384,9 @@ function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target
         update_post_meta($post_id, $meta_key, $merged);
     }
 
-    $updated_content = serialize_blocks($updated_blocks);
+    $updated_content = implode("\n\n", array_filter($segments, static function ($segment) {
+        return is_string($segment) && $segment !== '';
+    }));
     if ($updated_content === $original_content) {
         return false;
     }

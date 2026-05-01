@@ -171,7 +171,36 @@
           open: false,
           value: ''
         }
+        }));
+    }
+
+    function clearHybridOverride() {
+      if (mode !== 'hybrid' || !action.meta_key) {
+        return;
+      }
+
+      const currentMeta = editors.selectEditor().getEditedPostAttribute('meta') || {};
+      editors.dispatchEditor().editPost({
+        meta: {
+          ...currentMeta,
+          [action.meta_key]: ''
+        }
+      });
+
+      setData((prev) => ({
+        ...prev,
+        zones: {
+          ...prev.zones,
+          [slot]: {
+            ...prev.zones[slot],
+            pattern: prev.zones[slot].default_pattern || prev.zones[slot].pattern,
+            local_override_active: false
+          }
+        }
       }));
+
+      setNotices((prev) => ({ ...prev, [slot]: '' }));
+      closeSelector();
     }
 
     function applyReplacement() {
@@ -231,7 +260,8 @@
             ...prev.zones,
             [slot]: {
               ...prev.zones[slot],
-              pattern: selectedPattern.value
+              pattern: selectedPattern.value,
+              local_override_active: true
             }
           }
         }));
@@ -292,6 +322,11 @@
     }
     if (mode === 'hybrid' && (slot === 'header' || slot === 'footer')) {
       notes.push('Hybrid dynamic path');
+      if (zone.local_override_active) {
+        notes.push('Local override active');
+      } else {
+        notes.push('Following central PPB default');
+      }
     }
 
     return el('div', { className: 'mf-ppb-zone-panel__zone-row' },
@@ -315,6 +350,10 @@
           onClick: openSelector,
           disabled: !canReplace || !hasPatterns
         }, 'Replace'),
+        (mode === 'hybrid' && (slot === 'header' || slot === 'footer') && zone.local_override_active) ? el(Button, {
+          variant: 'tertiary',
+          onClick: clearHybridOverride
+        }, 'Reset to Default') : null,
         canToggleLock ? el(Button, {
           variant: zone.locked ? 'primary' : 'tertiary',
           onClick: toggleLock

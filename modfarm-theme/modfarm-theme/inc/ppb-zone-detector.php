@@ -202,24 +202,32 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
             'pattern' => '',
             'locked' => false,
             'contains_content_slot' => false,
+            'local_override_active' => false,
+            'default_pattern' => '',
         ],
         'body' => [
             'present' => false,
             'pattern' => '',
             'locked' => false,
             'contains_content_slot' => false,
+            'local_override_active' => false,
+            'default_pattern' => '',
         ],
         'footer' => [
             'present' => false,
             'pattern' => '',
             'locked' => false,
             'contains_content_slot' => false,
+            'local_override_active' => false,
+            'default_pattern' => '',
         ],
         'data' => [
             'present' => false,
             'pattern' => '',
             'locked' => false,
             'contains_content_slot' => false,
+            'local_override_active' => false,
+            'default_pattern' => '',
         ],
     ];
 
@@ -236,6 +244,8 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
                         'pattern' => isset($attrs['pattern']) && is_string($attrs['pattern']) ? $attrs['pattern'] : '',
                         'locked' => !empty($attrs['locked']),
                         'contains_content_slot' => modfarm_zone_tree_contains_content_slot($block['innerBlocks'] ?? []),
+                        'local_override_active' => false,
+                        'default_pattern' => '',
                     ];
                 }
             }
@@ -251,11 +261,33 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
     }
 
     if (!$detected['is_zoned'] && $is_hybrid_template && function_exists('modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post')) {
+        $hybrid_defaults = [];
+        if (function_exists('modfarm_ppb_get_local_chrome_override_meta_keys') && function_exists('modfarm_ppb_resolve_pattern_slug')) {
+            $opts = get_option('modfarm_theme_settings', []);
+            $hybrid_defaults = $post_type === 'page'
+                ? [
+                    'header' => modfarm_ppb_resolve_pattern_slug('page_header_pattern', $opts['page_header_pattern'] ?? null, $opts),
+                    'footer' => modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $opts['page_footer_pattern'] ?? null, $opts),
+                ]
+                : [
+                    'header' => modfarm_ppb_resolve_pattern_slug('post_header_pattern', $opts['post_header_pattern'] ?? null, $opts),
+                    'footer' => modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $opts['post_footer_pattern'] ?? null, $opts),
+                ];
+        }
+
         $hybrid_slugs = modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($post_id, $post_type);
         foreach (['header', 'footer'] as $slot) {
             if (!empty($hybrid_slugs[$slot])) {
                 $zone_details[$slot]['pattern'] = $hybrid_slugs[$slot];
             }
+            if (!empty($hybrid_defaults[$slot])) {
+                $zone_details[$slot]['default_pattern'] = $hybrid_defaults[$slot];
+            }
+
+            $override_slug = function_exists('modfarm_ppb_get_local_chrome_override_slug')
+                ? modfarm_ppb_get_local_chrome_override_slug($post_id, $slot)
+                : '';
+            $zone_details[$slot]['local_override_active'] = ($override_slug !== '');
         }
     }
 
@@ -303,13 +335,14 @@ function modfarm_get_ppb_apply_all_item_preview(int $post_id, string $post_type,
         } else {
             $action = 'will_update';
         }
-    } elseif ($is_hybrid && in_array($target_zone, ['header', 'footer'], true)) {
-        $action = 'will_update';
-        $notes[] = 'Hybrid chrome override path.';
     } else {
-        $notes[] = $is_hybrid && $target_zone === 'body'
-            ? 'Hybrid body is not PPB-managed.'
-            : 'Content is not zoned.';
+        if ($is_hybrid) {
+            $notes[] = in_array($target_zone, ['header', 'footer'], true)
+                ? 'Hybrid items are not eligible for Apply All. Use the central selector or local reset-to-default flow.'
+                : 'Hybrid body is not PPB-managed.';
+        } else {
+            $notes[] = 'Content is not zoned.';
+        }
     }
 
     if ($has_slot_content) {
