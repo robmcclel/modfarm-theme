@@ -352,7 +352,7 @@ function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target
                 $incoming_blocks = parse_blocks($pattern_content);
                 $incoming_changed = false;
                 $incoming_blocks = modfarm_ppb_hydrate_empty_slots_in_blocks($incoming_blocks, $harvested_payloads, $incoming_changed);
-                $incoming_markup = serialize_blocks(modfarm_ppb_normalize_parsed_blocks($incoming_blocks));
+                $incoming_markup = serialize_blocks($incoming_blocks);
                 $zone_markup = function_exists('modfarm_ppb_build_zone_markup')
                     ? modfarm_ppb_build_zone_markup($target_zone, $incoming_markup, [
                         'origin' => isset($attrs['origin']) && is_string($attrs['origin']) ? $attrs['origin'] : 'ppb',
@@ -363,7 +363,7 @@ function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target
                     : '';
                 $parsed_zone = $zone_markup !== '' ? parse_blocks($zone_markup) : [];
                 if (!empty($parsed_zone[0]) && is_array($parsed_zone[0])) {
-                    $block = modfarm_ppb_normalize_parsed_blocks([$parsed_zone[0]])[0];
+                    $block = $parsed_zone[0];
                 }
                 $changed = true;
                 $updated[] = $block;
@@ -380,7 +380,7 @@ function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target
         return $updated;
     };
 
-    $updated_blocks = modfarm_ppb_normalize_parsed_blocks($walk($blocks));
+    $updated_blocks = $walk($blocks);
     if (!$changed) {
         return false;
     }
