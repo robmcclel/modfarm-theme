@@ -173,6 +173,37 @@ function modfarm_ppb_merge_slot_payloads(array $existing, array $harvested): arr
 }
 
 /**
+ * Fetch one stored portable slot payload by slot ID.
+ */
+function modfarm_ppb_get_slot_payload_for_post(int $post_id, string $slot_id): array {
+    if ($post_id <= 0 || $slot_id === '') {
+        return [];
+    }
+
+    $all_payloads = get_post_meta($post_id, modfarm_ppb_slot_payload_meta_key(), true);
+    if (!is_array($all_payloads)) {
+        return [];
+    }
+
+    $payload = $all_payloads[$slot_id] ?? null;
+    if (!is_array($payload)) {
+        return [];
+    }
+
+    $blocks = isset($payload['blocks']) && is_string($payload['blocks']) ? $payload['blocks'] : '';
+    if ($blocks === '' || modfarm_ppb_is_slot_markup_empty($blocks)) {
+        return [];
+    }
+
+    return [
+        'blocks' => $blocks,
+        'updated_at' => isset($payload['updated_at']) && is_string($payload['updated_at']) ? $payload['updated_at'] : '',
+        'source' => isset($payload['source']) && is_string($payload['source']) ? $payload['source'] : '',
+        'last_zone' => isset($payload['last_zone']) && is_string($payload['last_zone']) ? $payload['last_zone'] : '',
+    ];
+}
+
+/**
  * Save portable content-slot payloads for supported post types.
  */
 function modfarm_ppb_sync_slot_payloads_on_save(int $post_id, WP_Post $post, bool $update): void {

@@ -32,7 +32,20 @@ if (!function_exists('modfarm_render_content_slot_block')) {
 
     $html = '';
 
-    if ($post_id && !empty($a['acceptImport']) && !empty($a['autofillPostContent'])) {
+    // --- 0) Portable slot payload rehydration ---------------------------------
+    // If the current slot is active but empty, prefer the stored payload for the
+    // same slot ID before importer/autofill behavior. This rehydrates content
+    // safely at render time without rewriting post_content yet.
+    if ($post_id && $slot !== '' && function_exists('modfarm_ppb_get_slot_payload_for_post')) {
+      $payload = modfarm_ppb_get_slot_payload_for_post($post_id, $slot);
+      if (!empty($payload['blocks'])) {
+        $html = !empty($a['applyTheContentFilters'])
+          ? do_blocks((string) $payload['blocks'])
+          : (string) $payload['blocks'];
+      }
+    }
+
+    if ($html === '' && $post_id && !empty($a['acceptImport']) && !empty($a['autofillPostContent'])) {
 
       // --- 1) Prefer explicit body meta saved by Composer/Importer -------------
       // These keys let us bypass the PPB tree entirely.

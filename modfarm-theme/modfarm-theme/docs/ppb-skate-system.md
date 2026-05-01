@@ -195,6 +195,7 @@ Current scope:
 - harvest manual `content-slot` `InnerBlocks` from `post_content` on save
 - store payloads in post meta by slot ID
 - preserve payloads even if the current visible pattern no longer contains a matching `content-slot`
+- when an active `content-slot` is empty, render-time logic can now rehydrate matching stored payloads by slot ID without rewriting `post_content`
 
 Current hard rule:
 
