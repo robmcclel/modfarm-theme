@@ -6,9 +6,9 @@
   const { createElement: el, Fragment, useState } = wp.element;
   const { PanelRow, Notice, Button, SelectControl } = wp.components;
   const { select, dispatch } = wp.data;
-  const { parse, serialize } = wp.blocks;
+  const { parse } = wp.blocks;
 
-  if (!registerPlugin || !PluginDocumentSettingPanel || !select || !dispatch || !parse || !serialize) return;
+  if (!registerPlugin || !PluginDocumentSettingPanel || !select || !dispatch || !parse) return;
 
   const initialData = config.summary || {};
 
@@ -16,40 +16,23 @@
     return `${slot.charAt(0).toUpperCase()}${slot.slice(1)} Zone`;
   }
 
-  function replaceZoneInBlocks(blocks, slot, pattern) {
-    let replaced = false;
+  function findZoneBlock(blocks, slot) {
+    for (let i = 0; i < blocks.length; i += 1) {
+      const block = blocks[i];
 
-    const nextBlocks = blocks.map(function (block) {
-      if (block.blockName === 'modfarm/zone' && block.attrs && block.attrs.slot === slot && !replaced) {
-        replaced = true;
-        return {
-          ...block,
-          attrs: {
-            ...block.attrs,
-            pattern: pattern.value
-          },
-          innerBlocks: parse(pattern.content)
-        };
+      if (block.blockName === 'modfarm/zone' && block.attrs && block.attrs.slot === slot) {
+        return block;
       }
 
       if (Array.isArray(block.innerBlocks) && block.innerBlocks.length) {
-        const child = replaceZoneInBlocks(block.innerBlocks, slot, pattern);
-        if (child.replaced) {
-          replaced = true;
-          return {
-            ...block,
-            innerBlocks: child.blocks
-          };
+        const nested = findZoneBlock(block.innerBlocks, slot);
+        if (nested) {
+          return nested;
         }
       }
+    }
 
-      return block;
-    });
-
-    return {
-      blocks: nextBlocks,
-      replaced: replaced
-    };
+    return null;
   }
 
   function zoneRow(slot, data, setData, editors, selections, setSelections, notices, setNotices) {
@@ -92,17 +75,17 @@
       }
 
       if (mode === 'zoned') {
-        const currentContent = editors.selectEditor().getEditedPostContent();
-        const parsedBlocks = parse(currentContent);
-        const replaced = replaceZoneInBlocks(parsedBlocks, slot, selectedPattern);
+        const blockTree = editors.selectBlocks().getBlocks();
+        const zoneBlock = findZoneBlock(blockTree, slot);
 
-        if (!replaced.replaced) {
+        if (!zoneBlock || !zoneBlock.clientId) {
           setNotices((prev) => ({ ...prev, [slot]: `${zoneLabel(slot)} was not found in the current content.` }));
           return;
         }
 
-        editors.dispatchEditor().editPost({
-          content: serialize(replaced.blocks)
+        editors.dispatchBlocks().replaceInnerBlocks(zoneBlock.clientId, parse(selectedPattern.content), false);
+        editors.dispatchBlocks().updateBlockAttributes(zoneBlock.clientId, {
+          pattern: selectedPattern.value
         });
 
         setData((prev) => ({
@@ -217,7 +200,9 @@
     });
     const editors = {
       selectEditor: () => select('core/editor'),
-      dispatchEditor: () => dispatch('core/editor')
+      dispatchEditor: () => dispatch('core/editor'),
+      selectBlocks: () => select('core/block-editor'),
+      dispatchBlocks: () => dispatch('core/block-editor')
     };
 
     return el(PluginDocumentSettingPanel, {
