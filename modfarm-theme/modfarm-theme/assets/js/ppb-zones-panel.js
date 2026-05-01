@@ -16,11 +16,19 @@
     return `${slot.charAt(0).toUpperCase()}${slot.slice(1)} Zone`;
   }
 
+  function resolveZoneSlot(attributes) {
+    if (attributes && typeof attributes.slot === 'string' && attributes.slot.trim()) {
+      return attributes.slot.trim();
+    }
+
+    return 'body';
+  }
+
   function findZoneBlock(blocks, slot) {
     for (let i = 0; i < blocks.length; i += 1) {
       const block = blocks[i];
 
-      if (block.name === 'modfarm/zone' && block.attributes && block.attributes.slot === slot) {
+      if (block.name === 'modfarm/zone' && resolveZoneSlot(block.attributes || {}) === slot) {
         return block;
       }
 

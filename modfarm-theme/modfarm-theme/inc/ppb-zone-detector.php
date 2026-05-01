@@ -2,6 +2,14 @@
 if (!defined('ABSPATH')) exit;
 
 /**
+ * Resolve a ModFarm zone slot from parsed attrs, honoring the block default.
+ */
+function modfarm_get_zone_slot_from_block_attrs(array $attrs): string {
+    $slot = isset($attrs['slot']) && is_string($attrs['slot']) ? trim($attrs['slot']) : '';
+    return $slot !== '' ? $slot : 'body';
+}
+
+/**
  * Parse post content and report whether it already uses explicit ModFarm zones.
  */
 function modfarm_detect_ppb_zones_in_content(string $content): array {
@@ -42,12 +50,10 @@ function modfarm_detect_ppb_zones_in_content(string $content): array {
             }
 
             if ($name === 'modfarm/zone') {
-                $slot = isset($attrs['slot']) && is_string($attrs['slot']) ? $attrs['slot'] : '';
-                if ($slot !== '') {
-                    $seen_zones[$slot] = true;
-                    if ($slot === 'body' && modfarm_zone_tree_contains_content_slot($block['innerBlocks'] ?? [])) {
-                        $body_has_slot = true;
-                    }
+                $slot = modfarm_get_zone_slot_from_block_attrs($attrs);
+                $seen_zones[$slot] = true;
+                if ($slot === 'body' && modfarm_zone_tree_contains_content_slot($block['innerBlocks'] ?? [])) {
+                    $body_has_slot = true;
                 }
             }
 
@@ -161,7 +167,7 @@ function modfarm_find_zone_block_by_slot(array $blocks, string $target_slot): ?a
         $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
 
         if ($name === 'modfarm/zone') {
-            $slot = isset($attrs['slot']) && is_string($attrs['slot']) ? $attrs['slot'] : '';
+            $slot = modfarm_get_zone_slot_from_block_attrs($attrs);
             if ($slot === $target_slot) {
                 return $block;
             }
@@ -223,7 +229,7 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
             $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
 
             if ($name === 'modfarm/zone') {
-                $slot = isset($attrs['slot']) && is_string($attrs['slot']) ? $attrs['slot'] : '';
+                $slot = modfarm_get_zone_slot_from_block_attrs($attrs);
                 if (isset($zone_details[$slot])) {
                     $zone_details[$slot] = [
                         'present' => true,
