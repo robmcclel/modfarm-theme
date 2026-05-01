@@ -228,11 +228,12 @@ Current visible fields:
 Current safe actions:
 
 - Header Zone replace for Zoned content
+- Body Zone replace for Zoned content
 - Footer Zone replace for Zoned content
 - Header Zone lock/unlock for Zoned content
+- Body Zone lock/unlock for Zoned content
 - Footer Zone lock/unlock for Zoned content
 - Header/Footer replace for Hybrid templates through local dynamic overrides
-- no Body Zone replace
 - no Apply All actions
 - no migration
 - no legacy/plain auto-conversion
@@ -240,6 +241,7 @@ Current safe actions:
 Current safety model:
 
 - Zoned content can be changed surgically by zone
+- Body Zone replacement preserves matching `content-slot` payloads and treats non-slot body edits as disposable unless the zone is locked
 - Legacy PPB content is detectable but not yet locally rewritten
 - Plain content is left alone
 - Hybrid treats the body as authored content and only exposes local PPB control for header/footer chrome

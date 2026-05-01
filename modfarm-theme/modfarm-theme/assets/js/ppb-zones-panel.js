@@ -6,9 +6,9 @@
   const { createElement: el, Fragment, useState } = wp.element;
   const { PanelRow, Notice, Button, SelectControl } = wp.components;
   const { select, dispatch } = wp.data;
-  const { parse } = wp.blocks;
+  const { parse, serialize } = wp.blocks;
 
-  if (!registerPlugin || !PluginDocumentSettingPanel || !select || !dispatch || !parse) return;
+  if (!registerPlugin || !PluginDocumentSettingPanel || !select || !dispatch || !parse || !serialize) return;
 
   const initialData = config.summary || {};
 
@@ -35,6 +35,104 @@
     return null;
   }
 
+  function cloneBlocks(blocks) {
+    if (!Array.isArray(blocks) || !blocks.length) {
+      return [];
+    }
+
+    return parse(serialize(blocks));
+  }
+
+  function getSlotId(attributes) {
+    if (attributes && typeof attributes.slot === 'string' && attributes.slot.trim()) {
+      return attributes.slot.trim();
+    }
+
+    return 'main';
+  }
+
+  function collectSlotPayloads(blocks, payloads = {}) {
+    if (!Array.isArray(blocks)) {
+      return payloads;
+    }
+
+    blocks.forEach((block) => {
+      if (!block || typeof block !== 'object') {
+        return;
+      }
+
+      if (block.name === 'modfarm/content-slot') {
+        const slotId = getSlotId(block.attributes || {});
+        if (Array.isArray(block.innerBlocks) && block.innerBlocks.length) {
+          payloads[slotId] = cloneBlocks(block.innerBlocks);
+        }
+      }
+
+      if (Array.isArray(block.innerBlocks) && block.innerBlocks.length) {
+        collectSlotPayloads(block.innerBlocks, payloads);
+      }
+    });
+
+    return payloads;
+  }
+
+  function zoneBlocksContainContentSlot(blocks) {
+    if (!Array.isArray(blocks)) {
+      return false;
+    }
+
+    for (let i = 0; i < blocks.length; i += 1) {
+      const block = blocks[i];
+      if (!block || typeof block !== 'object') {
+        continue;
+      }
+
+      if (block.name === 'modfarm/content-slot') {
+        return true;
+      }
+
+      if (Array.isArray(block.innerBlocks) && block.innerBlocks.length && zoneBlocksContainContentSlot(block.innerBlocks)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function hydrateIncomingContentSlots(blocks, slotPayloads) {
+    if (!Array.isArray(blocks) || !blocks.length) {
+      return [];
+    }
+
+    return blocks.map((block) => {
+      if (!block || typeof block !== 'object') {
+        return block;
+      }
+
+      const nextBlock = {
+        ...block,
+        attributes: block.attributes ? { ...block.attributes } : {},
+        innerBlocks: Array.isArray(block.innerBlocks) ? cloneBlocks(block.innerBlocks) : []
+      };
+
+      if (nextBlock.name === 'modfarm/content-slot') {
+        const slotId = getSlotId(nextBlock.attributes || {});
+        const payload = slotPayloads[slotId];
+        const isEmpty = !Array.isArray(nextBlock.innerBlocks) || nextBlock.innerBlocks.length === 0;
+        if (isEmpty && Array.isArray(payload) && payload.length) {
+          nextBlock.innerBlocks = cloneBlocks(payload);
+        }
+        return nextBlock;
+      }
+
+      if (Array.isArray(nextBlock.innerBlocks) && nextBlock.innerBlocks.length) {
+        nextBlock.innerBlocks = hydrateIncomingContentSlots(nextBlock.innerBlocks, slotPayloads);
+      }
+
+      return nextBlock;
+    });
+  }
+
   function zoneRow(slot, data, setData, editors, selections, setSelections, notices, setNotices) {
     const zones = data.zones || {};
     const actions = (data.actions && data.actions.zones) || {};
@@ -45,7 +143,7 @@
     const canReplace = !!action.enabled;
     const mode = data.actions && data.actions.mode ? data.actions.mode : 'disabled';
     const hasPatterns = Array.isArray(action.patterns) && action.patterns.length > 0;
-    const canToggleLock = mode === 'zoned' && (slot === 'header' || slot === 'footer') && !!zone.present;
+    const canToggleLock = mode === 'zoned' && ['header', 'body', 'footer'].includes(slot) && !!zone.present;
 
     function openSelector() {
       setSelections((prev) => ({
@@ -84,7 +182,10 @@
           return;
         }
 
-        editors.dispatchBlocks().replaceInnerBlocks(zoneBlock.clientId, parse(selectedPattern.content), false);
+        const outgoingSlotPayloads = collectSlotPayloads(zoneBlock.innerBlocks || []);
+        const incomingBlocks = hydrateIncomingContentSlots(parse(selectedPattern.content), outgoingSlotPayloads);
+
+        editors.dispatchBlocks().replaceInnerBlocks(zoneBlock.clientId, incomingBlocks, false);
         editors.dispatchBlocks().updateBlockAttributes(zoneBlock.clientId, {
           pattern: selectedPattern.value
         });
@@ -96,7 +197,8 @@
             [slot]: {
               ...prev.zones[slot],
               present: true,
-              pattern: selectedPattern.value
+              pattern: selectedPattern.value,
+              contains_content_slot: zoneBlocksContainContentSlot(incomingBlocks)
             }
           }
         }));
@@ -199,7 +301,7 @@
         ),
         notes.map((note, index) => el('div', { key: `${slot}-note-${index}` }, note))
       ),
-      (slot === 'header' || slot === 'footer') ? el('div', { className: 'mf-ppb-zone-panel__actions' },
+      (slot === 'header' || slot === 'body' || slot === 'footer') ? el('div', { className: 'mf-ppb-zone-panel__actions' },
         el(Button, {
           variant: 'secondary',
           onClick: openSelector,
@@ -247,10 +349,12 @@
     const [data, setData] = useState(initialData);
     const [selections, setSelections] = useState({
       header: { open: false, value: '' },
+      body: { open: false, value: '' },
       footer: { open: false, value: '' }
     });
     const [notices, setNotices] = useState({
       header: '',
+      body: '',
       footer: ''
     });
     const editors = {
@@ -281,8 +385,8 @@
         el(PanelRow, {},
           zoneRow('footer', data, setData, editors, selections, setSelections, notices, setNotices)
         ),
-        el(PanelRow, {},
-          el('div', { className: 'mf-ppb-zone-panel__zone-row' },
+      el(PanelRow, {},
+        el('div', { className: 'mf-ppb-zone-panel__zone-row' },
             el('div', { className: 'mf-ppb-zone-panel__zone-head' },
               el('strong', null, 'Data Zone'),
               el('span', null, 'Future / not active')
@@ -292,7 +396,7 @@
         el(Notice, {
           status: 'info',
           isDismissible: false
-        }, 'Local PPB actions are limited to Header and Footer. Body replacement, migration, and Apply All are not active here yet.')
+        }, 'Local PPB actions can now replace and lock zoned Header, Body, and Footer regions. Hybrid still exposes local PPB control for Header and Footer only.')
       )
     );
   }

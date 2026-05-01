@@ -449,7 +449,7 @@ function modfarm_get_ppb_pattern_payloads_for_field(string $field_id): array {
 }
 
 /**
- * Phase 2 local PPB manager config, including safe read/write eligibility for header/footer only.
+ * Phase 2 local PPB manager config, including safe local zone eligibility.
  */
 function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $post_type = ''): array {
     $post_type = $post_type !== '' ? $post_type : (string) get_post_type($post_id);
@@ -471,6 +471,11 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
                 'meta_key' => $meta_keys['header'] ?? '',
                 'patterns' => [],
             ],
+            'body' => [
+                'enabled' => false,
+                'meta_key' => '',
+                'patterns' => [],
+            ],
             'footer' => [
                 'enabled' => false,
                 'meta_key' => $meta_keys['footer'] ?? '',
@@ -479,7 +484,7 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
         ],
     ];
 
-    foreach (['header', 'footer'] as $slot) {
+    foreach (['header', 'body', 'footer'] as $slot) {
         $field_id = function_exists('modfarm_ppb_get_field_id_for_post_zone')
             ? modfarm_ppb_get_field_id_for_post_zone($post_type, $slot)
             : '';
@@ -493,7 +498,7 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
         $actions['zones'][$slot]['patterns'] = $patterns;
         $actions['zones'][$slot]['enabled'] = !empty($patterns) && (
             ($actions_mode === 'zoned' && $has_zone && !$is_locked) ||
-            $actions_mode === 'hybrid'
+            ($actions_mode === 'hybrid' && in_array($slot, ['header', 'footer'], true))
         );
     }
 

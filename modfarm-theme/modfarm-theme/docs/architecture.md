@@ -142,10 +142,10 @@ The panel is titled `PPB Zones` and reports:
 
 Current safe local actions are intentionally narrow:
 
-- Zoned content can replace Header Zone and Footer Zone only
-- Zoned content can lock or unlock Header Zone and Footer Zone only
+- Zoned content can replace Header Zone, Body Zone, and Footer Zone
+- Zoned content can lock or unlock Header Zone, Body Zone, and Footer Zone
 - Hybrid templates can replace dynamic header/footer pattern selection locally without touching `post_content`
-- Body replacement is not active here
+- Body replacement now preserves matching `content-slot` payloads inside the replaced zone and treats non-slot content as disposable unless locked
 - Legacy and Plain content are not locally rewritten here
 
 This keeps the first editable control surface narrow enough to avoid accidental body/content loss.
