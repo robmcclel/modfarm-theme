@@ -84,6 +84,66 @@ add_action('enqueue_block_editor_assets', function () {
     wp_enqueue_script('modfarm-editor-deps');
 });
 
+add_action('enqueue_block_editor_assets', function () {
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || $screen->base !== 'post') {
+        return;
+    }
+
+    $supported_types = ['page', 'book', 'post', 'offer'];
+    if (!in_array((string) $screen->post_type, $supported_types, true)) {
+        return;
+    }
+
+    $post_id = 0;
+    if (!empty($_GET['post'])) {
+        $post_id = absint($_GET['post']);
+    } elseif (!empty($_POST['post_ID'])) {
+        $post_id = absint($_POST['post_ID']);
+    }
+
+    $summary = [
+        'content_state' => 'Plain',
+        'layout_mode' => modfarm_get_ppb_layout_mode_for_post(0, (string) $screen->post_type, []),
+        'zones' => [
+            'header' => ['present' => false, 'pattern' => '', 'locked' => false, 'contains_content_slot' => false],
+            'body'   => ['present' => false, 'pattern' => '', 'locked' => false, 'contains_content_slot' => false],
+            'footer' => ['present' => false, 'pattern' => '', 'locked' => false, 'contains_content_slot' => false],
+            'data'   => ['present' => false, 'pattern' => '', 'locked' => false, 'contains_content_slot' => false],
+        ],
+    ];
+
+    if ($post_id > 0) {
+        $summary = modfarm_get_ppb_zone_summary_for_post($post_id, (string) $screen->post_type);
+    }
+
+    wp_register_script(
+        'modfarm-ppb-zones-panel',
+        get_template_directory_uri() . '/assets/js/ppb-zones-panel.js',
+        ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components'],
+        filemtime(get_template_directory() . '/assets/js/ppb-zones-panel.js'),
+        true
+    );
+
+    wp_register_style(
+        'modfarm-ppb-zones-panel',
+        get_template_directory_uri() . '/assets/css/ppb-zones-panel.css',
+        [],
+        filemtime(get_template_directory() . '/assets/css/ppb-zones-panel.css')
+    );
+
+    wp_enqueue_script('modfarm-ppb-zones-panel');
+    wp_enqueue_style('modfarm-ppb-zones-panel');
+    wp_add_inline_script(
+        'modfarm-ppb-zones-panel',
+        'window.ModFarmPPBZonesPanel = ' . wp_json_encode([
+            'enabled' => true,
+            'summary' => $summary,
+        ]) . ';',
+        'before'
+    );
+});
+
 /**
  * Global semantic tokens for Block Styles (works in frontend + editor iframe).
  */

@@ -1,0 +1,26 @@
+.mf-ppb-zone-panel__summary {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  font-size: 13px;
+}
+
+.mf-ppb-zone-panel__zone-row {
+  width: 100%;
+  padding: 8px 0;
+  border-top: 1px solid #e5e4e2;
+}
+
+.mf-ppb-zone-panel__zone-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.mf-ppb-zone-panel__meta {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #50575e;
+}

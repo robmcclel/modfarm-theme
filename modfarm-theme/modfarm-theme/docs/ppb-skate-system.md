@@ -85,22 +85,37 @@ Resolution logic appears in:
 - [functions.php:652](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php:652)
 - [blocks/archive-layout-loader/render.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/archive-layout-loader/render.php)
 
-## What "Skate" Appears To Mean Here
+## What "Skate" Means In ModFarm Direction
 
-I did not find any explicit `Skate`-named class, namespace, function, module, or directory in this repository.
+Authoritative design intent:
 
-I did find "zone" language in:
+- Skate is the mostly invisible base platform beneath the visible layout
+- it is analogous to an EV skateboard chassis: the control systems and structural base live underneath, while different visible bodies can be attached on top
 
-- [functions.php:406](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php:406)
-- [functions.php:411](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php:411)
-- [functions.php:416](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php:416)
-- [functions.php:421](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php:421)
+In ModFarm terms, Skate should be understood as the layer that carries:
 
-The safest visible interpretation is:
+- explicit zones
+- content/data plumbing
+- future structured data behavior
+- future SEO and AI discoverability support
+- stable rendering foundations that visible PPB layouts can attach to
 
-- this repo contains a zone-based pattern lane system
-- it may be related to what the wider ModFarm platform calls "Skate"
-- this repo alone does not confirm that naming
+That means PPB and Skate are related but not identical:
+
+- PPB chooses and swaps visible layout patterns
+- Skate provides the underlying structural platform those patterns attach to
+
+Visible repository signals that fit this direction include:
+
+- zone/pattern lane registration in [functions.php:406](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php:406)
+- explicit `modfarm/zone` wrappers
+- `modfarm/content-slot` as body/content plumbing
+- hybrid and singular template shells that can act as stable structural bases
+
+Current repo limitation:
+
+- there is still no explicit `Skate`-named runtime in this repository
+- the term is therefore architectural and directional here, not yet a fully formalized code namespace
 
 ## Visible Integration Points Relevant To PPB / Skate
 
@@ -111,6 +126,18 @@ The safest visible interpretation is:
 - Zone wrapper block: [blocks/zone](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/zone)
 - Zone detector helper: [inc/ppb-zone-detector.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/inc/ppb-zone-detector.php)
 - Hybrid singular rendering: [singular-hybrid.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/singular-hybrid.php)
+
+## Template Chassis Direction
+
+The current architectural direction is to treat singular templates more like Skate chassis than like final one-off layouts.
+
+Practical implication:
+
+- `single.php`
+- `singular-hybrid.php`
+- future variants such as a sidebar-capable hybrid singular template
+
+should be thought of as stable structural bases that define zone and data behavior while allowing visible layout layers to vary above them.
 
 ## Explicit Zone Support
 
@@ -156,6 +183,36 @@ Current intended use:
 
 It does not alter rendering or migrate content by itself.
 
+## Local PPB Manager
+
+The repository now includes a Phase 1 read-only local PPB manager in the block editor sidebar.
+
+Current visible scope:
+
+- Pages
+- Books
+- Posts
+- Offers, if the `offer` post type exists on the site
+
+Current visible fields:
+
+- content state: `Zoned`, `Legacy PPB`, or `Plain`
+- layout mode
+- Header Zone status
+- Body Zone status
+- Footer Zone status
+- whether the body zone contains `modfarm/content-slot`
+- Data Zone marked as future/not active
+
+Current limits:
+
+- no replace actions
+- no Apply All actions
+- no migration
+- no `post_content` mutation
+
+This provides the first control surface for understanding PPB-managed content without changing it.
+
 ## Canonical Fallback Defaults
 
 The repository now has a concrete canonical fallback set for unresolved or unset PPB defaults:
@@ -189,7 +246,7 @@ Legacy unprefixed book body slugs should resolve to the canonical `modfarm/...` 
 ## Known Unknowns
 
 - TODO: define PPB acronym explicitly once confirmed from a source inside the ModFarm codebase.
-- TODO: confirm whether "Skate" exists in another repository and only influences this repo via settings, slugs, or filters.
+- TODO: confirm whether a formal `Skate` runtime exists in another repository and only influences this repo via settings, slugs, or filters.
 - TODO: confirm whether `modfarm_is_hybrid_post()` and `modfarm_set_template_origin()` are defined outside this repository.
 - TODO: confirm the intended relationship between pattern lanes and any broader zone-wrapper runtime.
 

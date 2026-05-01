@@ -15,6 +15,10 @@ The theme appears to operate as a hybrid system with four overlapping layers:
 
 The main integration point is [functions.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/functions.php).
 
+Current ModFarm architectural direction adds a fifth concept across those layers:
+
+5. a Skate-style structural base that should carry zones and data plumbing beneath visible layout choices
+
 ## Repository Map
 
 - Theme root templates
@@ -70,6 +74,8 @@ That template delegates the archive page body to the custom block:
 
 This file strongly suggests the theme supports selective use of pattern-driven layout chrome without pattern-driving the entire body.
 
+A future sidebar-capable variant such as `singular-hybrid-sidebar.php` would fit this architecture as long as it stays a small chassis variation rather than becoming a separate routing system with different PPB rules.
+
 ## Block System
 
 Custom blocks are stored under [blocks](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks) and registered centrally in [blocks/register-blocks.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/register-blocks.php).
@@ -99,6 +105,8 @@ Visible intent of this block:
 
 The current implementation does not change existing PPB assembly or migrate existing content.
 
+From current ModFarm direction, these zone wrappers are part of the emerging Skate layer: the hidden structural base that visible layouts attach to.
+
 ### Zone Detection
 
 A read-only detector helper now exists in:
@@ -113,6 +121,26 @@ The helper reports:
 - whether content appears to be legacy PPB or plain content
 
 This is an analysis/helper surface only. It does not rewrite content or alter routing.
+
+### Local PPB Manager
+
+A Phase 1 read-only local PPB manager is now exposed in the block editor sidebar for:
+
+- Pages
+- Books
+- Posts
+- Offers, if the `offer` post type exists in the active site
+
+The panel is titled `PPB Zones` and reports:
+
+- content state
+- layout mode
+- Header Zone presence, pattern, and lock state
+- Body Zone presence, pattern, lock state, and `content-slot` presence
+- Footer Zone presence, pattern, and lock state
+- Data Zone as future/not active
+
+This panel is intentionally read-only in Phase 1. It does not replace zones, migrate content, or mutate `post_content`.
 
 ## Pattern System
 
@@ -156,6 +184,24 @@ The repository now visibly supports three PPB-related content models:
 3. explicit zone wrappers available for future zoned PPB storage
 
 At the moment, the zone wrapper is used for newly assembled singular PPB content and remains non-destructive toward existing legacy content.
+
+## Skate Chassis Direction
+
+The intended architectural direction is to treat core singular templates more like hidden chassis layers than like final page designs.
+
+That means templates such as:
+
+- [single.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/single.php)
+- [singular-hybrid.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/singular-hybrid.php)
+- possible future variants like `singular-hybrid-sidebar.php`
+
+should ideally provide:
+
+- stable zone structure
+- stable data/control plumbing
+- minimal routing complexity
+
+while allowing different visible content layouts to be swapped above that structure.
 
 ## Archive System
 

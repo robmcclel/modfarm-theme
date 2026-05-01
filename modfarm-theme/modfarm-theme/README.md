@@ -10,6 +10,12 @@ Based on the current repository contents, this theme is not a simple single-mode
 - a pattern-based layout system
 - settings-driven pattern selection for pages, posts, books, and archives
 
+In current ModFarm direction, that pattern system is increasingly paired with a "Skate" idea:
+
+- PPB controls the visible layout and pattern selection
+- Skate is the underlying structural platform that holds zones, data plumbing, and future control/discoverability layers
+- visible templates can change while the underlying Skate remains stable
+
 This README documents only behavior that is visible in the repository today. Unknowns are marked as `TODO`.
 
 ## Current State
@@ -64,6 +70,20 @@ These areas appear to be active:
 - `inc/patterns/**/*`
 - `templates/archive.html`
 - `singular-hybrid.php`
+
+## Current Architectural Direction
+
+The repo is moving toward a clearer separation between:
+
+- PPB as the visible layout/pattern layer
+- Skate as the mostly invisible structural base
+
+The safest current interpretation is:
+
+- pages, books, and offers are intended to favor Full PPB over time
+- archives are intended to remain dynamic PPB
+- posts are intended to default to Hybrid behavior unless explicitly moved further into Full PPB
+- template files such as `single.php` and `singular-hybrid.php` should gradually behave more like stable Skate chassis than one-off layouts
 
 ## What Looks Legacy Or Uncertain
 
