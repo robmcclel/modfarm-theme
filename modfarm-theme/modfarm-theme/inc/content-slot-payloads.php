@@ -204,6 +204,88 @@ function modfarm_ppb_get_slot_payload_for_post(int $post_id, string $slot_id): a
 }
 
 /**
+ * Build a valid parsed content-slot block carrying hydrated inner blocks.
+ */
+function modfarm_ppb_build_hydrated_content_slot_block(array $block, string $payload_markup): array {
+    $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+    $json = wp_json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $open = $json ? "<!-- wp:modfarm/content-slot {$json} -->" : '<!-- wp:modfarm/content-slot -->';
+    $markup = $open . "\n" . $payload_markup . "\n<!-- /wp:modfarm/content-slot -->";
+    $parsed = parse_blocks($markup);
+
+    if (!empty($parsed[0]) && is_array($parsed[0])) {
+        return modfarm_ppb_normalize_parsed_blocks([$parsed[0]])[0];
+    }
+
+    return $block;
+}
+
+/**
+ * Hydrate active empty content-slot blocks from stored slot payloads.
+ *
+ * Only empty live slots are hydrated. Existing visible slot content always wins.
+ * Stored slot payloads remain preserved in meta even after hydration.
+ */
+function modfarm_ppb_hydrate_empty_slots_in_blocks(array $blocks, array $stored_payloads, bool &$changed): array {
+    $blocks = modfarm_ppb_normalize_parsed_blocks($blocks);
+    $hydrated = [];
+
+    foreach ($blocks as $block) {
+        $name = $block['blockName'] ?? null;
+        $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+        $inner_blocks = is_array($block['innerBlocks'] ?? null) ? $block['innerBlocks'] : [];
+
+        if ($name === 'modfarm/content-slot') {
+            $slot_id = isset($attrs['slot']) && is_string($attrs['slot']) ? trim($attrs['slot']) : 'main';
+            if ($slot_id === '') {
+                $slot_id = 'main';
+            }
+
+            $serialized_inner = function_exists('serialize_blocks') ? serialize_blocks($inner_blocks) : '';
+            $is_empty = modfarm_ppb_is_slot_markup_empty($serialized_inner);
+            $payload = $stored_payloads[$slot_id] ?? null;
+
+            if ($is_empty && is_array($payload) && !empty($payload['blocks']) && is_string($payload['blocks'])) {
+                $block = modfarm_ppb_build_hydrated_content_slot_block($block, $payload['blocks']);
+                $changed = true;
+            }
+
+            $hydrated[] = $block;
+            continue;
+        }
+
+        if (!empty($inner_blocks)) {
+            $block['innerBlocks'] = modfarm_ppb_hydrate_empty_slots_in_blocks($inner_blocks, $stored_payloads, $changed);
+        }
+
+        $hydrated[] = $block;
+    }
+
+    return $hydrated;
+}
+
+/**
+ * Hydrate active empty content slots in post_content using stored payloads.
+ */
+function modfarm_ppb_hydrate_empty_slots_in_content(string $content, array $stored_payloads, bool &$changed): string {
+    if (trim($content) === '' || empty($stored_payloads)) {
+        return $content;
+    }
+
+    $blocks = parse_blocks($content);
+    if (empty($blocks)) {
+        return $content;
+    }
+
+    $hydrated = modfarm_ppb_hydrate_empty_slots_in_blocks($blocks, $stored_payloads, $changed);
+    if (!$changed || !function_exists('serialize_blocks')) {
+        return $content;
+    }
+
+    return serialize_blocks($hydrated);
+}
+
+/**
  * Save portable content-slot payloads for supported post types.
  */
 function modfarm_ppb_sync_slot_payloads_on_save(int $post_id, WP_Post $post, bool $update): void {
@@ -231,5 +313,17 @@ function modfarm_ppb_sync_slot_payloads_on_save(int $post_id, WP_Post $post, boo
     $merged = modfarm_ppb_merge_slot_payloads(is_array($existing) ? $existing : [], $harvested);
 
     update_post_meta($post_id, $meta_key, $merged);
+
+    $changed = false;
+    $hydrated_content = modfarm_ppb_hydrate_empty_slots_in_content((string) $post->post_content, $merged, $changed);
+
+    if ($changed && $hydrated_content !== (string) $post->post_content) {
+        remove_action('save_post', 'modfarm_ppb_sync_slot_payloads_on_save', 20);
+        wp_update_post([
+            'ID' => $post_id,
+            'post_content' => $hydrated_content,
+        ]);
+        add_action('save_post', 'modfarm_ppb_sync_slot_payloads_on_save', 20, 3);
+    }
 }
 add_action('save_post', 'modfarm_ppb_sync_slot_payloads_on_save', 20, 3);

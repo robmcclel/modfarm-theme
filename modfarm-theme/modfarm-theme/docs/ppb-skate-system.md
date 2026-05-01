@@ -196,6 +196,7 @@ Current scope:
 - store payloads in post meta by slot ID
 - preserve payloads even if the current visible pattern no longer contains a matching `content-slot`
 - when an active `content-slot` is empty, render-time logic can now rehydrate matching stored payloads by slot ID without rewriting `post_content`
+- save-time logic now also hydrates active empty slots back into `post_content` so restored slots become visible in both editor and frontend views
 
 Current hard rule:
 
