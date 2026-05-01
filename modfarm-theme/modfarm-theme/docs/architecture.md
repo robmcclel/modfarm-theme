@@ -230,6 +230,24 @@ Book-card UI composition appears centralized in:
 
 Several blocks mention these helpers directly in comments or includes.
 
+## Portable Content Slots
+
+The repository now includes an early portable slot-payload storage layer in:
+
+- [inc/content-slot-payloads.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/inc/content-slot-payloads.php)
+
+Current visible behavior:
+
+- on save, supported singular content types are scanned for `modfarm/content-slot` blocks
+- non-empty slot `InnerBlocks` are serialized and mirrored into post meta keyed by slot ID
+- payloads are merged into stored slot meta rather than treated as disposable current-layout content
+
+Current preservation rule:
+
+- slot payloads are never auto-deleted merely because a visible `content-slot` block is removed from the active pattern
+
+This is intentionally only the storage foundation. Current runtime rendering still prioritizes the block's own `InnerBlocks` and importer/body fallback behavior.
+
 ## Known Architectural Unknowns
 
 - TODO: determine which runtime path is primary for singular books in production.

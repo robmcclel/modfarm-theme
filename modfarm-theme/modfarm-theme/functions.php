@@ -28,6 +28,8 @@ function modfarm_author_setup() {
 }
 add_action('after_setup_theme', 'modfarm_author_setup');
 
+require_once get_template_directory() . '/inc/content-slot-payloads.php';
+
 add_action('after_setup_theme', function() {
     register_nav_menus([
         'primary'   => __('Primary Menu (Header)', 'modfarm-theme'),

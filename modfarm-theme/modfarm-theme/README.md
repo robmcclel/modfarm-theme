@@ -85,6 +85,12 @@ The safest current interpretation is:
 - posts are intended to default to Hybrid behavior unless explicitly moved further into Full PPB
 - template files such as `single.php` and `singular-hybrid.php` should gradually behave more like stable Skate chassis than one-off layouts
 
+The repository also now contains the beginning of a portable `content-slot` storage layer:
+
+- manual slot content can be harvested from `post_content` and mirrored into post meta by slot ID
+- this is intended to support future PPB redesigns where matching slot IDs can preserve content across pattern changes
+- slot payloads should not be auto-deleted just because a visible slot is removed from the current layout
+
 ## What Looks Legacy Or Uncertain
 
 - `archive-defunct.php`

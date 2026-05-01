@@ -184,6 +184,24 @@ Current intended use:
 
 It does not alter rendering or migrate content by itself.
 
+## Portable Content-Slot Storage
+
+The repository now includes a first-pass slot payload storage layer in:
+
+- [inc/content-slot-payloads.php](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/inc/content-slot-payloads.php)
+
+Current scope:
+
+- harvest manual `content-slot` `InnerBlocks` from `post_content` on save
+- store payloads in post meta by slot ID
+- preserve payloads even if the current visible pattern no longer contains a matching `content-slot`
+
+Current hard rule:
+
+- Never auto-delete slot payloads when a `content-slot` block is removed.
+
+This establishes the hidden Skate-side storage needed for future PPB zone replacement and Apply All behavior, where matching slot IDs should eventually allow manual content to survive redesigns and reappear in a new location.
+
 ## Local PPB Manager
 
 The repository now includes an early local PPB manager in the block editor sidebar.
