@@ -45,6 +45,7 @@
     const canReplace = !!action.enabled;
     const mode = data.actions && data.actions.mode ? data.actions.mode : 'disabled';
     const hasPatterns = Array.isArray(action.patterns) && action.patterns.length > 0;
+    const canToggleLock = mode === 'zoned' && (slot === 'header' || slot === 'footer') && !!zone.present;
 
     function openSelector() {
       setSelections((prev) => ({
@@ -130,6 +131,51 @@
       closeSelector();
     }
 
+    function toggleLock() {
+      if (!canToggleLock) {
+        return;
+      }
+
+      const blockTree = editors.selectBlocks().getBlocks();
+      const zoneBlock = findZoneBlock(blockTree, slot);
+
+      if (!zoneBlock || !zoneBlock.clientId) {
+        setNotices((prev) => ({ ...prev, [slot]: `${zoneLabel(slot)} was not found in the current content.` }));
+        return;
+      }
+
+      const nextLocked = !zone.locked;
+      editors.dispatchBlocks().updateBlockAttributes(zoneBlock.clientId, {
+        locked: nextLocked
+      });
+
+      setData((prev) => ({
+        ...prev,
+        zones: {
+          ...prev.zones,
+          [slot]: {
+            ...prev.zones[slot],
+            locked: nextLocked
+          }
+        },
+        actions: {
+          ...prev.actions,
+          zones: {
+            ...prev.actions.zones,
+            [slot]: {
+              ...prev.actions.zones[slot],
+              enabled: nextLocked ? false : (!!hasPatterns)
+            }
+          }
+        }
+      }));
+
+      setNotices((prev) => ({ ...prev, [slot]: '' }));
+      if (nextLocked) {
+        closeSelector();
+      }
+    }
+
     const notes = [];
     if (slot === 'body') {
       notes.push(`Contains content-slot: ${zone.contains_content_slot ? 'Yes' : 'No'}`);
@@ -145,7 +191,12 @@
       ),
       el('div', { className: 'mf-ppb-zone-panel__meta' },
         el('div', null, `Pattern: ${zone.pattern || 'None recorded'}`),
-        el('div', null, `Lock: ${zone.locked ? 'Locked' : 'Unlocked'}`),
+        el('div', null,
+          'Lock: ',
+          zone.locked
+            ? el('span', { className: 'mf-ppb-zone-panel__badge' }, 'Locked')
+            : 'Unlocked'
+        ),
         notes.map((note, index) => el('div', { key: `${slot}-note-${index}` }, note))
       ),
       (slot === 'header' || slot === 'footer') ? el('div', { className: 'mf-ppb-zone-panel__actions' },
@@ -153,7 +204,11 @@
           variant: 'secondary',
           onClick: openSelector,
           disabled: !canReplace || !hasPatterns
-        }, 'Replace')
+        }, 'Replace'),
+        canToggleLock ? el(Button, {
+          variant: zone.locked ? 'primary' : 'tertiary',
+          onClick: toggleLock
+        }, zone.locked ? 'Unlock' : 'Lock') : null
       ) : null,
       notice ? el('p', { className: 'mf-ppb-zone-panel__status' }, notice) : null,
       selectState.open ? el('div', { className: 'mf-ppb-zone-panel__selector' },

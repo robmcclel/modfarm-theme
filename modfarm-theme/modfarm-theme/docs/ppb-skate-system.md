@@ -229,6 +229,8 @@ Current safe actions:
 
 - Header Zone replace for Zoned content
 - Footer Zone replace for Zoned content
+- Header Zone lock/unlock for Zoned content
+- Footer Zone lock/unlock for Zoned content
 - Header/Footer replace for Hybrid templates through local dynamic overrides
 - no Body Zone replace
 - no Apply All actions
