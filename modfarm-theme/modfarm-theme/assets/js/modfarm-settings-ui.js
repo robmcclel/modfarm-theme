@@ -161,7 +161,7 @@
         results.innerHTML = data.data && data.data.html ? data.data.html : '';
       }
       const canExecute = !!lastPreviewReport
-        && ['header', 'footer'].includes(String(lastPreviewReport.zone || ''))
+        && ['header', 'body', 'footer'].includes(String(lastPreviewReport.zone || ''))
         && Number((lastPreviewReport.totals || {}).will_update || 0) > 0;
       if (executeWrap) {
         executeWrap.hidden = !canExecute;
@@ -184,8 +184,8 @@
   }
 
   async function runExecution() {
-    if (!lastPreviewReport || !['header', 'footer'].includes(String(lastPreviewReport.zone || ''))) {
-      setFeedback(messages.executionUnavailable || 'Apply All execution is currently available for Header and Footer zones only.', true);
+    if (!lastPreviewReport || !['header', 'body', 'footer'].includes(String(lastPreviewReport.zone || ''))) {
+      setFeedback(messages.executionUnavailable || 'Apply All execution is currently available for Header, Body, and Footer zones only.', true);
       return;
     }
 

@@ -789,7 +789,7 @@ function modfarm_render_ppb_apply_all_preview_markup(array $report): string {
 }
 
 /**
- * Render a compact execution summary for Apply All header/footer runs.
+ * Render a compact execution summary for Apply All zoned runs.
  */
 function modfarm_render_ppb_apply_all_result_markup(array $result): string {
     $totals = $result['totals'] ?? [];
@@ -920,7 +920,7 @@ function modfarm_ajax_ppb_apply_all_preview() {
 add_action('wp_ajax_modfarm_ppb_apply_all_preview', 'modfarm_ajax_ppb_apply_all_preview');
 
 /**
- * AJAX execution endpoint for safe Apply All runs on zoned header/footer only.
+ * AJAX execution endpoint for safe Apply All runs on zoned header/body/footer only.
  */
 function modfarm_ajax_ppb_apply_all_execute() {
     if (!current_user_can('edit_theme_options')) {
@@ -937,8 +937,8 @@ function modfarm_ajax_ppb_apply_all_execute() {
         wp_send_json_error(['message' => __('Unsupported content type for Apply All.', 'modfarm')], 400);
     }
 
-    if (!in_array($zone, ['header', 'footer'], true)) {
-        wp_send_json_error(['message' => __('Apply All execution is currently limited to Header and Footer zones.', 'modfarm')], 400);
+    if (!in_array($zone, ['header', 'body', 'footer'], true)) {
+        wp_send_json_error(['message' => __('Apply All execution is currently limited to Header, Body, and Footer zones.', 'modfarm')], 400);
     }
 
     $pattern_matrix = modfarm_get_ppb_apply_all_pattern_matrix();
@@ -1903,7 +1903,7 @@ function modfarm_admin_enqueue_scripts($hook) {
             'error' => __('Preview could not be generated.', 'modfarm'),
             'executing' => __('Applying the previewed change...', 'modfarm'),
             'confirmRequired' => __('Confirm the change before applying it.', 'modfarm'),
-            'executionUnavailable' => __('Apply All execution is currently available for Header and Footer zones only.', 'modfarm'),
+            'executionUnavailable' => __('Apply All execution is currently available for Header, Body, and Footer zones only.', 'modfarm'),
         ],
     ]);
 }

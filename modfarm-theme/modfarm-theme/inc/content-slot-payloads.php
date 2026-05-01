@@ -303,7 +303,7 @@ function modfarm_ppb_get_zone_slot_from_attrs(array $attrs): string {
  * Returns true only when the post content was actually updated.
  */
 function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target_zone, string $pattern_slug): bool {
-    if ($post_id <= 0 || !in_array($target_zone, ['header', 'footer'], true)) {
+    if ($post_id <= 0 || !in_array($target_zone, ['header', 'body', 'footer'], true)) {
         return false;
     }
 
