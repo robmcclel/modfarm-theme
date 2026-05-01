@@ -349,17 +349,22 @@ function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target
                     modfarm_ppb_extract_slot_payloads_from_blocks($inner_blocks, $target_zone)
                 );
 
-                $incoming_blocks = parse_blocks($pattern_slug !== '' ? modfarm_ppb_get_pattern_content_by_slug($pattern_slug) : '');
+                $incoming_blocks = parse_blocks($pattern_content);
                 $incoming_changed = false;
                 $incoming_blocks = modfarm_ppb_hydrate_empty_slots_in_blocks($incoming_blocks, $harvested_payloads, $incoming_changed);
-
-                $block['attrs'] = array_merge($attrs, [
-                    'slot' => $target_zone,
-                    'pattern' => $pattern_slug,
-                ]);
-                $block['innerBlocks'] = $incoming_blocks;
-                $block['innerHTML'] = '';
-                $block['innerContent'] = [];
+                $incoming_markup = serialize_blocks(modfarm_ppb_normalize_parsed_blocks($incoming_blocks));
+                $zone_markup = function_exists('modfarm_ppb_build_zone_markup')
+                    ? modfarm_ppb_build_zone_markup($target_zone, $incoming_markup, [
+                        'origin' => isset($attrs['origin']) && is_string($attrs['origin']) ? $attrs['origin'] : 'ppb',
+                        'pattern' => $pattern_slug,
+                        'locked' => !empty($attrs['locked']),
+                        'version' => isset($attrs['version']) ? (int) $attrs['version'] : 1,
+                    ])
+                    : '';
+                $parsed_zone = $zone_markup !== '' ? parse_blocks($zone_markup) : [];
+                if (!empty($parsed_zone[0]) && is_array($parsed_zone[0])) {
+                    $block = modfarm_ppb_normalize_parsed_blocks([$parsed_zone[0]])[0];
+                }
                 $changed = true;
                 $updated[] = $block;
                 continue;
