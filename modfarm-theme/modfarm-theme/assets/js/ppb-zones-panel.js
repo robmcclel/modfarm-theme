@@ -20,7 +20,7 @@
     for (let i = 0; i < blocks.length; i += 1) {
       const block = blocks[i];
 
-      if (block.blockName === 'modfarm/zone' && block.attrs && block.attrs.slot === slot) {
+      if (block.name === 'modfarm/zone' && block.attributes && block.attributes.slot === slot) {
         return block;
       }
 
