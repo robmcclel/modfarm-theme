@@ -4,7 +4,7 @@ This document records what is visibly present in the repository about the PPB sy
 
 It does not assume platform behavior that is not visible in this repo.
 
-## What PPB Appears To Mean Here
+## What PPB Means Here
 
 The repository contains a clear pattern-selection system for assembling layout regions through theme settings.
 
@@ -19,6 +19,7 @@ Evidence:
 
 For documentation purposes, the safest visible description is:
 
+- PPB stands for `Pattern Page Builder`.
 - PPB is a settings-driven pattern composition system for pages, posts, books, and archives.
 
 ## Visible PPB Concepts
@@ -185,7 +186,7 @@ It does not alter rendering or migrate content by itself.
 
 ## Local PPB Manager
 
-The repository now includes a Phase 1 read-only local PPB manager in the block editor sidebar.
+The repository now includes an early local PPB manager in the block editor sidebar.
 
 Current visible scope:
 
@@ -204,14 +205,22 @@ Current visible fields:
 - whether the body zone contains `modfarm/content-slot`
 - Data Zone marked as future/not active
 
-Current limits:
+Current safe actions:
 
-- no replace actions
+- Header Zone replace for Zoned content
+- Footer Zone replace for Zoned content
+- Header/Footer replace for Hybrid templates through local dynamic overrides
+- no Body Zone replace
 - no Apply All actions
 - no migration
-- no `post_content` mutation
+- no legacy/plain auto-conversion
 
-This provides the first control surface for understanding PPB-managed content without changing it.
+Current safety model:
+
+- Zoned content can be changed surgically by zone
+- Legacy PPB content is detectable but not yet locally rewritten
+- Plain content is left alone
+- Hybrid treats the body as authored content and only exposes local PPB control for header/footer chrome
 
 ## Canonical Fallback Defaults
 
@@ -245,7 +254,6 @@ Legacy unprefixed book body slugs should resolve to the canonical `modfarm/...` 
 
 ## Known Unknowns
 
-- TODO: define PPB acronym explicitly once confirmed from a source inside the ModFarm codebase.
 - TODO: confirm whether a formal `Skate` runtime exists in another repository and only influences this repo via settings, slugs, or filters.
 - TODO: confirm whether `modfarm_is_hybrid_post()` and `modfarm_set_template_origin()` are defined outside this repository.
 - TODO: confirm the intended relationship between pattern lanes and any broader zone-wrapper runtime.

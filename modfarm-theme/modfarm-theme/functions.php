@@ -102,7 +102,7 @@ add_action('enqueue_block_editor_assets', function () {
         $post_id = absint($_POST['post_ID']);
     }
 
-    $summary = [
+    $panel_config = [
         'content_state' => 'Plain',
         'layout_mode' => modfarm_get_ppb_layout_mode_for_post(0, (string) $screen->post_type, []),
         'zones' => [
@@ -111,16 +111,23 @@ add_action('enqueue_block_editor_assets', function () {
             'footer' => ['present' => false, 'pattern' => '', 'locked' => false, 'contains_content_slot' => false],
             'data'   => ['present' => false, 'pattern' => '', 'locked' => false, 'contains_content_slot' => false],
         ],
+        'actions' => [
+            'mode' => 'disabled',
+            'zones' => [
+                'header' => ['enabled' => false, 'meta_key' => '', 'patterns' => []],
+                'footer' => ['enabled' => false, 'meta_key' => '', 'patterns' => []],
+            ],
+        ],
     ];
 
     if ($post_id > 0) {
-        $summary = modfarm_get_ppb_zone_summary_for_post($post_id, (string) $screen->post_type);
+        $panel_config = modfarm_get_local_ppb_manager_config_for_post($post_id, (string) $screen->post_type);
     }
 
     wp_register_script(
         'modfarm-ppb-zones-panel',
         get_template_directory_uri() . '/assets/js/ppb-zones-panel.js',
-        ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components'],
+        ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data', 'wp-blocks'],
         filemtime(get_template_directory() . '/assets/js/ppb-zones-panel.js'),
         true
     );
@@ -138,10 +145,40 @@ add_action('enqueue_block_editor_assets', function () {
         'modfarm-ppb-zones-panel',
         'window.ModFarmPPBZonesPanel = ' . wp_json_encode([
             'enabled' => true,
-            'summary' => $summary,
+            'summary' => $panel_config,
         ]) . ';',
         'before'
     );
+});
+
+add_action('init', function () {
+    $meta_keys = modfarm_ppb_local_chrome_override_meta_keys();
+    $shared_args = [
+        'single' => true,
+        'type' => 'string',
+        'show_in_rest' => true,
+        'auth_callback' => static function (): bool {
+            return current_user_can('edit_posts');
+        },
+        'sanitize_callback' => static function ($value): string {
+            if (!function_exists('modfarm_ppb_normalize_slug')) {
+                return is_string($value) ? sanitize_text_field($value) : '';
+            }
+
+            $normalized = modfarm_ppb_normalize_slug($value);
+            return $normalized !== '' ? sanitize_text_field($normalized) : '';
+        },
+    ];
+
+    foreach (['page', 'post', 'book', 'offer'] as $post_type) {
+        if (!post_type_exists($post_type)) {
+            continue;
+        }
+
+        foreach ($meta_keys as $meta_key) {
+            register_post_meta($post_type, $meta_key, $shared_args);
+        }
+    }
 });
 
 /**
@@ -654,6 +691,149 @@ function modfarm_ppb_pattern_exists(string $slug): bool {
     }
 
     return false;
+}
+
+/**
+ * Resolve the stored block pattern content for a given slug.
+ */
+function modfarm_ppb_get_pattern_content_by_slug(string $slug): string {
+    $slug = modfarm_ppb_normalize_slug($slug);
+    if ($slug === '') {
+        return '';
+    }
+
+    if (str_starts_with($slug, 'user/')) {
+        $post_name = substr($slug, 5);
+        $post = get_page_by_path($post_name, OBJECT, 'wp_block');
+        if ($post && is_string($post->post_content) && strpos($post->post_content, '<!-- wp:') !== false) {
+            return (string) $post->post_content;
+        }
+        return '';
+    }
+
+    if (function_exists('get_block_pattern')) {
+        $pattern = get_block_pattern($slug);
+        if (is_array($pattern) && !empty($pattern['content'])) {
+            return (string) $pattern['content'];
+        }
+    }
+
+    if (class_exists('WP_Block_Patterns_Registry')) {
+        $registry = WP_Block_Patterns_Registry::get_instance();
+        if ($registry && method_exists($registry, 'get_registered')) {
+            $pattern = $registry->get_registered($slug);
+            if (is_array($pattern) && !empty($pattern['content'])) {
+                return (string) $pattern['content'];
+            }
+            if (is_object($pattern) && !empty($pattern->content)) {
+                return (string) $pattern->content;
+            }
+        }
+    }
+
+    return '';
+}
+
+/**
+ * Local per-post PPB header/footer override meta keys used by Hybrid.
+ */
+function modfarm_ppb_local_chrome_override_meta_keys(): array {
+    return [
+        'header' => '_modfarm_ppb_local_header_pattern',
+        'footer' => '_modfarm_ppb_local_footer_pattern',
+    ];
+}
+
+/**
+ * Check whether a post uses one of the Hybrid singular templates.
+ */
+function modfarm_ppb_is_hybrid_template_for_post(int $post_id, string $post_type = ''): bool {
+    unset($post_type);
+
+    if ($post_id <= 0) {
+        return false;
+    }
+
+    $template_slug = (string) get_page_template_slug($post_id);
+    return in_array($template_slug, ['singular-hybrid.php', 'singular-hybrid-sidebar.php'], true);
+}
+
+/**
+ * Resolve a saved local Hybrid override to a valid pattern slug.
+ */
+function modfarm_ppb_get_local_chrome_override_slug(int $post_id, string $slot): string {
+    $meta_keys = modfarm_ppb_local_chrome_override_meta_keys();
+    if (!isset($meta_keys[$slot])) {
+        return '';
+    }
+
+    $raw_value = get_post_meta($post_id, $meta_keys[$slot], true);
+    $candidate = modfarm_ppb_normalize_slug($raw_value);
+
+    return ($candidate !== '' && modfarm_ppb_pattern_exists($candidate)) ? $candidate : '';
+}
+
+/**
+ * Map a post type + slot to the PPB settings field used for its pattern lane.
+ */
+function modfarm_ppb_get_field_id_for_post_zone(string $post_type, string $slot): string {
+    $map = [
+        'page' => [
+            'header' => 'page_header_pattern',
+            'body' => 'page_body_pattern',
+            'footer' => 'page_footer_pattern',
+        ],
+        'post' => [
+            'header' => 'post_header_pattern',
+            'body' => 'post_body_pattern',
+            'footer' => 'post_footer_pattern',
+        ],
+        'book' => [
+            'header' => 'book_header_pattern',
+            'body' => 'book_body_pattern',
+            'footer' => 'book_footer_pattern',
+        ],
+        'modfarm_book' => [
+            'header' => 'book_header_pattern',
+            'body' => 'book_body_pattern',
+            'footer' => 'book_footer_pattern',
+        ],
+    ];
+
+    return $map[$post_type][$slot] ?? '';
+}
+
+/**
+ * Resolve the effective Hybrid header/footer slugs for a single post.
+ */
+function modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post(int $post_id, string $post_type, ?array $options = null): array {
+    $options = is_array($options) ? $options : get_option('modfarm_theme_settings', []);
+
+    switch ($post_type) {
+        case 'page':
+            $resolved = [
+                'header' => modfarm_ppb_resolve_pattern_slug('page_header_pattern', $options['page_header_pattern'] ?? null, $options),
+                'footer' => modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $options['page_footer_pattern'] ?? null, $options),
+            ];
+            break;
+
+        case 'post':
+        default:
+            $resolved = [
+                'header' => modfarm_ppb_resolve_pattern_slug('post_header_pattern', $options['post_header_pattern'] ?? null, $options),
+                'footer' => modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $options['post_footer_pattern'] ?? null, $options),
+            ];
+            break;
+    }
+
+    foreach (['header', 'footer'] as $slot) {
+        $override = modfarm_ppb_get_local_chrome_override_slug($post_id, $slot);
+        if ($override !== '') {
+            $resolved[$slot] = $override;
+        }
+    }
+
+    return $resolved;
 }
 
 /**

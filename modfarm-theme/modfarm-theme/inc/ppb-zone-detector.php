@@ -110,6 +110,9 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
     $content = (string) get_post_field('post_content', $post_id);
     $detected = modfarm_detect_ppb_zones_in_content($content);
     $blocks = parse_blocks($content);
+    $is_hybrid_template = function_exists('modfarm_ppb_is_hybrid_template_for_post')
+        ? modfarm_ppb_is_hybrid_template_for_post($post_id, $post_type)
+        : false;
 
     $zone_details = [
         'header' => [
@@ -167,6 +170,15 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
         $walk($blocks);
     }
 
+    if (!$detected['is_zoned'] && $is_hybrid_template && function_exists('modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post')) {
+        $hybrid_slugs = modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($post_id, $post_type);
+        foreach (['header', 'footer'] as $slot) {
+            if (!empty($hybrid_slugs[$slot])) {
+                $zone_details[$slot]['pattern'] = $hybrid_slugs[$slot];
+            }
+        }
+    }
+
     return [
         'content_state' => $detected['is_zoned']
             ? 'Zoned'
@@ -180,7 +192,17 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
  * Read-only layout mode summary for the local PPB manager.
  */
 function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, array $detected = []): string {
-    unset($post_id);
+    $hybrid_template = $post_id > 0 && function_exists('modfarm_ppb_is_hybrid_template_for_post')
+        ? modfarm_ppb_is_hybrid_template_for_post($post_id, $post_type)
+        : false;
+
+    if ($hybrid_template) {
+        $template_slug = (string) get_page_template_slug($post_id);
+        if ($template_slug === 'singular-hybrid-sidebar.php') {
+            return 'Hybrid: Right Sidebar';
+        }
+        return 'Hybrid: No Sidebar';
+    }
 
     if ($post_type === 'post') {
         if (!empty($detected['is_zoned'])) {
@@ -194,4 +216,83 @@ function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, a
     }
 
     return 'Not managed';
+}
+
+/**
+ * Build selector payloads for the local PPB manager from the existing lane-based pattern list.
+ */
+function modfarm_get_ppb_pattern_payloads_for_field(string $field_id): array {
+    if (!function_exists('modfarm_get_registered_patterns_for_field') || !function_exists('modfarm_ppb_get_pattern_content_by_slug')) {
+        return [];
+    }
+
+    $payloads = [];
+    foreach (modfarm_get_registered_patterns_for_field($field_id) as $slug => $title) {
+        $content = modfarm_ppb_get_pattern_content_by_slug($slug);
+        if ($content === '') {
+            continue;
+        }
+
+        $payloads[] = [
+            'value' => $slug,
+            'label' => $title,
+            'content' => $content,
+        ];
+    }
+
+    return $payloads;
+}
+
+/**
+ * Phase 2 local PPB manager config, including safe read/write eligibility for header/footer only.
+ */
+function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $post_type = ''): array {
+    $post_type = $post_type !== '' ? $post_type : (string) get_post_type($post_id);
+    $summary = modfarm_get_ppb_zone_summary_for_post($post_id, $post_type);
+    $is_hybrid_template = function_exists('modfarm_ppb_is_hybrid_template_for_post')
+        ? modfarm_ppb_is_hybrid_template_for_post($post_id, $post_type)
+        : false;
+    $is_zoned = $summary['content_state'] === 'Zoned';
+    $actions_mode = $is_zoned ? 'zoned' : ($is_hybrid_template ? 'hybrid' : 'disabled');
+    $meta_keys = function_exists('modfarm_ppb_local_chrome_override_meta_keys')
+        ? modfarm_ppb_local_chrome_override_meta_keys()
+        : ['header' => '', 'footer' => ''];
+
+    $actions = [
+        'mode' => $actions_mode,
+        'zones' => [
+            'header' => [
+                'enabled' => false,
+                'meta_key' => $meta_keys['header'] ?? '',
+                'patterns' => [],
+            ],
+            'footer' => [
+                'enabled' => false,
+                'meta_key' => $meta_keys['footer'] ?? '',
+                'patterns' => [],
+            ],
+        ],
+    ];
+
+    foreach (['header', 'footer'] as $slot) {
+        $field_id = function_exists('modfarm_ppb_get_field_id_for_post_zone')
+            ? modfarm_ppb_get_field_id_for_post_zone($post_type, $slot)
+            : '';
+        if ($field_id === '') {
+            continue;
+        }
+
+        $patterns = modfarm_get_ppb_pattern_payloads_for_field($field_id);
+        $has_zone = !empty($summary['zones'][$slot]['present']);
+        $is_locked = !empty($summary['zones'][$slot]['locked']);
+        $actions['zones'][$slot]['patterns'] = $patterns;
+        $actions['zones'][$slot]['enabled'] = !empty($patterns) && (
+            ($actions_mode === 'zoned' && $has_zone && !$is_locked) ||
+            $actions_mode === 'hybrid'
+        );
+    }
+
+    $summary['actions'] = $actions;
+
+    return $summary;
 }

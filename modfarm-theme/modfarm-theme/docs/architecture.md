@@ -124,7 +124,7 @@ This is an analysis/helper surface only. It does not rewrite content or alter ro
 
 ### Local PPB Manager
 
-A Phase 1 read-only local PPB manager is now exposed in the block editor sidebar for:
+A Phase 1 local PPB manager is now exposed in the block editor sidebar for:
 
 - Pages
 - Books
@@ -140,7 +140,14 @@ The panel is titled `PPB Zones` and reports:
 - Footer Zone presence, pattern, and lock state
 - Data Zone as future/not active
 
-This panel is intentionally read-only in Phase 1. It does not replace zones, migrate content, or mutate `post_content`.
+Current safe local actions are intentionally narrow:
+
+- Zoned content can replace Header Zone and Footer Zone only
+- Hybrid templates can replace dynamic header/footer pattern selection locally without touching `post_content`
+- Body replacement is not active here
+- Legacy and Plain content are not locally rewritten here
+
+This keeps the first editable control surface narrow enough to avoid accidental body/content loss.
 
 ## Pattern System
 

@@ -17,6 +17,10 @@ defined('ABSPATH') || exit;
 /** Resolve pattern content from slug (supports user/* and registered patterns) */
 if (!function_exists('mf_resolve_pattern_content')) {
   function mf_resolve_pattern_content(?string $slug): string {
+    if (function_exists('modfarm_ppb_get_pattern_content_by_slug')) {
+      return modfarm_ppb_get_pattern_content_by_slug((string) $slug);
+    }
+
     if (!$slug) return '';
 
     // 1) user/* patterns stored in wp_block
@@ -52,6 +56,10 @@ if (!function_exists('mf_resolve_pattern_content')) {
 /** Get PPB header/footer slugs for current post type from ModFarm Settings */
 if (!function_exists('mf_get_ppb_chrome_slugs_for_post')) {
   function mf_get_ppb_chrome_slugs_for_post(WP_Post $post): array {
+    if (function_exists('modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post')) {
+      return modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($post->ID, $post->post_type);
+    }
+
     $opts = get_option('modfarm_theme_settings', []);
     switch ($post->post_type) {
       case 'page':
