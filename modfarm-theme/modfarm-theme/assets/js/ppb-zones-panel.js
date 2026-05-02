@@ -433,10 +433,9 @@
       const currentMarkup = Array.isArray(blockTree) && blockTree.length ? serialize(blockTree) : '';
       const headerMarkup = buildZoneMarkup(
         'header',
-        ((convertAction.header && convertAction.header.content) || ''),
+        '',
         {
           origin: 'legacy-migrated',
-          pattern: (convertAction.header && convertAction.header.pattern) || '',
           locked: false,
           version: 1
         }
@@ -452,10 +451,9 @@
       );
       const footerMarkup = buildZoneMarkup(
         'footer',
-        ((convertAction.footer && convertAction.footer.content) || ''),
+        '',
         {
           origin: 'legacy-migrated',
-          pattern: (convertAction.footer && convertAction.footer.pattern) || '',
           locked: false,
           version: 1
         }
@@ -471,7 +469,7 @@
         zones: {
           header: {
             present: true,
-            pattern: (convertAction.header && convertAction.header.pattern) || '',
+            pattern: '',
             locked: false,
             contains_content_slot: false,
             local_override_active: false,
@@ -487,7 +485,7 @@
           },
           footer: {
             present: true,
-            pattern: (convertAction.footer && convertAction.footer.pattern) || '',
+            pattern: '',
             locked: false,
             contains_content_slot: false,
             local_override_active: false,
@@ -546,7 +544,7 @@
               el('span', null, 'Safe Convert')
             ),
             el('div', { className: 'mf-ppb-zone-panel__meta' },
-              el('div', null, 'Preserve current content inside Body Zone and add current default Header/Footer zones.'),
+              el('div', null, 'Preserve current content inside Body Zone and add empty Header/Footer zones.'),
               el('div', null, 'Use this to bring Legacy PPB or Plain content onto the modern PPB zone framework.')
             ),
             el('div', { className: 'mf-ppb-zone-panel__actions' },
@@ -556,7 +554,7 @@
               }, 'Convert to Zoned PPB')
             ),
             convertOpen ? el('div', { className: 'mf-ppb-zone-panel__selector' },
-              el('p', { className: 'mf-ppb-zone-panel__status' }, 'This will preserve the current content inside Body Zone and add the current default Header and Footer zones. Save the post after conversion to persist it.'),
+              el('p', { className: 'mf-ppb-zone-panel__status' }, 'This will preserve the current content inside Body Zone and add empty Header and Footer zones. Save the post after conversion to persist it.'),
               el('div', { className: 'mf-ppb-zone-panel__selector-buttons' },
                 el(Button, {
                   variant: 'primary',
