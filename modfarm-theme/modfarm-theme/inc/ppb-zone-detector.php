@@ -433,6 +433,89 @@ function modfarm_get_ppb_apply_all_preview_report(string $post_type, string $tar
 }
 
 /**
+ * Build a read-only Safe Convert preview item report for a single post.
+ */
+function modfarm_get_ppb_safe_convert_item_preview(int $post_id, string $post_type): array {
+    $summary = modfarm_get_ppb_zone_summary_for_post($post_id, $post_type);
+    $content = (string) get_post_field('post_content', $post_id);
+    $blocks = parse_blocks($content);
+    $slot_ids = !empty($blocks) ? modfarm_collect_content_slot_ids($blocks) : [];
+    $has_slot_content = !empty($slot_ids);
+    $is_zoned = $summary['content_state'] === 'Zoned';
+    $action = $is_zoned ? 'skip_zoned' : 'will_convert';
+    $notes = [];
+
+    if ($is_zoned) {
+        $notes[] = 'Content is already zoned.';
+    } elseif ($summary['content_state'] === 'Legacy PPB') {
+        $notes[] = 'Legacy PPB content will be preserved inside Body Zone.';
+    } else {
+        $notes[] = 'Plain content will be preserved inside Body Zone.';
+    }
+
+    if ($has_slot_content) {
+        $notes[] = 'Existing content-slot markup will remain inside Body Zone.';
+    }
+
+    return [
+        'post_id' => $post_id,
+        'title' => get_the_title($post_id) ?: sprintf('#%d', $post_id),
+        'status' => (string) get_post_status($post_id),
+        'edit_link' => get_edit_post_link($post_id, ''),
+        'content_state' => $summary['content_state'],
+        'layout_mode' => (string) ($summary['layout_mode'] ?? ''),
+        'has_slot_content' => $has_slot_content,
+        'action' => $action,
+        'notes' => $notes,
+    ];
+}
+
+/**
+ * Build a Safe Convert preview report for one content type.
+ */
+function modfarm_get_ppb_safe_convert_preview_report(string $post_type): array {
+    $report = [
+        'content_type' => $post_type,
+        'totals' => [
+            'items' => 0,
+            'will_convert' => 0,
+            'skipped_zoned' => 0,
+            'slot_content_detected' => 0,
+        ],
+        'items' => [],
+    ];
+
+    $posts = get_posts([
+        'post_type' => $post_type,
+        'posts_per_page' => -1,
+        'post_status' => ['publish', 'draft', 'pending', 'future', 'private'],
+        'orderby' => 'title',
+        'order' => 'ASC',
+        'fields' => 'ids',
+        'no_found_rows' => true,
+        'suppress_filters' => false,
+    ]);
+
+    foreach ($posts as $post_id) {
+        $item = modfarm_get_ppb_safe_convert_item_preview((int) $post_id, $post_type);
+        $report['items'][] = $item;
+        $report['totals']['items']++;
+
+        if ($item['action'] === 'will_convert') {
+            $report['totals']['will_convert']++;
+        } else {
+            $report['totals']['skipped_zoned']++;
+        }
+
+        if (!empty($item['has_slot_content'])) {
+            $report['totals']['slot_content_detected']++;
+        }
+    }
+
+    return $report;
+}
+
+/**
  * Read-only layout mode summary for the local PPB manager.
  */
 function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, array $detected = []): string {

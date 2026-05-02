@@ -209,6 +209,10 @@
   margin-top: 18px;
 }
 
+.mf-ppb-run-log-wrap {
+  margin-top: 18px;
+}
+
 .mf-ppb-preview-execute {
   margin-top: 16px;
   padding: 16px;
@@ -233,6 +237,32 @@
   border-radius: 12px;
   background: #fff;
   padding: 18px;
+}
+
+.mf-ppb-run-progress {
+  margin-top: 16px;
+}
+
+.mf-ppb-run-progress__bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #eef2f6;
+  overflow: hidden;
+}
+
+.mf-ppb-run-progress__fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #2271b1, #4f94d4);
+}
+
+.mf-ppb-run-progress__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: #475569;
+  font-size: 13px;
 }
 
 .mf-ppb-preview-header h4 {
@@ -372,6 +402,50 @@
 .mf-ppb-preview-pill.is-locked {
   background: #fff4ce;
   color: #8a6d1d;
+}
+
+.mf-ppb-run-log {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 18px;
+}
+
+.mf-ppb-run-log h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.mf-ppb-run-log__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mf-ppb-run-log__item {
+  border-top: 1px solid #f0f0f0;
+  padding: 12px 0;
+}
+
+.mf-ppb-run-log__item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.mf-ppb-run-log__title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.mf-ppb-run-log__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 12px;
 }
 
 @media (max-width: 960px) {

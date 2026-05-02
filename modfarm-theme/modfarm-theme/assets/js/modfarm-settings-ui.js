@@ -57,7 +57,16 @@
   const executeWrap = document.getElementById('mf-ppb-preview-execute');
   const confirmInput = document.getElementById('mf-ppb-preview-confirm');
   const applyButton = document.getElementById('mf-ppb-preview-apply');
+  const safeConvertContentTypeSelect = document.getElementById('mf-ppb-safe-convert-content-type');
+  const safeConvertRunButton = document.getElementById('mf-ppb-safe-convert-run');
+  const safeConvertFeedback = document.getElementById('mf-ppb-safe-convert-feedback');
+  const safeConvertResults = document.getElementById('mf-ppb-safe-convert-results');
+  const safeConvertExecuteWrap = document.getElementById('mf-ppb-safe-convert-execute');
+  const safeConvertConfirmInput = document.getElementById('mf-ppb-safe-convert-confirm');
+  const safeConvertApplyButton = document.getElementById('mf-ppb-safe-convert-apply');
+  const runLog = document.getElementById('mf-ppb-run-log');
   let lastPreviewReport = null;
+  let lastSafeConvertReport = null;
   let previewListState = {
     filter: 'will_update',
     visible: Number(config.previewPageSize || 50)
@@ -218,6 +227,155 @@
     }
   }
 
+  function renderSafeConvertReport(report) {
+    if (!safeConvertResults) {
+      return;
+    }
+
+    const totals = (report && report.totals) || {};
+    const items = Array.isArray(report && report.items) ? report.items.slice(0, Number(config.previewPageSize || 50)) : [];
+    const contentTypeLabel = contentTypeLabels[report.content_type] || report.content_type || '';
+    const itemsMarkup = items.length
+      ? `<ul class="mf-ppb-preview-items">${items.map((item) => {
+        const statusClass = item.action === 'will_convert' ? 'is-update' : 'is-skip';
+        const statusLabel = item.action === 'will_convert' ? 'Will convert' : 'Skipped zoned';
+        const title = escapeHtml(item.title || 'Untitled');
+        const editLink = item.edit_link ? `<a href="${escapeHtml(item.edit_link)}">${title}</a>` : title;
+        const meta = [
+          escapeHtml(item.content_state || 'Unknown'),
+          escapeHtml(item.layout_mode || 'Unknown layout'),
+          `Status: ${escapeHtml(item.status || 'unknown')}`,
+          item.has_slot_content ? 'Content-slot preserved' : ''
+        ].filter(Boolean).map((part) => `<span>${part}</span>`).join('');
+        const notes = Array.isArray(item.notes) && item.notes.length
+          ? `<div class="mf-ppb-preview-item__notes">${escapeHtml(item.notes.join(' '))}</div>`
+          : '';
+
+        return `
+          <li class="mf-ppb-preview-item">
+            <div class="mf-ppb-preview-item__top">
+              <strong>${editLink}</strong>
+              <span class="mf-ppb-preview-pill ${statusClass}">${statusLabel}</span>
+            </div>
+            <div class="mf-ppb-preview-item__meta">${meta}</div>
+            ${notes}
+          </li>
+        `;
+      }).join('')}</ul>`
+      : '<p class="description">No matching items were found for this preview.</p>';
+
+    safeConvertResults.innerHTML = `
+      <div class="mf-ppb-preview-report">
+        <div class="mf-ppb-preview-header">
+          <div>
+            <h4>Safe Convert Preview</h4>
+            <p>${escapeHtml(String(contentTypeLabel))} - Convert Legacy or Plain content into explicit Header, Body, and Footer zones.</p>
+          </div>
+        </div>
+        <div class="mf-ppb-preview-stats">
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Total items</span><strong>${Number(totals.items || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Will convert</span><strong>${Number(totals.will_convert || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Skipped zoned</span><strong>${Number(totals.skipped_zoned || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Slot content detected</span><strong>${Number(totals.slot_content_detected || 0)}</strong></div>
+        </div>
+        <div class="mf-ppb-preview-list">
+          <h5>Preview items</h5>
+          <div class="mf-ppb-preview-list__summary">Showing ${items.length} of ${Number((report.items || []).length || 0)} matching items.</div>
+          ${itemsMarkup}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderRunProgress(run, target) {
+    if (!target || !run) {
+      return;
+    }
+
+    const totals = run.totals || {};
+    const contentTypeLabel = contentTypeLabels[run.content_type] || run.content_type || '';
+    const percent = Number(run.percent || 0);
+    const runTypeLabel = run.run_type_label || 'PPB Run';
+    const primaryActionLabel = run.primary_action_label || 'Updated';
+    const zoneLabel = run.zone ? ` - ${escapeHtml(String(run.zone))} Zone` : '';
+    const patternLabel = run.pattern ? ` - ${escapeHtml(String(run.pattern))}` : '';
+    target.innerHTML = `
+      <div class="mf-ppb-preview-report mf-ppb-preview-report--progress">
+        <div class="mf-ppb-preview-header">
+          <div>
+            <h4>${escapeHtml(String(runTypeLabel))} Progress</h4>
+            <p>${escapeHtml(String(contentTypeLabel))} · ${escapeHtml(String(run.zone || ''))} Zone · ${escapeHtml(String(run.pattern || ''))}</p>
+          </div>
+        </div>
+        <div class="mf-ppb-run-progress">
+          <div class="mf-ppb-run-progress__bar">
+            <span class="mf-ppb-run-progress__fill" style="width:${percent}%"></span>
+          </div>
+          <div class="mf-ppb-run-progress__meta">
+            <strong>${Number(run.processed || 0)} / ${Number(run.eligible_total || 0)}</strong>
+            <span>${percent}% complete</span>
+          </div>
+        </div>
+        <div class="mf-ppb-preview-stats">
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Updated</span><strong>${Number(totals.updated || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Skipped locked</span><strong>${Number(totals.skipped_locked || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Skipped non-zoned</span><strong>${Number(totals.skipped_legacy || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Slot content preserved</span><strong>${Number(totals.slot_content_preserved || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Potential conflicts</span><strong>${Number(totals.potential_conflicts || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Failed</span><strong>${Number(totals.failed || 0)}</strong></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderBatchRunProgress(run, target) {
+    if (!target || !run) {
+      return;
+    }
+
+    const totals = run.totals || {};
+    const contentTypeLabel = contentTypeLabels[run.content_type] || run.content_type || '';
+    const percent = Number(run.percent || 0);
+    const runTypeLabel = run.run_type_label || 'PPB Run';
+    const primaryActionLabel = run.primary_action_label || 'Updated';
+    const zoneLabel = run.zone ? ` - ${escapeHtml(String(run.zone))} Zone` : '';
+    const patternLabel = run.pattern ? ` - ${escapeHtml(String(run.pattern))}` : '';
+    const secondarySkipLabel = run.run_type === 'safe_convert' ? 'Skipped zoned' : 'Skipped locked';
+    const secondarySkipValue = run.run_type === 'safe_convert' ? Number(totals.skipped_zoned || 0) : Number(totals.skipped_locked || 0);
+    const thirdStatLabel = run.run_type === 'safe_convert' ? 'Eligible' : 'Skipped non-zoned';
+    const thirdStatValue = run.run_type === 'safe_convert' ? Number(run.eligible_total || 0) : Number(totals.skipped_legacy || 0);
+    const fourthStatLabel = run.run_type === 'safe_convert' ? 'Remaining' : 'Potential conflicts';
+    const fourthStatValue = run.run_type === 'safe_convert' ? Number(run.remaining || 0) : Number(totals.potential_conflicts || 0);
+
+    target.innerHTML = `
+      <div class="mf-ppb-preview-report mf-ppb-preview-report--progress">
+        <div class="mf-ppb-preview-header">
+          <div>
+            <h4>${escapeHtml(String(runTypeLabel))} Progress</h4>
+            <p>${escapeHtml(String(contentTypeLabel))}${zoneLabel}${patternLabel}</p>
+          </div>
+        </div>
+        <div class="mf-ppb-run-progress">
+          <div class="mf-ppb-run-progress__bar">
+            <span class="mf-ppb-run-progress__fill" style="width:${percent}%"></span>
+          </div>
+          <div class="mf-ppb-run-progress__meta">
+            <strong>${Number(run.processed || 0)} / ${Number(run.eligible_total || 0)}</strong>
+            <span>${percent}% complete</span>
+          </div>
+        </div>
+        <div class="mf-ppb-preview-stats">
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">${escapeHtml(String(primaryActionLabel))}</span><strong>${Number(totals.updated || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">${secondarySkipLabel}</span><strong>${secondarySkipValue}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">${thirdStatLabel}</span><strong>${thirdStatValue}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Slot content preserved</span><strong>${Number(totals.slot_content_preserved || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">${fourthStatLabel}</span><strong>${fourthStatValue}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Failed</span><strong>${Number(totals.failed || 0)}</strong></div>
+        </div>
+      </div>
+    `;
+  }
+
   function getPatternOptions() {
     const contentType = contentTypeSelect ? contentTypeSelect.value : '';
     const zone = zoneSelect ? zoneSelect.value : '';
@@ -241,6 +399,26 @@
     }
     if (applyButton) {
       applyButton.disabled = true;
+    }
+  }
+
+  function setSafeConvertFeedback(message, isError = false) {
+    if (!safeConvertFeedback) return;
+    safeConvertFeedback.textContent = message || '';
+    safeConvertFeedback.classList.toggle('is-error', Boolean(isError));
+    safeConvertFeedback.classList.toggle('is-active', Boolean(message));
+  }
+
+  function resetSafeConvertExecutionState() {
+    lastSafeConvertReport = null;
+    if (safeConvertExecuteWrap) {
+      safeConvertExecuteWrap.hidden = true;
+    }
+    if (safeConvertConfirmInput) {
+      safeConvertConfirmInput.checked = false;
+    }
+    if (safeConvertApplyButton) {
+      safeConvertApplyButton.disabled = true;
     }
   }
 
@@ -391,11 +569,68 @@
         throw new Error(message);
       }
 
-      setFeedback('');
-      if (results) {
-        results.innerHTML = data.data && data.data.html ? data.data.html : '';
+      const payload = data.data || {};
+      if (payload.completed) {
+        setFeedback('');
+        if (results) {
+          results.innerHTML = payload.html || '';
+        }
+        if (runLog && payload.runLogHtml) {
+          runLog.innerHTML = payload.runLogHtml;
+        }
+        resetExecutionState();
+        return;
       }
-      resetExecutionState();
+
+      let runState = payload.run || null;
+      if (!runState || !payload.runId) {
+        throw new Error(messages.error || 'Preview could not be generated.');
+      }
+
+      renderBatchRunProgress(runState, results);
+
+      while (runState && Number(runState.remaining || 0) > 0) {
+        setFeedback(messages.processing || 'Processing the next Apply All batch...');
+
+        const nextPayload = new window.URLSearchParams();
+        nextPayload.set('action', 'modfarm_ppb_apply_all_process_run');
+        nextPayload.set('nonce', config.processNonce || '');
+        nextPayload.set('runId', String(payload.runId || runState.run_id || ''));
+
+        const nextResponse = await window.fetch(config.ajaxUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          },
+          body: nextPayload.toString(),
+        });
+        const nextData = await nextResponse.json();
+
+        if (!nextData || !nextData.success) {
+          const message = nextData && nextData.data && nextData.data.message ? nextData.data.message : (messages.error || 'Preview could not be generated.');
+          throw new Error(message);
+        }
+
+        const nextRunPayload = nextData.data || {};
+        runState = nextRunPayload.run || null;
+
+        if (nextRunPayload.completed) {
+          setFeedback('');
+          if (results) {
+            results.innerHTML = nextRunPayload.html || '';
+          }
+          if (runLog && nextRunPayload.runLogHtml) {
+            runLog.innerHTML = nextRunPayload.runLogHtml;
+          }
+          resetExecutionState();
+          return;
+        }
+
+        if (runState) {
+          renderBatchRunProgress(runState, results);
+        }
+      }
     } catch (error) {
       setFeedback(error && error.message ? error.message : (messages.error || 'Preview could not be generated.'), true);
       if (applyButton) {
@@ -403,6 +638,180 @@
       }
     } finally {
       runButton.disabled = false;
+    }
+  }
+
+  async function runSafeConvertPreview() {
+    if (!safeConvertContentTypeSelect) {
+      return;
+    }
+
+    setSafeConvertFeedback(messages.loading || 'Scanning matching items...');
+    safeConvertRunButton.disabled = true;
+
+    const payload = new window.URLSearchParams();
+    payload.set('action', 'modfarm_ppb_safe_convert_preview');
+    payload.set('nonce', config.safeConvertPreviewNonce || '');
+    payload.set('contentType', safeConvertContentTypeSelect.value);
+
+    try {
+      const response = await window.fetch(config.ajaxUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        },
+        body: payload.toString(),
+      });
+      const data = await response.json();
+
+      if (!data || !data.success) {
+        const message = data && data.data && data.data.message ? data.data.message : (messages.error || 'Preview could not be generated.');
+        throw new Error(message);
+      }
+
+      setSafeConvertFeedback('');
+      lastSafeConvertReport = data.data && data.data.report ? data.data.report : null;
+      if (safeConvertResults) {
+        if (lastSafeConvertReport) {
+          renderSafeConvertReport(lastSafeConvertReport);
+        } else {
+          safeConvertResults.innerHTML = data.data && data.data.html ? data.data.html : '';
+        }
+      }
+
+      const canExecute = !!lastSafeConvertReport && Number((lastSafeConvertReport.totals || {}).will_convert || 0) > 0;
+      if (safeConvertExecuteWrap) {
+        safeConvertExecuteWrap.hidden = !canExecute;
+      }
+      if (safeConvertConfirmInput) {
+        safeConvertConfirmInput.checked = false;
+      }
+      if (safeConvertApplyButton) {
+        safeConvertApplyButton.disabled = true;
+      }
+    } catch (error) {
+      setSafeConvertFeedback(error && error.message ? error.message : (messages.error || 'Preview could not be generated.'), true);
+      if (safeConvertResults) {
+        safeConvertResults.innerHTML = '';
+      }
+      resetSafeConvertExecutionState();
+    } finally {
+      safeConvertRunButton.disabled = false;
+    }
+  }
+
+  async function runSafeConvertExecution() {
+    if (!lastSafeConvertReport) {
+      setSafeConvertFeedback(messages.error || 'Preview could not be generated.', true);
+      return;
+    }
+
+    if (!safeConvertConfirmInput || !safeConvertConfirmInput.checked) {
+      setSafeConvertFeedback(messages.convertConfirmRequired || 'Confirm the conversion before running Safe Convert.', true);
+      return;
+    }
+
+    setSafeConvertFeedback(messages.executingConvert || 'Converting the previewed items to Zoned PPB...');
+    if (safeConvertRunButton) {
+      safeConvertRunButton.disabled = true;
+    }
+    if (safeConvertApplyButton) {
+      safeConvertApplyButton.disabled = true;
+    }
+
+    const payload = new window.URLSearchParams();
+    payload.set('action', 'modfarm_ppb_safe_convert_execute');
+    payload.set('nonce', config.safeConvertExecuteNonce || '');
+    payload.set('contentType', String(lastSafeConvertReport.content_type || safeConvertContentTypeSelect.value));
+
+    try {
+      const response = await window.fetch(config.ajaxUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        },
+        body: payload.toString(),
+      });
+      const data = await response.json();
+
+      if (!data || !data.success) {
+        const message = data && data.data && data.data.message ? data.data.message : (messages.error || 'Preview could not be generated.');
+        throw new Error(message);
+      }
+
+      const responsePayload = data.data || {};
+      if (responsePayload.completed) {
+        setSafeConvertFeedback('');
+        if (safeConvertResults) {
+          safeConvertResults.innerHTML = responsePayload.html || '';
+        }
+        if (runLog && responsePayload.runLogHtml) {
+          runLog.innerHTML = responsePayload.runLogHtml;
+        }
+        resetSafeConvertExecutionState();
+        return;
+      }
+
+      let runState = responsePayload.run || null;
+      if (!runState || !responsePayload.runId) {
+        throw new Error(messages.error || 'Preview could not be generated.');
+      }
+
+      renderBatchRunProgress(runState, safeConvertResults);
+
+      while (runState && Number(runState.remaining || 0) > 0) {
+        setSafeConvertFeedback(messages.processingConvert || 'Processing the next Safe Convert batch...');
+
+        const nextPayload = new window.URLSearchParams();
+        nextPayload.set('action', 'modfarm_ppb_apply_all_process_run');
+        nextPayload.set('nonce', config.processNonce || '');
+        nextPayload.set('runId', String(responsePayload.runId || runState.run_id || ''));
+
+        const nextResponse = await window.fetch(config.ajaxUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          },
+          body: nextPayload.toString(),
+        });
+        const nextData = await nextResponse.json();
+
+        if (!nextData || !nextData.success) {
+          const message = nextData && nextData.data && nextData.data.message ? nextData.data.message : (messages.error || 'Preview could not be generated.');
+          throw new Error(message);
+        }
+
+        const nextRunPayload = nextData.data || {};
+        runState = nextRunPayload.run || null;
+
+        if (nextRunPayload.completed) {
+          setSafeConvertFeedback('');
+          if (safeConvertResults) {
+            safeConvertResults.innerHTML = nextRunPayload.html || '';
+          }
+          if (runLog && nextRunPayload.runLogHtml) {
+            runLog.innerHTML = nextRunPayload.runLogHtml;
+          }
+          resetSafeConvertExecutionState();
+          return;
+        }
+
+        if (runState) {
+          renderBatchRunProgress(runState, safeConvertResults);
+        }
+      }
+    } catch (error) {
+      setSafeConvertFeedback(error && error.message ? error.message : (messages.error || 'Preview could not be generated.'), true);
+      if (safeConvertApplyButton) {
+        safeConvertApplyButton.disabled = false;
+      }
+    } finally {
+      if (safeConvertRunButton) {
+        safeConvertRunButton.disabled = false;
+      }
     }
   }
 
@@ -428,11 +837,30 @@
     runButton.addEventListener('click', runPreview);
   }
 
+  if (safeConvertContentTypeSelect) {
+    safeConvertContentTypeSelect.addEventListener('change', () => {
+      setSafeConvertFeedback('');
+      if (safeConvertResults) safeConvertResults.innerHTML = '';
+      resetSafeConvertExecutionState();
+    });
+  }
+
+  if (safeConvertRunButton) {
+    safeConvertRunButton.addEventListener('click', runSafeConvertPreview);
+  }
+
   if (confirmInput && applyButton) {
     confirmInput.addEventListener('change', () => {
       applyButton.disabled = !confirmInput.checked;
     });
     applyButton.addEventListener('click', runExecution);
+  }
+
+  if (safeConvertConfirmInput && safeConvertApplyButton) {
+    safeConvertConfirmInput.addEventListener('change', () => {
+      safeConvertApplyButton.disabled = !safeConvertConfirmInput.checked;
+    });
+    safeConvertApplyButton.addEventListener('click', runSafeConvertExecution);
   }
 
   populatePatternSelect();

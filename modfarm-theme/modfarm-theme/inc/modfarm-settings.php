@@ -680,6 +680,337 @@ function modfarm_get_ppb_apply_all_pattern_matrix(): array {
 }
 
 /**
+ * Persistent option names for chunked PPB Apply All runs.
+ */
+function modfarm_ppb_apply_all_active_runs_option_name(): string {
+    return 'modfarm_ppb_apply_all_active_runs';
+}
+
+function modfarm_ppb_apply_all_run_log_option_name(): string {
+    return 'modfarm_ppb_apply_all_run_log';
+}
+
+/**
+ * Resolve a persistent run type label for admin UI.
+ */
+function modfarm_ppb_get_run_type_label(array $run): string {
+    $run_type = (string) ($run['run_type'] ?? 'apply_all');
+    return $run_type === 'safe_convert' ? 'Safe Convert' : 'Apply All';
+}
+
+/**
+ * Resolve the primary action label for progress and results.
+ */
+function modfarm_ppb_get_run_primary_action_label(array $run): string {
+    $run_type = (string) ($run['run_type'] ?? 'apply_all');
+    return $run_type === 'safe_convert' ? 'Converted' : 'Updated';
+}
+
+/**
+ * Read and write active Apply All run records.
+ */
+function modfarm_ppb_get_apply_all_active_runs(): array {
+    $runs = get_option(modfarm_ppb_apply_all_active_runs_option_name(), []);
+    return is_array($runs) ? $runs : [];
+}
+
+function modfarm_ppb_save_apply_all_active_runs(array $runs): void {
+    update_option(modfarm_ppb_apply_all_active_runs_option_name(), $runs, false);
+}
+
+function modfarm_ppb_get_apply_all_run(string $run_id): array {
+    $runs = modfarm_ppb_get_apply_all_active_runs();
+    $run = $runs[$run_id] ?? [];
+    return is_array($run) ? $run : [];
+}
+
+function modfarm_ppb_store_apply_all_run(array $run): void {
+    if (empty($run['run_id']) || !is_string($run['run_id'])) {
+        return;
+    }
+
+    $runs = modfarm_ppb_get_apply_all_active_runs();
+    $runs[$run['run_id']] = $run;
+    modfarm_ppb_save_apply_all_active_runs($runs);
+}
+
+function modfarm_ppb_delete_apply_all_run(string $run_id): void {
+    $runs = modfarm_ppb_get_apply_all_active_runs();
+    unset($runs[$run_id]);
+    modfarm_ppb_save_apply_all_active_runs($runs);
+}
+
+/**
+ * Read and append recent completed Apply All runs.
+ */
+function modfarm_ppb_get_apply_all_run_log(): array {
+    $log = get_option(modfarm_ppb_apply_all_run_log_option_name(), []);
+    return is_array($log) ? $log : [];
+}
+
+function modfarm_ppb_append_apply_all_run_log(array $run): void {
+    $log = modfarm_ppb_get_apply_all_run_log();
+    array_unshift($log, $run);
+    $log = array_slice($log, 0, 15);
+    update_option(modfarm_ppb_apply_all_run_log_option_name(), $log, false);
+}
+
+/**
+ * Shape an active run into lightweight progress data for the admin UI.
+ */
+function modfarm_ppb_get_apply_all_run_progress(array $run): array {
+    $eligible_total = (int) ($run['eligible_total'] ?? 0);
+    $remaining = is_array($run['queue'] ?? null) ? count($run['queue']) : 0;
+    $processed = max(0, $eligible_total - $remaining);
+    $percent = $eligible_total > 0 ? (int) floor(($processed / $eligible_total) * 100) : 100;
+
+    return [
+        'run_id' => (string) ($run['run_id'] ?? ''),
+        'run_type' => (string) ($run['run_type'] ?? 'apply_all'),
+        'run_type_label' => modfarm_ppb_get_run_type_label($run),
+        'primary_action_label' => modfarm_ppb_get_run_primary_action_label($run),
+        'status' => (string) ($run['status'] ?? 'queued'),
+        'content_type' => (string) ($run['content_type'] ?? ''),
+        'zone' => (string) ($run['zone'] ?? ''),
+        'pattern' => (string) ($run['pattern'] ?? ''),
+        'eligible_total' => $eligible_total,
+        'processed' => $processed,
+        'remaining' => $remaining,
+        'percent' => $percent,
+        'totals' => is_array($run['totals'] ?? null) ? $run['totals'] : [],
+        'started_at' => (string) ($run['started_at'] ?? ''),
+        'updated_at' => (string) ($run['updated_at'] ?? ''),
+        'finished_at' => (string) ($run['finished_at'] ?? ''),
+    ];
+}
+
+/**
+ * Process one Apply All batch and return the updated run record.
+ */
+function modfarm_ppb_process_apply_all_run_batch(array $run): array {
+    $queue = array_values(array_map('intval', is_array($run['queue'] ?? null) ? $run['queue'] : []));
+    $batch_size = max(1, (int) ($run['batch_size'] ?? 25));
+    $batch = array_splice($queue, 0, $batch_size);
+
+    $run['status'] = 'running';
+    $run['queue'] = $queue;
+
+    foreach ($batch as $post_id) {
+        $item = modfarm_get_ppb_apply_all_item_preview($post_id, (string) $run['content_type'], (string) $run['zone']);
+        $action = (string) ($item['action'] ?? '');
+
+        if ($action !== 'will_update') {
+            if ($action === 'skip_locked') {
+                $run['totals']['skipped_locked'] = (int) ($run['totals']['skipped_locked'] ?? 0) + 1;
+            } else {
+                $run['totals']['skipped_legacy'] = (int) ($run['totals']['skipped_legacy'] ?? 0) + 1;
+            }
+            continue;
+        }
+
+        $preserves_slots = !empty($item['zone']['contains_content_slot']);
+        $updated = function_exists('modfarm_ppb_replace_post_zone_with_pattern')
+            ? modfarm_ppb_replace_post_zone_with_pattern($post_id, (string) $run['zone'], (string) $run['pattern'])
+            : false;
+
+        if ($updated) {
+            $run['totals']['updated'] = (int) ($run['totals']['updated'] ?? 0) + 1;
+            if ($preserves_slots) {
+                $run['totals']['slot_content_preserved'] = (int) ($run['totals']['slot_content_preserved'] ?? 0) + 1;
+            }
+            if (count($run['updated_items'] ?? []) < 100) {
+                $run['updated_items'][] = [
+                    'post_id' => $post_id,
+                    'title' => $item['title'] ?? sprintf('#%d', $post_id),
+                ];
+            }
+            continue;
+        }
+
+        $run['totals']['failed'] = (int) ($run['totals']['failed'] ?? 0) + 1;
+        if (count($run['failed_items'] ?? []) < 100) {
+            $run['failed_items'][] = [
+                'post_id' => $post_id,
+                'title' => $item['title'] ?? sprintf('#%d', $post_id),
+                'message' => __('Replacement did not produce a content change.', 'modfarm'),
+            ];
+        }
+    }
+
+    $run['updated_at'] = gmdate('c');
+
+    if (empty($run['queue'])) {
+        $run['status'] = 'completed';
+        $run['finished_at'] = gmdate('c');
+    }
+
+    return $run;
+}
+
+/**
+ * Process one Safe Convert batch and return the updated run record.
+ */
+function modfarm_ppb_process_safe_convert_run_batch(array $run): array {
+    $queue = array_values(array_map('intval', is_array($run['queue'] ?? null) ? $run['queue'] : []));
+    $batch_size = max(1, (int) ($run['batch_size'] ?? 25));
+    $batch = array_splice($queue, 0, $batch_size);
+
+    $run['status'] = 'running';
+    $run['queue'] = $queue;
+
+    foreach ($batch as $post_id) {
+        $item = function_exists('modfarm_get_ppb_safe_convert_item_preview')
+            ? modfarm_get_ppb_safe_convert_item_preview($post_id, (string) $run['content_type'])
+            : [];
+        $action = (string) ($item['action'] ?? '');
+
+        if ($action !== 'will_convert') {
+            $run['totals']['skipped_zoned'] = (int) ($run['totals']['skipped_zoned'] ?? 0) + 1;
+            continue;
+        }
+
+        $converted = function_exists('modfarm_ppb_safe_convert_post_to_zoned')
+            ? modfarm_ppb_safe_convert_post_to_zoned($post_id)
+            : false;
+
+        if ($converted) {
+            $run['totals']['updated'] = (int) ($run['totals']['updated'] ?? 0) + 1;
+            if (!empty($item['has_slot_content'])) {
+                $run['totals']['slot_content_preserved'] = (int) ($run['totals']['slot_content_preserved'] ?? 0) + 1;
+            }
+            if (count($run['updated_items'] ?? []) < 100) {
+                $run['updated_items'][] = [
+                    'post_id' => $post_id,
+                    'title' => $item['title'] ?? sprintf('#%d', $post_id),
+                ];
+            }
+            continue;
+        }
+
+        $run['totals']['failed'] = (int) ($run['totals']['failed'] ?? 0) + 1;
+        if (count($run['failed_items'] ?? []) < 100) {
+            $run['failed_items'][] = [
+                'post_id' => $post_id,
+                'title' => $item['title'] ?? sprintf('#%d', $post_id),
+                'message' => __('Safe Convert did not produce a content change.', 'modfarm'),
+            ];
+        }
+    }
+
+    $run['updated_at'] = gmdate('c');
+
+    if (empty($run['queue'])) {
+        $run['status'] = 'completed';
+        $run['finished_at'] = gmdate('c');
+    }
+
+    return $run;
+}
+
+/**
+ * Process one batch for any persistent PPB run type.
+ */
+function modfarm_ppb_process_run_batch(array $run): array {
+    $run_type = (string) ($run['run_type'] ?? 'apply_all');
+    if ($run_type === 'safe_convert') {
+        return modfarm_ppb_process_safe_convert_run_batch($run);
+    }
+
+    return modfarm_ppb_process_apply_all_run_batch($run);
+}
+
+/**
+ * Render a lightweight persistent run log for recent PPB batch activity.
+ */
+function modfarm_render_ppb_apply_all_run_log_markup(): string {
+    $runs = modfarm_ppb_get_apply_all_run_log();
+
+    ob_start();
+    ?>
+    <div class="mf-ppb-run-log">
+        <h4>Recent PPB Runs</h4>
+        <?php if (empty($runs)) : ?>
+            <p class="description">No completed PPB runs have been logged yet.</p>
+        <?php else : ?>
+            <ul class="mf-ppb-run-log__items">
+                <?php foreach ($runs as $run) :
+                    $content_type_label = modfarm_get_ppb_apply_all_content_types()[$run['content_type'] ?? ''] ?? ucfirst((string) ($run['content_type'] ?? 'Items'));
+                    $zone_label = ucfirst((string) ($run['zone'] ?? 'zone'));
+                    $totals = is_array($run['totals'] ?? null) ? $run['totals'] : [];
+                    ?>
+                    <li class="mf-ppb-run-log__item">
+                        <div class="mf-ppb-run-log__title">
+                            <strong><?php echo esc_html($content_type_label . ' · ' . $zone_label . ' Zone'); ?></strong>
+                            <span><?php echo esc_html((string) ($run['finished_at'] ?? $run['started_at'] ?? '')); ?></span>
+                        </div>
+                        <div class="mf-ppb-run-log__meta">
+                            <span><?php echo esc_html((string) ($run['pattern'] ?? '')); ?></span>
+                            <span>Eligible: <?php echo esc_html((string) ($run['eligible_total'] ?? 0)); ?></span>
+                            <span>Updated: <?php echo esc_html((string) ($totals['updated'] ?? 0)); ?></span>
+                            <span>Skipped locked: <?php echo esc_html((string) ($totals['skipped_locked'] ?? 0)); ?></span>
+                            <span>Skipped non-zoned: <?php echo esc_html((string) ($totals['skipped_legacy'] ?? 0)); ?></span>
+                            <span>Failed: <?php echo esc_html((string) ($totals['failed'] ?? 0)); ?></span>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
+/**
+ * Render a lightweight persistent run log for recent PPB batch activity.
+ */
+function modfarm_render_ppb_run_log_markup(): string {
+    $runs = modfarm_ppb_get_apply_all_run_log();
+
+    ob_start();
+    ?>
+    <div class="mf-ppb-run-log">
+        <h4>Recent PPB Runs</h4>
+        <?php if (empty($runs)) : ?>
+            <p class="description">No completed PPB runs have been logged yet.</p>
+        <?php else : ?>
+            <ul class="mf-ppb-run-log__items">
+                <?php foreach ($runs as $run) :
+                    $content_type_label = modfarm_get_ppb_apply_all_content_types()[$run['content_type'] ?? ''] ?? ucfirst((string) ($run['content_type'] ?? 'Items'));
+                    $run_type = (string) ($run['run_type'] ?? 'apply_all');
+                    $run_type_label = modfarm_ppb_get_run_type_label($run);
+                    $zone = (string) ($run['zone'] ?? '');
+                    $totals = is_array($run['totals'] ?? null) ? $run['totals'] : [];
+                    $primary_action_label = modfarm_ppb_get_run_primary_action_label($run);
+                    ?>
+                    <li class="mf-ppb-run-log__item">
+                        <div class="mf-ppb-run-log__title">
+                            <strong><?php echo esc_html($content_type_label . ' - ' . $run_type_label . ($zone !== '' ? ' - ' . ucfirst($zone) . ' Zone' : '')); ?></strong>
+                            <span><?php echo esc_html((string) ($run['finished_at'] ?? $run['started_at'] ?? '')); ?></span>
+                        </div>
+                        <div class="mf-ppb-run-log__meta">
+                            <span><?php echo esc_html((string) ($run['pattern'] ?? '')); ?></span>
+                            <span>Eligible: <?php echo esc_html((string) ($run['eligible_total'] ?? 0)); ?></span>
+                            <span><?php echo esc_html($primary_action_label); ?>: <?php echo esc_html((string) ($totals['updated'] ?? 0)); ?></span>
+                            <?php if ($run_type === 'safe_convert') : ?>
+                                <span>Skipped zoned: <?php echo esc_html((string) ($totals['skipped_zoned'] ?? 0)); ?></span>
+                            <?php else : ?>
+                                <span>Skipped locked: <?php echo esc_html((string) ($totals['skipped_locked'] ?? 0)); ?></span>
+                                <span>Skipped non-zoned: <?php echo esc_html((string) ($totals['skipped_legacy'] ?? 0)); ?></span>
+                            <?php endif; ?>
+                            <span>Failed: <?php echo esc_html((string) ($totals['failed'] ?? 0)); ?></span>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
+/**
  * Render the Apply All preview report as admin HTML.
  */
 function modfarm_render_ppb_apply_all_preview_markup(array $report): string {
@@ -833,6 +1164,164 @@ function modfarm_render_ppb_apply_all_result_markup(array $result): string {
 }
 
 /**
+ * Render a compact preview summary for Bulk Safe Convert.
+ */
+function modfarm_render_ppb_safe_convert_preview_markup(array $report): string {
+    $totals = $report['totals'] ?? [];
+    $items = array_slice($report['items'] ?? [], 0, 50);
+    $content_type_label = modfarm_get_ppb_apply_all_content_types()[$report['content_type'] ?? ''] ?? ucfirst((string) ($report['content_type'] ?? 'Items'));
+
+    ob_start();
+    ?>
+    <div class="mf-ppb-preview-report">
+        <div class="mf-ppb-preview-header">
+            <div>
+                <h4>Safe Convert Preview</h4>
+                <p><?php echo esc_html($content_type_label); ?> - Convert Legacy or Plain content into explicit Header, Body, and Footer zones.</p>
+            </div>
+        </div>
+
+        <div class="mf-ppb-preview-stats">
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Total items</span>
+                <strong><?php echo esc_html((string) ($totals['items'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Will convert</span>
+                <strong><?php echo esc_html((string) ($totals['will_convert'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Skipped zoned</span>
+                <strong><?php echo esc_html((string) ($totals['skipped_zoned'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Slot content detected</span>
+                <strong><?php echo esc_html((string) ($totals['slot_content_detected'] ?? 0)); ?></strong>
+            </div>
+        </div>
+
+        <div class="mf-ppb-preview-list">
+            <h5>Preview items</h5>
+            <p class="description">Showing the first 50 matching items. Existing content will be preserved inside Body Zone, with empty Header and Footer zones added.</p>
+            <?php if (empty($items)) : ?>
+                <p class="description">No matching items were found for this preview.</p>
+            <?php else : ?>
+                <ul class="mf-ppb-preview-items">
+                    <?php foreach ($items as $item) : ?>
+                        <li class="mf-ppb-preview-item">
+                            <div class="mf-ppb-preview-item__top">
+                                <strong>
+                                    <?php if (!empty($item['edit_link'])) : ?>
+                                        <a href="<?php echo esc_url($item['edit_link']); ?>"><?php echo esc_html($item['title'] ?? 'Untitled'); ?></a>
+                                    <?php else : ?>
+                                        <?php echo esc_html($item['title'] ?? 'Untitled'); ?>
+                                    <?php endif; ?>
+                                </strong>
+                                <span class="mf-ppb-preview-pill <?php echo ($item['action'] ?? '') === 'will_convert' ? 'is-update' : 'is-skip'; ?>">
+                                    <?php echo ($item['action'] ?? '') === 'will_convert' ? esc_html__('Will convert', 'modfarm') : esc_html__('Skipped zoned', 'modfarm'); ?>
+                                </span>
+                            </div>
+                            <div class="mf-ppb-preview-item__meta">
+                                <span><?php echo esc_html((string) ($item['content_state'] ?? 'Unknown')); ?></span>
+                                <span><?php echo esc_html((string) ($item['layout_mode'] ?? 'Unknown layout')); ?></span>
+                                <span><?php echo esc_html('Status: ' . ((string) ($item['status'] ?? 'unknown'))); ?></span>
+                                <?php if (!empty($item['has_slot_content'])) : ?>
+                                    <span>Content-slot preserved</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (!empty($item['notes'])) : ?>
+                                <div class="mf-ppb-preview-item__notes"><?php echo esc_html(implode(' ', (array) $item['notes'])); ?></div>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
+/**
+ * Render a compact execution summary for Bulk Safe Convert.
+ */
+function modfarm_render_ppb_safe_convert_result_markup(array $result): string {
+    $totals = $result['totals'] ?? [];
+    $content_type_label = modfarm_get_ppb_apply_all_content_types()[$result['content_type'] ?? ''] ?? ucfirst((string) ($result['content_type'] ?? 'Items'));
+    $updated_items = $result['updated_items'] ?? [];
+    $failed_items = $result['failed_items'] ?? [];
+
+    ob_start();
+    ?>
+    <div class="mf-ppb-preview-report mf-ppb-preview-report--result">
+        <div class="mf-ppb-preview-header">
+            <div>
+                <h4>Safe Convert Result</h4>
+                <p><?php echo esc_html($content_type_label); ?> - Bulk Safe Convert to Zoned PPB</p>
+            </div>
+        </div>
+
+        <div class="mf-ppb-preview-stats">
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Converted</span>
+                <strong><?php echo esc_html((string) ($totals['updated'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Skipped zoned</span>
+                <strong><?php echo esc_html((string) ($totals['skipped_zoned'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Slot content preserved</span>
+                <strong><?php echo esc_html((string) ($totals['slot_content_preserved'] ?? 0)); ?></strong>
+            </div>
+            <div class="mf-ppb-preview-stat">
+                <span class="mf-ppb-preview-stat__label">Failed</span>
+                <strong><?php echo esc_html((string) ($totals['failed'] ?? 0)); ?></strong>
+            </div>
+        </div>
+
+        <?php if (!empty($updated_items)) : ?>
+            <div class="mf-ppb-preview-list">
+                <h5>Converted items</h5>
+                <ul class="mf-ppb-preview-items">
+                    <?php foreach ($updated_items as $item) : ?>
+                        <li class="mf-ppb-preview-item">
+                            <div class="mf-ppb-preview-item__top">
+                                <strong><?php echo esc_html($item['title'] ?? 'Untitled'); ?></strong>
+                                <span class="mf-ppb-preview-pill is-update">Converted</span>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($failed_items)) : ?>
+            <div class="mf-ppb-preview-list">
+                <h5>Failed items</h5>
+                <ul class="mf-ppb-preview-items">
+                    <?php foreach ($failed_items as $item) : ?>
+                        <li class="mf-ppb-preview-item">
+                            <div class="mf-ppb-preview-item__top">
+                                <strong><?php echo esc_html($item['title'] ?? 'Untitled'); ?></strong>
+                                <span class="mf-ppb-preview-pill is-skip">Failed</span>
+                            </div>
+                            <?php if (!empty($item['message'])) : ?>
+                                <div class="mf-ppb-preview-item__notes"><?php echo esc_html($item['message']); ?></div>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
+/**
  * AJAX preview endpoint for read-only Apply All analysis.
  */
 function modfarm_ajax_ppb_apply_all_preview() {
@@ -872,7 +1361,33 @@ function modfarm_ajax_ppb_apply_all_preview() {
 add_action('wp_ajax_modfarm_ppb_apply_all_preview', 'modfarm_ajax_ppb_apply_all_preview');
 
 /**
- * AJAX execution endpoint for safe Apply All runs on zoned header/body/footer only.
+ * AJAX preview endpoint for Bulk Safe Convert analysis.
+ */
+function modfarm_ajax_ppb_safe_convert_preview() {
+    if (!current_user_can('edit_theme_options')) {
+        wp_send_json_error(['message' => __('You do not have permission to run this preview.', 'modfarm')], 403);
+    }
+
+    check_ajax_referer('modfarm_ppb_safe_convert_preview', 'nonce');
+
+    $content_type = sanitize_key((string) ($_POST['contentType'] ?? ''));
+    if (!isset(modfarm_get_ppb_apply_all_content_types()[$content_type])) {
+        wp_send_json_error(['message' => __('Unsupported content type for Safe Convert.', 'modfarm')], 400);
+    }
+
+    $report = function_exists('modfarm_get_ppb_safe_convert_preview_report')
+        ? modfarm_get_ppb_safe_convert_preview_report($content_type)
+        : [];
+
+    wp_send_json_success([
+        'html' => modfarm_render_ppb_safe_convert_preview_markup($report),
+        'report' => $report,
+    ]);
+}
+add_action('wp_ajax_modfarm_ppb_safe_convert_preview', 'modfarm_ajax_ppb_safe_convert_preview');
+
+/**
+ * AJAX execution start endpoint for chunked zoned Apply All runs.
  */
 function modfarm_ajax_ppb_apply_all_execute() {
     if (!current_user_can('edit_theme_options')) {
@@ -901,10 +1416,26 @@ function modfarm_ajax_ppb_apply_all_execute() {
     }
 
     $preview = modfarm_get_ppb_apply_all_preview_report($content_type, $zone, $pattern);
-    $result = [
+    $eligible_items = array_values(array_filter($preview['items'] ?? [], static function ($item) {
+        return (($item['action'] ?? '') === 'will_update') && !empty($item['post_id']);
+    }));
+    $eligible_ids = array_map(static function ($item) {
+        return (int) $item['post_id'];
+    }, $eligible_items);
+
+    $run = [
+        'run_id' => wp_generate_uuid4(),
+        'run_type' => 'apply_all',
         'content_type' => $content_type,
         'zone' => $zone,
         'pattern' => $pattern,
+        'status' => 'queued',
+        'batch_size' => 25,
+        'eligible_total' => count($eligible_ids),
+        'queue' => $eligible_ids,
+        'started_at' => gmdate('c'),
+        'updated_at' => gmdate('c'),
+        'finished_at' => '',
         'totals' => [
             'updated' => 0,
             'skipped_locked' => (int) ($preview['totals']['skipped_locked'] ?? 0),
@@ -916,44 +1447,147 @@ function modfarm_ajax_ppb_apply_all_execute() {
         'updated_items' => [],
         'failed_items' => [],
     ];
+    $run = modfarm_ppb_process_run_batch($run);
 
-    foreach (($preview['items'] ?? []) as $item) {
-        if (($item['action'] ?? '') !== 'will_update') {
-            continue;
-        }
-
-        $post_id = (int) ($item['post_id'] ?? 0);
-        $preserves_slots = !empty($item['zone']['contains_content_slot']);
-        $updated = function_exists('modfarm_ppb_replace_post_zone_with_pattern')
-            ? modfarm_ppb_replace_post_zone_with_pattern($post_id, $zone, $pattern)
-            : false;
-
-        if ($updated) {
-            $result['totals']['updated']++;
-            if ($preserves_slots) {
-                $result['totals']['slot_content_preserved']++;
-            }
-            $result['updated_items'][] = [
-                'post_id' => $post_id,
-                'title' => $item['title'] ?? sprintf('#%d', $post_id),
-            ];
-            continue;
-        }
-
-        $result['totals']['failed']++;
-        $result['failed_items'][] = [
-            'post_id' => $post_id,
-            'title' => $item['title'] ?? sprintf('#%d', $post_id),
-            'message' => __('Replacement did not produce a content change.', 'modfarm'),
-        ];
+    $completed = (($run['status'] ?? '') === 'completed');
+    if ($completed) {
+        modfarm_ppb_append_apply_all_run_log($run);
+    } else {
+        modfarm_ppb_store_apply_all_run($run);
     }
 
-    wp_send_json_success([
-        'html' => modfarm_render_ppb_apply_all_result_markup($result),
-        'result' => $result,
-    ]);
+    $response = [
+        'runId' => (string) $run['run_id'],
+        'completed' => $completed,
+        'run' => modfarm_ppb_get_apply_all_run_progress($run),
+    ];
+
+    if ($completed) {
+        $response['html'] = modfarm_render_ppb_apply_all_result_markup($run);
+        $response['runLogHtml'] = modfarm_render_ppb_run_log_markup();
+    }
+
+    wp_send_json_success($response);
 }
 add_action('wp_ajax_modfarm_ppb_apply_all_execute', 'modfarm_ajax_ppb_apply_all_execute');
+
+/**
+ * AJAX execution start endpoint for chunked Bulk Safe Convert runs.
+ */
+function modfarm_ajax_ppb_safe_convert_execute() {
+    if (!current_user_can('edit_theme_options')) {
+        wp_send_json_error(['message' => __('You do not have permission to run this action.', 'modfarm')], 403);
+    }
+
+    check_ajax_referer('modfarm_ppb_safe_convert_execute', 'nonce');
+
+    $content_type = sanitize_key((string) ($_POST['contentType'] ?? ''));
+    if (!isset(modfarm_get_ppb_apply_all_content_types()[$content_type])) {
+        wp_send_json_error(['message' => __('Unsupported content type for Safe Convert.', 'modfarm')], 400);
+    }
+
+    $preview = function_exists('modfarm_get_ppb_safe_convert_preview_report')
+        ? modfarm_get_ppb_safe_convert_preview_report($content_type)
+        : [];
+    $eligible_items = array_values(array_filter($preview['items'] ?? [], static function ($item) {
+        return (($item['action'] ?? '') === 'will_convert') && !empty($item['post_id']);
+    }));
+    $eligible_ids = array_map(static function ($item) {
+        return (int) $item['post_id'];
+    }, $eligible_items);
+
+    $run = [
+        'run_id' => wp_generate_uuid4(),
+        'run_type' => 'safe_convert',
+        'content_type' => $content_type,
+        'zone' => '',
+        'pattern' => '',
+        'status' => 'queued',
+        'batch_size' => 25,
+        'eligible_total' => count($eligible_ids),
+        'queue' => $eligible_ids,
+        'started_at' => gmdate('c'),
+        'updated_at' => gmdate('c'),
+        'finished_at' => '',
+        'totals' => [
+            'updated' => 0,
+            'skipped_zoned' => (int) ($preview['totals']['skipped_zoned'] ?? 0),
+            'slot_content_preserved' => 0,
+            'failed' => 0,
+        ],
+        'updated_items' => [],
+        'failed_items' => [],
+    ];
+    $run = modfarm_ppb_process_run_batch($run);
+
+    $completed = (($run['status'] ?? '') === 'completed');
+    if ($completed) {
+        modfarm_ppb_append_apply_all_run_log($run);
+    } else {
+        modfarm_ppb_store_apply_all_run($run);
+    }
+
+    $response = [
+        'runId' => (string) $run['run_id'],
+        'completed' => $completed,
+        'run' => modfarm_ppb_get_apply_all_run_progress($run),
+    ];
+
+    if ($completed) {
+        $response['html'] = modfarm_render_ppb_safe_convert_result_markup($run);
+        $response['runLogHtml'] = modfarm_render_ppb_run_log_markup();
+    }
+
+    wp_send_json_success($response);
+}
+add_action('wp_ajax_modfarm_ppb_safe_convert_execute', 'modfarm_ajax_ppb_safe_convert_execute');
+
+/**
+ * AJAX batch-processing endpoint for active Apply All runs.
+ */
+function modfarm_ajax_ppb_apply_all_process_run() {
+    if (!current_user_can('edit_theme_options')) {
+        wp_send_json_error(['message' => __('You do not have permission to run this action.', 'modfarm')], 403);
+    }
+
+    check_ajax_referer('modfarm_ppb_apply_all_process_run', 'nonce');
+
+    $run_id = sanitize_text_field(wp_unslash((string) ($_POST['runId'] ?? '')));
+    if ($run_id === '') {
+        wp_send_json_error(['message' => __('A valid Apply All run was not provided.', 'modfarm')], 400);
+    }
+
+    $run = modfarm_ppb_get_apply_all_run($run_id);
+    if (empty($run)) {
+        wp_send_json_error(['message' => __('That Apply All run could not be found.', 'modfarm')], 404);
+    }
+
+    $run = modfarm_ppb_process_run_batch($run);
+    $completed = (($run['status'] ?? '') === 'completed');
+
+    if ($completed) {
+        modfarm_ppb_delete_apply_all_run($run_id);
+        modfarm_ppb_append_apply_all_run_log($run);
+    } else {
+        modfarm_ppb_store_apply_all_run($run);
+    }
+
+    $response = [
+        'runId' => (string) $run['run_id'],
+        'completed' => $completed,
+        'run' => modfarm_ppb_get_apply_all_run_progress($run),
+    ];
+
+    if ($completed) {
+        $response['html'] = (($run['run_type'] ?? 'apply_all') === 'safe_convert')
+            ? modfarm_render_ppb_safe_convert_result_markup($run)
+            : modfarm_render_ppb_apply_all_result_markup($run);
+        $response['runLogHtml'] = modfarm_render_ppb_run_log_markup();
+    }
+
+    wp_send_json_success($response);
+}
+add_action('wp_ajax_modfarm_ppb_apply_all_process_run', 'modfarm_ajax_ppb_apply_all_process_run');
 
 
 /**
@@ -1786,6 +2420,46 @@ function modfarm_render_settings_page() {
                                                 Apply Previewed Change
                                             </button>
                                         </div>
+
+                                        <div class="mf-settings-group">
+                                            <h4 class="mf-group-title">Bulk Safe Convert</h4>
+                                            <p class="description">
+                                                Safe Convert adds empty Header and Footer zones and preserves all existing content inside Body Zone. This is intended for Legacy PPB and Plain content that needs the full PPB toolset.
+                                            </p>
+
+                                            <div class="mf-ppb-preview-controls" id="mf-ppb-safe-convert-preview">
+                                                <div class="mf-ppb-preview-field">
+                                                    <label for="mf-ppb-safe-convert-content-type">Content Type</label>
+                                                    <select id="mf-ppb-safe-convert-content-type">
+                                                        <?php foreach (modfarm_get_ppb_apply_all_content_types() as $value => $label) : ?>
+                                                            <option value="<?php echo esc_attr($value); ?>"><?php echo esc_html($label); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+
+                                                <div class="mf-ppb-preview-actions">
+                                                    <button type="button" class="button button-secondary" id="mf-ppb-safe-convert-run">
+                                                        Preview Safe Convert
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="mf-ppb-preview-feedback" id="mf-ppb-safe-convert-feedback" aria-live="polite"></div>
+                                            <div class="mf-ppb-preview-results" id="mf-ppb-safe-convert-results"></div>
+                                            <div class="mf-ppb-preview-execute" id="mf-ppb-safe-convert-execute" hidden>
+                                                <label class="mf-ppb-preview-confirm">
+                                                    <input type="checkbox" id="mf-ppb-safe-convert-confirm">
+                                                    <span>I understand this will convert the previewed Legacy or Plain items to Zoned PPB by preserving current content inside Body Zone and adding empty Header and Footer zones.</span>
+                                                </label>
+                                                <button type="button" class="button button-primary" id="mf-ppb-safe-convert-apply" disabled>
+                                                    Run Safe Convert
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="mf-ppb-run-log-wrap" id="mf-ppb-run-log">
+                                            <?php echo modfarm_render_ppb_run_log_markup(); ?>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1849,6 +2523,9 @@ function modfarm_admin_enqueue_scripts($hook) {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'previewNonce' => wp_create_nonce('modfarm_ppb_apply_all_preview'),
         'executeNonce' => wp_create_nonce('modfarm_ppb_apply_all_execute'),
+        'safeConvertPreviewNonce' => wp_create_nonce('modfarm_ppb_safe_convert_preview'),
+        'safeConvertExecuteNonce' => wp_create_nonce('modfarm_ppb_safe_convert_execute'),
+        'processNonce' => wp_create_nonce('modfarm_ppb_apply_all_process_run'),
         'applyAllPatterns' => modfarm_get_ppb_apply_all_pattern_matrix(),
         'contentTypeLabels' => modfarm_get_ppb_apply_all_content_types(),
         'messages' => [
@@ -1857,8 +2534,12 @@ function modfarm_admin_enqueue_scripts($hook) {
             'noPatterns' => __('No central PPB patterns are registered for this content type and zone yet.', 'modfarm'),
             'error' => __('Preview could not be generated.', 'modfarm'),
             'executing' => __('Applying the previewed change...', 'modfarm'),
+            'executingConvert' => __('Converting the previewed items to Zoned PPB...', 'modfarm'),
+            'processing' => __('Processing the next Apply All batch...', 'modfarm'),
+            'processingConvert' => __('Processing the next Safe Convert batch...', 'modfarm'),
             'confirmRequired' => __('Confirm the change before applying it.', 'modfarm'),
             'executionUnavailable' => __('Apply All execution is currently available for Header, Body, and Footer zones only.', 'modfarm'),
+            'convertConfirmRequired' => __('Confirm the conversion before running Safe Convert.', 'modfarm'),
         ],
         'previewPageSize' => 50,
     ]);

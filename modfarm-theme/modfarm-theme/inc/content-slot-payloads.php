@@ -402,6 +402,72 @@ function modfarm_ppb_replace_post_zone_with_pattern(int $post_id, string $target
 }
 
 /**
+ * Safely convert Legacy PPB or Plain content into explicit zoned content.
+ *
+ * Existing content is preserved exactly inside Body Zone. Header and Footer
+ * zones are created empty so older chrome is not duplicated.
+ */
+function modfarm_ppb_safe_convert_post_to_zoned(int $post_id): bool {
+    if ($post_id <= 0) {
+        return false;
+    }
+
+    $post = get_post($post_id);
+    if (!$post instanceof WP_Post) {
+        return false;
+    }
+
+    $original_content = (string) $post->post_content;
+    $detected = function_exists('modfarm_detect_ppb_zones_in_content')
+        ? modfarm_detect_ppb_zones_in_content($original_content)
+        : ['is_zoned' => false];
+
+    if (!empty($detected['is_zoned'])) {
+        return false;
+    }
+
+    $header_markup = function_exists('modfarm_ppb_build_zone_markup')
+        ? modfarm_ppb_build_zone_markup('header', '', [
+            'origin' => 'legacy-migrated',
+            'locked' => false,
+            'version' => 1,
+        ])
+        : '';
+    $body_markup = function_exists('modfarm_ppb_build_zone_markup')
+        ? modfarm_ppb_build_zone_markup('body', $original_content, [
+            'origin' => 'legacy-migrated',
+            'locked' => false,
+            'version' => 1,
+        ])
+        : '';
+    $footer_markup = function_exists('modfarm_ppb_build_zone_markup')
+        ? modfarm_ppb_build_zone_markup('footer', '', [
+            'origin' => 'legacy-migrated',
+            'locked' => false,
+            'version' => 1,
+        ])
+        : '';
+
+    if ($header_markup === '' || $body_markup === '' || $footer_markup === '') {
+        return false;
+    }
+
+    $updated_content = implode("\n\n", [$header_markup, $body_markup, $footer_markup]);
+    if ($updated_content === $original_content) {
+        return false;
+    }
+
+    remove_action('save_post', 'modfarm_ppb_sync_slot_payloads_on_save', 20);
+    wp_update_post([
+        'ID' => $post_id,
+        'post_content' => $updated_content,
+    ]);
+    add_action('save_post', 'modfarm_ppb_sync_slot_payloads_on_save', 20, 3);
+
+    return true;
+}
+
+/**
  * Save portable content-slot payloads for supported post types.
  */
 function modfarm_ppb_sync_slot_payloads_on_save(int $post_id, WP_Post $post, bool $update): void {
