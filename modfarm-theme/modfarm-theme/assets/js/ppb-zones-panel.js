@@ -51,6 +51,21 @@
     return parse(serialize(blocks));
   }
 
+  function buildZoneMarkup(slot, content, meta = {}) {
+    const attrs = {
+      slot,
+      origin: meta.origin || 'legacy-migrated',
+      locked: !!meta.locked,
+      version: Number.isFinite(meta.version) ? meta.version : 1
+    };
+
+    if (meta.pattern) {
+      attrs.pattern = meta.pattern;
+    }
+
+    return `<!-- wp:modfarm/zone ${JSON.stringify(attrs)} -->\n${(content || '').trim()}\n<!-- /wp:modfarm/zone -->`;
+  }
+
   function getSlotId(attributes) {
     if (attributes && typeof attributes.slot === 'string' && attributes.slot.trim()) {
       return attributes.slot.trim();
@@ -394,6 +409,7 @@
 
   function Panel() {
     const [data, setData] = useState(initialData);
+    const [convertOpen, setConvertOpen] = useState(false);
     const [selections, setSelections] = useState({
       header: { open: false, value: '' },
       body: { open: false, value: '' },
@@ -410,6 +426,106 @@
       selectBlocks: () => select('core/block-editor'),
       dispatchBlocks: () => dispatch('core/block-editor')
     };
+    const convertAction = (data.actions && data.actions.convert) || {};
+
+    function runSafeConvert() {
+      const blockTree = editors.selectBlocks().getBlocks();
+      const currentMarkup = Array.isArray(blockTree) && blockTree.length ? serialize(blockTree) : '';
+      const headerMarkup = buildZoneMarkup(
+        'header',
+        ((convertAction.header && convertAction.header.content) || ''),
+        {
+          origin: 'legacy-migrated',
+          pattern: (convertAction.header && convertAction.header.pattern) || '',
+          locked: false,
+          version: 1
+        }
+      );
+      const bodyMarkup = buildZoneMarkup(
+        'body',
+        currentMarkup,
+        {
+          origin: 'legacy-migrated',
+          locked: false,
+          version: 1
+        }
+      );
+      const footerMarkup = buildZoneMarkup(
+        'footer',
+        ((convertAction.footer && convertAction.footer.content) || ''),
+        {
+          origin: 'legacy-migrated',
+          pattern: (convertAction.footer && convertAction.footer.pattern) || '',
+          locked: false,
+          version: 1
+        }
+      );
+
+      const zonedBlocks = parse([headerMarkup, bodyMarkup, footerMarkup].join('\n\n'));
+      editors.dispatchBlocks().resetBlocks(zonedBlocks);
+      setConvertOpen(false);
+      setData((prev) => ({
+        ...prev,
+        content_state: 'Zoned',
+        layout_mode: 'Full PPB',
+        zones: {
+          header: {
+            present: true,
+            pattern: (convertAction.header && convertAction.header.pattern) || '',
+            locked: false,
+            contains_content_slot: false,
+            local_override_active: false,
+            default_pattern: ''
+          },
+          body: {
+            present: true,
+            pattern: '',
+            locked: false,
+            contains_content_slot: zoneBlocksContainContentSlot(parse(currentMarkup)),
+            local_override_active: false,
+            default_pattern: ''
+          },
+          footer: {
+            present: true,
+            pattern: (convertAction.footer && convertAction.footer.pattern) || '',
+            locked: false,
+            contains_content_slot: false,
+            local_override_active: false,
+            default_pattern: ''
+          },
+          data: {
+            present: false,
+            pattern: '',
+            locked: false,
+            contains_content_slot: false,
+            local_override_active: false,
+            default_pattern: ''
+          }
+        },
+        actions: {
+          ...prev.actions,
+          mode: 'zoned',
+          convert: {
+            ...prev.actions.convert,
+            enabled: false
+          },
+          zones: {
+            header: {
+              ...prev.actions.zones.header,
+              enabled: Array.isArray(prev.actions.zones.header.patterns) && prev.actions.zones.header.patterns.length > 0
+            },
+            body: {
+              ...prev.actions.zones.body,
+              enabled: Array.isArray(prev.actions.zones.body.patterns) && prev.actions.zones.body.patterns.length > 0
+            },
+            footer: {
+              ...prev.actions.zones.footer,
+              enabled: Array.isArray(prev.actions.zones.footer.patterns) && prev.actions.zones.footer.patterns.length > 0
+            }
+          }
+        }
+      }));
+    }
 
     return el(PluginDocumentSettingPanel, {
       name: 'modfarm-ppb-zones',
@@ -423,6 +539,37 @@
             el('div', null, `Layout Mode: ${data.layout_mode || 'Unknown'}`)
           )
         ),
+        convertAction.enabled ? el(PanelRow, {},
+          el('div', { className: 'mf-ppb-zone-panel__zone-row' },
+            el('div', { className: 'mf-ppb-zone-panel__zone-head' },
+              el('strong', null, 'Convert to Zoned PPB'),
+              el('span', null, 'Safe Convert')
+            ),
+            el('div', { className: 'mf-ppb-zone-panel__meta' },
+              el('div', null, 'Preserve current content inside Body Zone and add current default Header/Footer zones.'),
+              el('div', null, 'Use this to bring Legacy PPB or Plain content onto the modern PPB zone framework.')
+            ),
+            el('div', { className: 'mf-ppb-zone-panel__actions' },
+              el(Button, {
+                variant: 'primary',
+                onClick: function () { setConvertOpen(true); }
+              }, 'Convert to Zoned PPB')
+            ),
+            convertOpen ? el('div', { className: 'mf-ppb-zone-panel__selector' },
+              el('p', { className: 'mf-ppb-zone-panel__status' }, 'This will preserve the current content inside Body Zone and add the current default Header and Footer zones. Save the post after conversion to persist it.'),
+              el('div', { className: 'mf-ppb-zone-panel__selector-buttons' },
+                el(Button, {
+                  variant: 'primary',
+                  onClick: runSafeConvert
+                }, 'Convert'),
+                el(Button, {
+                  variant: 'tertiary',
+                  onClick: function () { setConvertOpen(false); }
+                }, 'Cancel')
+              )
+            ) : null
+          )
+        ) : null,
         el(PanelRow, {},
           zoneRow('header', data, setData, editors, selections, setSelections, notices, setNotices)
         ),
@@ -443,7 +590,7 @@
         el(Notice, {
           status: 'info',
           isDismissible: false
-        }, 'Local PPB actions can now replace and lock zoned Header, Body, and Footer regions. Hybrid still exposes local PPB control for Header and Footer only.')
+        }, 'Use local PPB controls to replace or lock zoned regions on this item only. Locked zones are skipped, matching content-slot IDs preserve portable manual content, and Hybrid body content remains outside PPB control.')
       )
     );
   }

@@ -1785,8 +1785,10 @@ function modfarm_render_settings_page() {
                                     <div class="mf-settings-group">
                                         <h3 class="mf-group-title">PPB Control</h3>
                                         <p class="description">
-                                            Preview the impact of a PPB zone replacement across a content type before any Apply All execution exists.
-                                            This preview is read-only and respects locks, hybrid rules, and portable content-slot preservation.
+                                            Central PPB selectors set defaults for future content and dynamic Hybrid chrome. Apply Previewed Change updates existing zoned content only.
+                                        </p>
+                                        <p class="description">
+                                            Locks prevent zone replacement. Matching <code>content-slot</code> IDs preserve portable manual content during zone changes. Hybrid posts follow central defaults unless a local override is active.
                                         </p>
 
                                         <div class="mf-ppb-preview-controls" id="mf-ppb-apply-all-preview">
@@ -1826,7 +1828,7 @@ function modfarm_render_settings_page() {
                                         <div class="mf-ppb-preview-execute" id="mf-ppb-preview-execute" hidden>
                                             <label class="mf-ppb-preview-confirm">
                                                 <input type="checkbox" id="mf-ppb-preview-confirm">
-                                                <span>I understand this will update the previewed Header or Footer zones sitewide for matching zoned items only.</span>
+                                                <span>I understand this will update the previewed Header, Body, or Footer zones sitewide for matching zoned items only.</span>
                                             </label>
                                             <button type="button" class="button button-primary" id="mf-ppb-preview-apply" disabled>
                                                 Apply Previewed Change

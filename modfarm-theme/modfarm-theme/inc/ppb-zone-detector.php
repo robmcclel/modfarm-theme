@@ -504,6 +504,17 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
 
     $actions = [
         'mode' => $actions_mode,
+        'convert' => [
+            'enabled' => false,
+            'header' => [
+                'pattern' => '',
+                'content' => '',
+            ],
+            'footer' => [
+                'pattern' => '',
+                'content' => '',
+            ],
+        ],
         'zones' => [
             'header' => [
                 'enabled' => false,
@@ -539,6 +550,32 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
             ($actions_mode === 'zoned' && $has_zone && !$is_locked) ||
             ($actions_mode === 'hybrid' && in_array($slot, ['header', 'footer'], true))
         );
+    }
+
+    $convert_supported_post_type = in_array($post_type, ['page', 'post', 'book', 'offer', 'modfarm_book'], true);
+    if (!$is_zoned && $convert_supported_post_type && function_exists('modfarm_ppb_get_pattern_content_by_slug') && function_exists('modfarm_ppb_resolve_pattern_slug')) {
+        $header_field = function_exists('modfarm_ppb_get_field_id_for_post_zone')
+            ? modfarm_ppb_get_field_id_for_post_zone($post_type, 'header')
+            : '';
+        $footer_field = function_exists('modfarm_ppb_get_field_id_for_post_zone')
+            ? modfarm_ppb_get_field_id_for_post_zone($post_type, 'footer')
+            : '';
+        $opts = get_option('modfarm_theme_settings', []);
+
+        $header_pattern = $header_field !== '' ? modfarm_ppb_resolve_pattern_slug($header_field, $opts[$header_field] ?? null, $opts) : '';
+        $footer_pattern = $footer_field !== '' ? modfarm_ppb_resolve_pattern_slug($footer_field, $opts[$footer_field] ?? null, $opts) : '';
+
+        $actions['convert'] = [
+            'enabled' => true,
+            'header' => [
+                'pattern' => $header_pattern,
+                'content' => $header_pattern !== '' ? modfarm_ppb_get_pattern_content_by_slug($header_pattern) : '',
+            ],
+            'footer' => [
+                'pattern' => $footer_pattern,
+                'content' => $footer_pattern !== '' ? modfarm_ppb_get_pattern_content_by_slug($footer_pattern) : '',
+            ],
+        ];
     }
 
     $summary['actions'] = $actions;
