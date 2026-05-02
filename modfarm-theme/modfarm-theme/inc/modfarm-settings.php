@@ -732,55 +732,7 @@ function modfarm_render_ppb_apply_all_preview_markup(array $report): string {
 
         <div class="mf-ppb-preview-list">
             <h5>Affected items</h5>
-            <?php if (empty($items)) : ?>
-                <p class="description">No matching items were found for this preview.</p>
-            <?php else : ?>
-                <ul class="mf-ppb-preview-items">
-                    <?php foreach ($items as $item) : ?>
-                        <?php
-                        $status_class = 'is-skip';
-                        if (($item['action'] ?? '') === 'will_update') {
-                            $status_class = 'is-update';
-                        } elseif (($item['action'] ?? '') === 'skip_locked') {
-                            $status_class = 'is-locked';
-                        }
-                        $status_label = [
-                            'will_update' => 'Will update',
-                            'skip_locked' => 'Skipped locked',
-                            'skip_legacy' => 'Skipped legacy/unzoned',
-                        ][$item['action'] ?? 'skip_legacy'];
-                        ?>
-                        <li class="mf-ppb-preview-item">
-                            <div class="mf-ppb-preview-item__top">
-                                <strong>
-                                    <?php if (!empty($item['edit_link'])) : ?>
-                                        <a href="<?php echo esc_url($item['edit_link']); ?>"><?php echo esc_html($item['title'] ?? 'Untitled'); ?></a>
-                                    <?php else : ?>
-                                        <?php echo esc_html($item['title'] ?? 'Untitled'); ?>
-                                    <?php endif; ?>
-                                </strong>
-                                <span class="mf-ppb-preview-pill <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status_label); ?></span>
-                            </div>
-                            <div class="mf-ppb-preview-item__meta">
-                                <span><?php echo esc_html($item['content_state'] ?? 'Unknown'); ?></span>
-                                <span><?php echo esc_html($item['layout_mode'] ?? 'Unknown layout'); ?></span>
-                                <span>Status: <?php echo esc_html($item['status'] ?? 'unknown'); ?></span>
-                                <?php if (!empty($item['zone']['locked'])) : ?>
-                                    <span>Locked</span>
-                                <?php endif; ?>
-                                <?php if (!empty($item['zone']['contains_content_slot'])) : ?>
-                                    <span>Content-slot preserved</span>
-                                <?php endif; ?>
-                            </div>
-                            <?php if (!empty($item['notes'])) : ?>
-                                <div class="mf-ppb-preview-item__notes">
-                                    <?php echo esc_html(implode(' ', $item['notes'])); ?>
-                                </div>
-                            <?php endif; ?>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
+            <p class="description">Showing summary counts first. Use the filters below to inspect only the subset you care about.</p>
         </div>
     </div>
     <?php
@@ -1898,6 +1850,7 @@ function modfarm_admin_enqueue_scripts($hook) {
         'previewNonce' => wp_create_nonce('modfarm_ppb_apply_all_preview'),
         'executeNonce' => wp_create_nonce('modfarm_ppb_apply_all_execute'),
         'applyAllPatterns' => modfarm_get_ppb_apply_all_pattern_matrix(),
+        'contentTypeLabels' => modfarm_get_ppb_apply_all_content_types(),
         'messages' => [
             'loading' => __('Scanning matching items...', 'modfarm'),
             'missingPattern' => __('Select a valid pattern before running the preview.', 'modfarm'),
@@ -1907,6 +1860,7 @@ function modfarm_admin_enqueue_scripts($hook) {
             'confirmRequired' => __('Confirm the change before applying it.', 'modfarm'),
             'executionUnavailable' => __('Apply All execution is currently available for Header, Body, and Footer zones only.', 'modfarm'),
         ],
+        'previewPageSize' => 50,
     ]);
 }
 add_action('admin_enqueue_scripts', 'modfarm_admin_enqueue_scripts');

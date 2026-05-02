@@ -45,6 +45,7 @@
 
   const config = window.modfarmSettingsUi;
   const patterns = config.applyAllPatterns || {};
+  const contentTypeLabels = config.contentTypeLabels || {};
   const messages = config.messages || {};
   const contentTypeSelect = document.getElementById('mf-ppb-preview-content-type');
   const zoneSelect = document.getElementById('mf-ppb-preview-zone');
@@ -57,6 +58,165 @@
   const confirmInput = document.getElementById('mf-ppb-preview-confirm');
   const applyButton = document.getElementById('mf-ppb-preview-apply');
   let lastPreviewReport = null;
+  let previewListState = {
+    filter: 'will_update',
+    visible: Number(config.previewPageSize || 50)
+  };
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function previewStatusMeta(item) {
+    const action = String((item && item.action) || 'skip_legacy');
+    if (action === 'will_update') {
+      return { cls: 'is-update', label: 'Will update' };
+    }
+    if (action === 'skip_locked') {
+      return { cls: 'is-locked', label: 'Skipped locked' };
+    }
+    return { cls: 'is-skip', label: 'Skipped non-zoned' };
+  }
+
+  function getPreviewFilterCount(report, filter) {
+    const totals = (report && report.totals) || {};
+    switch (filter) {
+      case 'will_update':
+        return Number(totals.will_update || 0);
+      case 'skip_locked':
+        return Number(totals.skipped_locked || 0);
+      case 'skip_legacy':
+        return Number(totals.skipped_legacy || 0);
+      case 'conflicts':
+        return Number(totals.potential_conflicts || 0);
+      default:
+        return Number(totals.items || 0);
+    }
+  }
+
+  function matchesPreviewFilter(item, filter) {
+    if (filter === 'all') {
+      return true;
+    }
+    if (filter === 'conflicts') {
+      return !!(((item || {}).zone || {}).duplicate_slot_ids || []).length;
+    }
+    return String((item && item.action) || '') === filter;
+  }
+
+  function buildPreviewItemsMarkup(report) {
+    const items = Array.isArray(report && report.items) ? report.items : [];
+    if (!items.length) {
+      return '<p class="description">No matching items were found for this preview.</p>';
+    }
+
+    const filtered = items.filter((item) => matchesPreviewFilter(item, previewListState.filter));
+    if (!filtered.length) {
+      return '<p class="description">No items match the current filter.</p>';
+    }
+
+    const shown = filtered.slice(0, previewListState.visible);
+    const summary = `<div class="mf-ppb-preview-list__summary">Showing ${shown.length} of ${filtered.length} matching items.</div>`;
+    const list = shown.map((item) => {
+      const status = previewStatusMeta(item);
+      const title = escapeHtml(item.title || 'Untitled');
+      const editLink = item.edit_link ? `<a href="${escapeHtml(item.edit_link)}">${title}</a>` : title;
+      const meta = [
+        escapeHtml(item.content_state || 'Unknown'),
+        escapeHtml(item.layout_mode || 'Unknown layout'),
+        `Status: ${escapeHtml(item.status || 'unknown')}`,
+        (((item || {}).zone || {}).locked) ? 'Locked' : '',
+        (((item || {}).zone || {}).contains_content_slot) ? 'Content-slot preserved' : ''
+      ].filter(Boolean).map((part) => `<span>${part}</span>`).join('');
+      const notes = Array.isArray(item.notes) && item.notes.length
+        ? `<div class="mf-ppb-preview-item__notes">${escapeHtml(item.notes.join(' '))}</div>`
+        : '';
+
+      return `
+        <li class="mf-ppb-preview-item">
+          <div class="mf-ppb-preview-item__top">
+            <strong>${editLink}</strong>
+            <span class="mf-ppb-preview-pill ${status.cls}">${status.label}</span>
+          </div>
+          <div class="mf-ppb-preview-item__meta">${meta}</div>
+          ${notes}
+        </li>
+      `;
+    }).join('');
+
+    const canLoadMore = shown.length < filtered.length;
+    const loadMore = canLoadMore
+      ? `<div class="mf-ppb-preview-list__actions"><button type="button" class="button button-secondary" id="mf-ppb-preview-load-more">Load more</button></div>`
+      : '';
+
+    return `${summary}<ul class="mf-ppb-preview-items">${list}</ul>${loadMore}`;
+  }
+
+  function renderPreviewReport(report) {
+    if (!results) {
+      return;
+    }
+
+    const totals = (report && report.totals) || {};
+    const filterButtons = [
+      { key: 'will_update', label: 'Will update' },
+      { key: 'skip_locked', label: 'Skipped locked' },
+      { key: 'skip_legacy', label: 'Skipped non-zoned' },
+      { key: 'conflicts', label: 'Conflicts' },
+      { key: 'all', label: 'All' }
+    ].map((filter) => {
+      const active = previewListState.filter === filter.key ? ' is-active' : '';
+      return `<button type="button" class="mf-ppb-preview-filter${active}" data-filter="${filter.key}">${filter.label} (${getPreviewFilterCount(report, filter.key)})</button>`;
+    }).join('');
+
+    results.innerHTML = `
+      <div class="mf-ppb-preview-report">
+        <div class="mf-ppb-preview-header">
+          <div>
+            <h4>Apply All Preview</h4>
+            <p>${escapeHtml(String(contentTypeLabels[report.content_type] || report.content_type || ''))} · ${escapeHtml(String(report.zone || ''))} Zone · ${escapeHtml(String(report.pattern || ''))}</p>
+          </div>
+        </div>
+        <div class="mf-ppb-preview-stats">
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Total items</span><strong>${Number(totals.items || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Will update</span><strong>${Number(totals.will_update || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Skipped locked</span><strong>${Number(totals.skipped_locked || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Skipped non-zoned</span><strong>${Number(totals.skipped_legacy || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Slot content detected</span><strong>${Number(totals.slot_content_detected || 0)}</strong></div>
+          <div class="mf-ppb-preview-stat"><span class="mf-ppb-preview-stat__label">Potential conflicts</span><strong>${Number(totals.potential_conflicts || 0)}</strong></div>
+        </div>
+        <div class="mf-ppb-preview-list">
+          <h5>Affected items</h5>
+          <div class="mf-ppb-preview-filters">${filterButtons}</div>
+          ${buildPreviewItemsMarkup(report)}
+        </div>
+      </div>
+    `;
+
+    const filterWrap = results.querySelector('.mf-ppb-preview-filters');
+    if (filterWrap) {
+      filterWrap.querySelectorAll('[data-filter]').forEach((button) => {
+        button.addEventListener('click', () => {
+          previewListState.filter = button.getAttribute('data-filter') || 'will_update';
+          previewListState.visible = Number(config.previewPageSize || 50);
+          renderPreviewReport(report);
+        });
+      });
+    }
+
+    const loadMoreButton = results.querySelector('#mf-ppb-preview-load-more');
+    if (loadMoreButton) {
+      loadMoreButton.addEventListener('click', () => {
+        previewListState.visible += Number(config.previewPageSize || 50);
+        renderPreviewReport(report);
+      });
+    }
+  }
 
   function getPatternOptions() {
     const contentType = contentTypeSelect ? contentTypeSelect.value : '';
@@ -157,8 +317,16 @@
 
       setFeedback('');
       lastPreviewReport = data.data && data.data.report ? data.data.report : null;
+      previewListState = {
+        filter: 'will_update',
+        visible: Number(config.previewPageSize || 50)
+      };
       if (results) {
-        results.innerHTML = data.data && data.data.html ? data.data.html : '';
+        if (lastPreviewReport) {
+          renderPreviewReport(lastPreviewReport);
+        } else {
+          results.innerHTML = data.data && data.data.html ? data.data.html : '';
+        }
       }
       const canExecute = !!lastPreviewReport
         && ['header', 'body', 'footer'].includes(String(lastPreviewReport.zone || ''))

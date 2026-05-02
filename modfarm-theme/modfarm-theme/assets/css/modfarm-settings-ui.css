@@ -272,6 +272,40 @@
   margin-top: 18px;
 }
 
+.mf-ppb-preview-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+
+.mf-ppb-preview-filter {
+  border: 1px solid #d0d7de;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.mf-ppb-preview-filter.is-active {
+  border-color: #2271b1;
+  background: #eef6fc;
+  color: #0f4c75;
+}
+
+.mf-ppb-preview-list__summary {
+  margin-bottom: 10px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.mf-ppb-preview-list__actions {
+  margin-top: 12px;
+}
+
 .mf-ppb-preview-list h5 {
   margin: 0 0 10px;
   font-size: 14px;
