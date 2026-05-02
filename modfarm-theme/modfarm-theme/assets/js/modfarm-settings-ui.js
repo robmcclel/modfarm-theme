@@ -569,21 +569,21 @@
         throw new Error(message);
       }
 
-      const payload = data.data || {};
-      if (payload.completed) {
+      const responsePayload = data.data || {};
+      if (responsePayload.completed) {
         setFeedback('');
         if (results) {
-          results.innerHTML = payload.html || '';
+          results.innerHTML = responsePayload.html || '';
         }
-        if (runLog && payload.runLogHtml) {
-          runLog.innerHTML = payload.runLogHtml;
+        if (runLog && responsePayload.runLogHtml) {
+          runLog.innerHTML = responsePayload.runLogHtml;
         }
         resetExecutionState();
         return;
       }
 
-      let runState = payload.run || null;
-      if (!runState || !payload.runId) {
+      let runState = responsePayload.run || null;
+      if (!runState || !responsePayload.runId) {
         throw new Error(messages.error || 'Preview could not be generated.');
       }
 
@@ -595,7 +595,7 @@
         const nextPayload = new window.URLSearchParams();
         nextPayload.set('action', 'modfarm_ppb_apply_all_process_run');
         nextPayload.set('nonce', config.processNonce || '');
-        nextPayload.set('runId', String(payload.runId || runState.run_id || ''));
+        nextPayload.set('runId', String(responsePayload.runId || runState.run_id || ''));
 
         const nextResponse = await window.fetch(config.ajaxUrl, {
           method: 'POST',
