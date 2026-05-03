@@ -1,0 +1,9 @@
+.mfs-offer-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.mfs-offer-price--empty {
+  opacity: .7;
+}

@@ -1,0 +1,30 @@
+.mfs-offer-buy-button {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.mfs-offer-buy-button__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--mfs-button-bg, #222);
+  border-radius: var(--mfb-book-page-button-radius, 4px);
+  background: var(--mfs-button-bg, #222);
+  color: var(--mfs-button-fg, #fff);
+  font-weight: 700;
+  line-height: 1;
+  padding: .75rem 1rem;
+  text-decoration: none;
+}
+
+.mfs-offer-buy-button__link:hover,
+.mfs-offer-buy-button__link:focus {
+  color: var(--mfs-button-fg, #fff);
+  opacity: .88;
+}
+
+.mfs-offer-buy-button__link--disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}

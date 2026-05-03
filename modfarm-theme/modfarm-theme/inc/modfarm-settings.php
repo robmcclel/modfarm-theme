@@ -390,6 +390,11 @@ function modfarm_register_settings() {
     add_settings_field('post_body_pattern',   'Post Body Pattern',    'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'post_body_pattern']);
     add_settings_field('post_footer_pattern', 'Post Footer Pattern',  'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'post_footer_pattern']);
 
+    // OFFER Layout
+    add_settings_field('offer_header_pattern', 'Offer Header Pattern',  'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'offer_header_pattern']);
+    add_settings_field('offer_body_pattern',   'Offer Body Pattern',    'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'offer_body_pattern']);
+    add_settings_field('offer_footer_pattern', 'Offer Footer Pattern',  'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'offer_footer_pattern']);
+
     // ARCHIVE Layout
     add_settings_field('archive_header_pattern',              'Archive Header Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_header_pattern']);
     add_settings_field('archive_body_pattern',                'Archive Body Pattern',        'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern']);
@@ -492,6 +497,11 @@ function modfarm_ppb_pattern_category_map(): array {
         'post_header_pattern' => 'modfarm-post-header',
         'post_body_pattern'   => 'modfarm-post-body',
         'post_footer_pattern' => 'modfarm-post-footer',
+
+        // Offer Layout
+        'offer_header_pattern' => 'modfarm-offer-header',
+        'offer_body_pattern'   => 'modfarm-offer-body',
+        'offer_footer_pattern' => 'modfarm-offer-footer',
 
         // Archive Layout
         'archive_header_pattern' => 'modfarm-archive-header',
@@ -645,6 +655,10 @@ function modfarm_get_ppb_apply_all_content_types(): array {
 
     if (post_type_exists('offer')) {
         $types['offer'] = 'Offers';
+    }
+
+    if (post_type_exists('mf_offer')) {
+        $types['mf_offer'] = 'Offers';
     }
 
     return $types;
@@ -1637,6 +1651,9 @@ function modfarm_sanitize_settings($settings) {
         'post_header_pattern',
         'post_body_pattern',
         'post_footer_pattern',
+        'offer_header_pattern',
+        'offer_body_pattern',
+        'offer_footer_pattern',
         'archive_header_pattern',
         'archive_body_pattern',
         'archive_body_pattern_book_series',
@@ -2331,6 +2348,26 @@ function modfarm_render_settings_page() {
                                             <tr>
                                                 <th scope="row"><label>Post Footer Pattern</label></th>
                                                 <td><?php modfarm_pattern_dropdown(['id' => 'post_footer_pattern']); ?></td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="mf-settings-group">
+                                        <h3 class="mf-group-title">Offer Layout</h3>
+                                        <table class="form-table mf-form-table">
+                                            <tbody>
+                                            <tr>
+                                                <th scope="row"><label>Offer Header Pattern</label></th>
+                                                <td><?php modfarm_pattern_dropdown(['id' => 'offer_header_pattern']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Offer Body Pattern</label></th>
+                                                <td><?php modfarm_pattern_dropdown(['id' => 'offer_body_pattern']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Offer Footer Pattern</label></th>
+                                                <td><?php modfarm_pattern_dropdown(['id' => 'offer_footer_pattern']); ?></td>
                                             </tr>
                                             </tbody>
                                         </table>

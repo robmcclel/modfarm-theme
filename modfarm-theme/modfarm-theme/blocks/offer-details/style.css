@@ -1,0 +1,19 @@
+.mfs-offer-details__list {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+}
+
+.mfs-offer-details__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, max-content) 1fr;
+  gap: .75rem;
+}
+
+.mfs-offer-details dt {
+  font-weight: 700;
+}
+
+.mfs-offer-details dd {
+  margin: 0;
+}

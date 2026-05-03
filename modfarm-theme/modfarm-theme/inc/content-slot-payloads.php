@@ -30,7 +30,7 @@ add_action('init', function () {
         },
     ];
 
-    foreach (['page', 'post', 'book', 'offer'] as $post_type) {
+    foreach (['page', 'post', 'book', 'offer', 'mf_offer'] as $post_type) {
         if (post_type_exists($post_type)) {
             register_post_meta($post_type, $meta_key, $meta_args);
         }
@@ -481,7 +481,7 @@ function modfarm_ppb_sync_slot_payloads_on_save(int $post_id, WP_Post $post, boo
         return;
     }
 
-    if (!in_array($post->post_type, ['page', 'post', 'book', 'offer'], true)) {
+    if (!in_array($post->post_type, ['page', 'post', 'book', 'offer', 'mf_offer'], true)) {
         return;
     }
 

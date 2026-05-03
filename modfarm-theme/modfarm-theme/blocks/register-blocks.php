@@ -46,7 +46,12 @@ add_action('init', function () {
         'table-of-contents'          => 'modfarm_render_table_of_contents_block',
         'simple-gallery'             => 'modfarm_render_simple_gallery_block',
         'format-icons'               => 'modfarm_render_format_icons_block',
-        'featured-banner'            => 'modfarm_render_featured_banner_block'
+        'featured-banner'            => 'modfarm_render_featured_banner_block',
+
+        // Store blocks
+        'offer-price'                => 'modfarm_render_offer_price_block',
+        'offer-buy-button'           => 'modfarm_render_offer_buy_button_block',
+        'offer-details'              => 'modfarm_render_offer_details_block'
     ];
 
     foreach ($blocks as $slug => $callback) {

@@ -92,7 +92,7 @@ add_action('enqueue_block_editor_assets', function () {
         return;
     }
 
-    $supported_types = ['page', 'book', 'post', 'offer'];
+    $supported_types = ['page', 'book', 'post', 'offer', 'mf_offer'];
     if (!in_array((string) $screen->post_type, $supported_types, true)) {
         return;
     }
@@ -172,7 +172,7 @@ add_action('init', function () {
         },
     ];
 
-    foreach (['page', 'post', 'book', 'offer'] as $post_type) {
+    foreach (['page', 'post', 'book', 'offer', 'mf_offer'] as $post_type) {
         if (!post_type_exists($post_type)) {
             continue;
         }
@@ -498,6 +498,13 @@ function modfarm_register_block_categories( $categories ) {
         ];
     }
 
+    if ( ! in_array( 'modfarm-store', $slugs, true ) ) {
+        $categories[] = [
+            'slug'  => 'modfarm-store',
+            'title' => __( 'ModFarm Store', 'modfarm' ),
+        ];
+    }
+
     return $categories;
 }
 
@@ -518,6 +525,11 @@ add_action('init', function () {
     register_block_pattern_category('modfarm-post-body',   [ 'label' => 'ModFarm Post Layouts' ]);
     register_block_pattern_category('modfarm-post-footer', [ 'label' => 'ModFarm Post Footers' ]);
 
+    // Offer zones
+    register_block_pattern_category('modfarm-offer-header', [ 'label' => 'ModFarm Offer Headers' ]);
+    register_block_pattern_category('modfarm-offer-body',   [ 'label' => 'ModFarm Offer Layouts' ]);
+    register_block_pattern_category('modfarm-offer-footer', [ 'label' => 'ModFarm Offer Footers' ]);
+
     // Archive zones
     register_block_pattern_category('modfarm-archive-header', [ 'label' => 'ModFarm Archive Headers' ]);
     register_block_pattern_category('modfarm-archive-body',   [ 'label' => 'ModFarm Archive Layouts' ]);
@@ -527,6 +539,7 @@ add_action('init', function () {
     register_block_pattern_category('modfarm-book-elements',    [ 'label' => 'ModFarm Book Elements' ]);
     register_block_pattern_category('modfarm-page-elements',    [ 'label' => 'ModFarm Page Elements' ]);
     register_block_pattern_category('modfarm-post-elements',    [ 'label' => 'ModFarm Post Elements' ]);
+    register_block_pattern_category('modfarm-offer-elements',   [ 'label' => 'ModFarm Offer Elements' ]);
     register_block_pattern_category('modfarm-archive-elements', [ 'label' => 'ModFarm Archive Elements' ]);
 
     $base_dir = get_template_directory() . '/inc/patterns';
@@ -610,6 +623,9 @@ function modfarm_ppb_canonical_defaults(): array {
         'post_header_pattern'               => 'modfarm/post-header-basic-left',
         'post_body_pattern'                 => 'modfarm/post-body-basic',
         'post_footer_pattern'               => 'modfarm/post-footer-simple-comments',
+        'offer_header_pattern'              => 'modfarm/offer-header-basic-left',
+        'offer_body_pattern'                => 'modfarm/offer-body-basic',
+        'offer_footer_pattern'              => 'modfarm/offer-footer-simple',
     ];
 }
 
@@ -799,6 +815,16 @@ function modfarm_ppb_get_field_id_for_post_zone(string $post_type, string $slot)
             'header' => 'book_header_pattern',
             'body' => 'book_body_pattern',
             'footer' => 'book_footer_pattern',
+        ],
+        'offer' => [
+            'header' => 'offer_header_pattern',
+            'body' => 'offer_body_pattern',
+            'footer' => 'offer_footer_pattern',
+        ],
+        'mf_offer' => [
+            'header' => 'offer_header_pattern',
+            'body' => 'offer_body_pattern',
+            'footer' => 'offer_footer_pattern',
         ],
     ];
 
@@ -1008,6 +1034,13 @@ function modfarm_assemble_post_layout_on_insert($post_id, $post, $update) {
             $header_slug = modfarm_ppb_resolve_pattern_slug('book_header_pattern', $options['book_header_pattern'] ?? null, $options);
             $body_slug   = modfarm_ppb_resolve_pattern_slug('book_body_pattern', $options['book_body_pattern'] ?? null, $options);
             $footer_slug = modfarm_ppb_resolve_pattern_slug('book_footer_pattern', $options['book_footer_pattern'] ?? null, $options);
+            break;
+
+        case 'offer':
+        case 'mf_offer':
+            $header_slug = modfarm_ppb_resolve_pattern_slug('offer_header_pattern', $options['offer_header_pattern'] ?? null, $options);
+            $body_slug   = modfarm_ppb_resolve_pattern_slug('offer_body_pattern', $options['offer_body_pattern'] ?? null, $options);
+            $footer_slug = modfarm_ppb_resolve_pattern_slug('offer_footer_pattern', $options['offer_footer_pattern'] ?? null, $options);
             break;
 
         default:
