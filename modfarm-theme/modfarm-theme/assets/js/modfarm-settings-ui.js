@@ -38,12 +38,180 @@
   const hasTab = Array.prototype.some.call(tabs, t => t.dataset.tab === initial);
   activate(hasTab ? initial : 'site-basics');
 
+  const config = typeof window.modfarmSettingsUi === 'object' ? window.modfarmSettingsUi : {};
+
+  function initPpbVisualizer() {
+    const visualizer = document.getElementById('mf-ppb-visualizer');
+    if (!visualizer || !config.ajaxUrl) return;
+
+    const types = config.visualizerTypes || {};
+    const samples = config.visualizerSamples || {};
+    const layoutTabs = document.querySelectorAll('.mf-ppb-layout-tab');
+    const layoutPanels = document.querySelectorAll('.mf-ppb-layout-panel');
+    const sampleSelect = document.getElementById('mf-ppb-visualizer-sample');
+    const frame = document.getElementById('mf-ppb-visualizer-frame');
+    const feedback = document.getElementById('mf-ppb-visualizer-feedback');
+    const refreshButton = document.getElementById('mf-ppb-visualizer-refresh');
+    let activeType = 'book';
+    let refreshTimer = null;
+    let requestId = 0;
+
+    function fieldSelect(fieldId) {
+      return document.querySelector(`select[name="modfarm_theme_settings[${fieldId}]"]`);
+    }
+
+    function activeFields() {
+      return ((types[activeType] || {}).fields) || {};
+    }
+
+    function selectedValue(selectEl) {
+      if (!selectEl) {
+        return 'default';
+      }
+
+      return selectEl.value || 'default';
+    }
+
+    function setFeedback(message, isError) {
+      if (!feedback) return;
+      feedback.textContent = message || '';
+      feedback.classList.toggle('is-error', !!isError);
+      feedback.classList.toggle('is-active', !!message);
+    }
+
+    function updateLayoutTabs() {
+      layoutTabs.forEach((tab) => {
+        const isActive = tab.getAttribute('data-ppb-layout-type') === activeType;
+        tab.classList.toggle('is-active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      layoutPanels.forEach((panel) => {
+        panel.classList.toggle('is-active', panel.getAttribute('data-ppb-layout-type') === activeType);
+      });
+    }
+
+    function updateSampleSelect() {
+      if (!sampleSelect) return;
+
+      const typeSamples = samples[activeType] || [];
+      sampleSelect.innerHTML = '';
+
+      if (!typeSamples.length) {
+        const opt = document.createElement('option');
+        opt.value = '0';
+        opt.textContent = activeType === 'archive' ? 'Default archive context' : 'No sample content found';
+        sampleSelect.appendChild(opt);
+        sampleSelect.disabled = true;
+        return;
+      }
+
+      typeSamples.forEach((item) => {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.label;
+        sampleSelect.appendChild(opt);
+      });
+      sampleSelect.disabled = false;
+    }
+
+    function currentPatterns() {
+      const fields = activeFields();
+      return {
+        header: selectedValue(fieldSelect(fields.header)),
+        body: selectedValue(fieldSelect(fields.body)),
+        footer: selectedValue(fieldSelect(fields.footer))
+      };
+    }
+
+    function queueRefresh(delay) {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(refreshPreview, delay || 150);
+    }
+
+    async function refreshPreview() {
+      if (!frame) return;
+
+      const currentRequest = ++requestId;
+      setFeedback('Rendering preview...');
+
+      const payload = new window.FormData();
+      payload.set('action', 'modfarm_ppb_visualizer_preview');
+      payload.set('nonce', config.visualizerNonce || '');
+      payload.set('contentType', activeType);
+      payload.set('activeZone', 'body');
+      payload.set('sampleId', sampleSelect && !sampleSelect.disabled ? sampleSelect.value : '0');
+      payload.set('patterns', JSON.stringify(currentPatterns()));
+
+      try {
+        const response = await window.fetch(config.ajaxUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: payload
+        });
+        const data = await response.json();
+
+        if (currentRequest !== requestId) {
+          return;
+        }
+
+        if (!data || !data.success || !data.data || !data.data.html) {
+          const message = data && data.data && data.data.message ? data.data.message : 'Preview could not be generated.';
+          throw new Error(message);
+        }
+
+        frame.srcdoc = data.data.html;
+        setFeedback('');
+      } catch (error) {
+        setFeedback(error && error.message ? error.message : 'Preview could not be generated.', true);
+      }
+    }
+
+    layoutTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activeType = tab.getAttribute('data-ppb-layout-type') || 'book';
+        const applyTypeSelect = document.getElementById('mf-ppb-preview-content-type');
+        if (applyTypeSelect && applyTypeSelect.querySelector(`option[value="${activeType}"]`)) {
+          applyTypeSelect.value = activeType;
+          applyTypeSelect.dispatchEvent(new window.Event('change', { bubbles: true }));
+        }
+        updateLayoutTabs();
+        updateSampleSelect();
+        queueRefresh(0);
+      });
+    });
+
+    Object.keys(types).forEach((typeKey) => {
+      const fields = (types[typeKey] || {}).fields || {};
+      ['header', 'body', 'footer'].forEach((zone) => {
+        const selectEl = fieldSelect(fields[zone]);
+        if (!selectEl) return;
+        selectEl.addEventListener('change', () => {
+          if (typeKey === activeType) {
+            queueRefresh(150);
+          }
+        });
+      });
+    });
+
+    if (sampleSelect) {
+      sampleSelect.addEventListener('change', () => queueRefresh(0));
+    }
+    if (refreshButton) {
+      refreshButton.addEventListener('click', () => queueRefresh(0));
+    }
+    updateLayoutTabs();
+    updateSampleSelect();
+    queueRefresh(0);
+  }
+
+  initPpbVisualizer();
+
   const previewRoot = document.getElementById('mf-ppb-apply-all-preview');
-  if (!previewRoot || typeof window.modfarmSettingsUi !== 'object') {
+  if (!previewRoot || !config.ajaxUrl) {
     return;
   }
 
-  const config = window.modfarmSettingsUi;
   const patterns = config.applyAllPatterns || {};
   const contentTypeLabels = config.contentTypeLabels || {};
   const messages = config.messages || {};

@@ -694,6 +694,230 @@ function modfarm_get_ppb_apply_all_pattern_matrix(): array {
 }
 
 /**
+ * Build visualizer content type definitions for the PPB layout browser.
+ */
+function modfarm_get_ppb_visualizer_content_types(): array {
+    $types = [
+        'book' => [
+            'label' => __('Book Page', 'modfarm'),
+            'sample_label' => __('Sample Book', 'modfarm'),
+            'fields' => [
+                'header' => 'book_header_pattern',
+                'body' => 'book_body_pattern',
+                'footer' => 'book_footer_pattern',
+            ],
+        ],
+        'page' => [
+            'label' => __('Standard Page', 'modfarm'),
+            'sample_label' => __('Sample Page', 'modfarm'),
+            'fields' => [
+                'header' => 'page_header_pattern',
+                'body' => 'page_body_pattern',
+                'footer' => 'page_footer_pattern',
+            ],
+        ],
+        'post' => [
+            'label' => __('Blog Post', 'modfarm'),
+            'sample_label' => __('Sample Post', 'modfarm'),
+            'fields' => [
+                'header' => 'post_header_pattern',
+                'body' => 'post_body_pattern',
+                'footer' => 'post_footer_pattern',
+            ],
+        ],
+    ];
+
+    if (post_type_exists('offer')) {
+        $types['offer'] = [
+            'label' => __('Offer Page', 'modfarm'),
+            'sample_label' => __('Sample Offer', 'modfarm'),
+            'fields' => [
+                'header' => 'offer_header_pattern',
+                'body' => 'offer_body_pattern',
+                'footer' => 'offer_footer_pattern',
+            ],
+        ];
+    } elseif (post_type_exists('mf_offer')) {
+        $types['mf_offer'] = [
+            'label' => __('Offer Page', 'modfarm'),
+            'sample_label' => __('Sample Offer', 'modfarm'),
+            'fields' => [
+                'header' => 'offer_header_pattern',
+                'body' => 'offer_body_pattern',
+                'footer' => 'offer_footer_pattern',
+            ],
+        ];
+    }
+
+    $types['archive'] = [
+        'label' => __('Book Archive', 'modfarm'),
+        'sample_label' => __('Archive Context', 'modfarm'),
+        'fields' => [
+            'header' => 'archive_header_pattern',
+            'body' => 'archive_body_pattern',
+            'footer' => 'archive_footer_pattern',
+        ],
+    ];
+
+    return $types;
+}
+
+/**
+ * Return sample posts for the visualizer. These are only used as render context.
+ */
+function modfarm_get_ppb_visualizer_samples(): array {
+    $samples = [];
+
+    foreach (modfarm_get_ppb_visualizer_content_types() as $post_type => $config) {
+        if ($post_type === 'archive' || !post_type_exists($post_type)) {
+            $samples[$post_type] = [];
+            continue;
+        }
+
+        $posts = get_posts([
+            'post_type' => $post_type,
+            'post_status' => ['publish', 'draft', 'private'],
+            'posts_per_page' => 12,
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'suppress_filters' => false,
+        ]);
+
+        $samples[$post_type] = array_map(static function ($post) {
+            return [
+                'value' => (string) $post->ID,
+                'label' => get_the_title($post) ?: __('Untitled', 'modfarm'),
+            ];
+        }, $posts);
+    }
+
+    return $samples;
+}
+
+/**
+ * Resolve a submitted visualizer slug against the field's central default.
+ */
+function modfarm_ppb_visualizer_resolve_slug(string $field_id, string $submitted, array $options): string {
+    $submitted = trim($submitted);
+    if ($submitted !== '' && $submitted !== 'default') {
+        return function_exists('modfarm_ppb_normalize_slug') ? modfarm_ppb_normalize_slug($submitted) : $submitted;
+    }
+
+    return function_exists('modfarm_ppb_resolve_pattern_slug')
+        ? modfarm_ppb_resolve_pattern_slug($field_id, $options[$field_id] ?? null, $options)
+        : '';
+}
+
+/**
+ * Render a small iframe document for the PPB visualizer.
+ */
+function modfarm_build_ppb_visualizer_document(array $args): string {
+    $types = modfarm_get_ppb_visualizer_content_types();
+    $content_type = sanitize_key($args['content_type'] ?? 'book');
+    if (!isset($types[$content_type])) {
+        $content_type = 'book';
+    }
+
+    $active_zone = sanitize_key($args['active_zone'] ?? 'header');
+    if (!in_array($active_zone, ['header', 'body', 'footer'], true)) {
+        $active_zone = 'header';
+    }
+
+    $options = get_option('modfarm_theme_settings', []);
+    if (!is_array($options)) {
+        $options = [];
+    }
+
+    $sample_id = absint($args['sample_id'] ?? 0);
+    $sample_is_active = false;
+    if ($sample_id > 0 && $content_type !== 'archive') {
+        $sample_post = get_post($sample_id);
+        if ($sample_post && $sample_post->post_type === $content_type) {
+            $GLOBALS['post'] = $sample_post;
+            setup_postdata($sample_post);
+            $sample_is_active = true;
+        }
+    }
+
+    $fields = $types[$content_type]['fields'];
+    $submitted_patterns = is_array($args['patterns'] ?? null) ? $args['patterns'] : [];
+    $zone_markup = [];
+    $resolved = [];
+
+    foreach (['header', 'body', 'footer'] as $zone) {
+        $field_id = $fields[$zone] ?? '';
+        $slug = $field_id ? modfarm_ppb_visualizer_resolve_slug($field_id, (string) ($submitted_patterns[$zone] ?? ''), $options) : '';
+        $resolved[$zone] = $slug;
+        $content = ($slug && function_exists('modfarm_ppb_get_pattern_content_by_slug'))
+            ? modfarm_ppb_get_pattern_content_by_slug($slug)
+            : '';
+
+        $zone_markup[$zone] = sprintf(
+            '<div class="mf-ppb-viz-zone mf-ppb-viz-zone--%1$s" data-zone="%1$s">%2$s</div>',
+            esc_attr($zone),
+            do_blocks($content)
+        );
+    }
+
+    $body_class = 'mf-ppb-visualizer-doc mf-ppb-visualizer-doc--' . sanitize_html_class($content_type);
+    $style_uri = get_stylesheet_uri();
+    $common_uri = get_template_directory_uri() . '/assets/css/common.css';
+    $block_library_uri = includes_url('css/dist/block-library/style.min.css');
+
+    $document = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
+    $document .= '<link rel="stylesheet" href="' . esc_url($block_library_uri) . '">';
+    $document .= '<link rel="stylesheet" href="' . esc_url($style_uri) . '">';
+    $document .= '<link rel="stylesheet" href="' . esc_url($common_uri) . '">';
+    $document .= '<style>
+      html,body{margin:0;padding:0;background:#fff;color:#1d2327;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;}
+      body{font-size:13px;line-height:1.45;}
+      .mf-ppb-viz-canvas{width:100%;min-height:100vh;background:#fff;overflow:hidden;}
+      .mf-ppb-viz-zone{position:relative;min-height:24px;overflow:hidden;}
+      .mf-ppb-viz-zone:empty::after{content:"Pattern preview unavailable";display:block;padding:24px;color:#646970;background:#f6f7f7;}
+      img{max-width:100%;height:auto;}
+    </style>';
+    $document .= '</head><body class="' . esc_attr($body_class) . '"><main class="mf-ppb-viz-canvas">';
+    $document .= $zone_markup['header'] . $zone_markup['body'] . $zone_markup['footer'];
+    $document .= '</main></body></html>';
+
+    if ($sample_is_active) {
+        wp_reset_postdata();
+    }
+
+    return $document;
+}
+
+/**
+ * AJAX endpoint for the PPB layout browser visual preview.
+ */
+function modfarm_ajax_ppb_visualizer_preview() {
+    if (!current_user_can('edit_theme_options')) {
+        wp_send_json_error(['message' => __('You do not have permission to preview PPB layouts.', 'modfarm')], 403);
+    }
+
+    check_ajax_referer('modfarm_ppb_visualizer_preview', 'nonce');
+
+    $patterns = [];
+    $raw_patterns = isset($_POST['patterns']) ? wp_unslash($_POST['patterns']) : '';
+    if (is_string($raw_patterns) && $raw_patterns !== '') {
+        $decoded = json_decode($raw_patterns, true);
+        if (is_array($decoded)) {
+            $patterns = $decoded;
+        }
+    }
+
+    $html = modfarm_build_ppb_visualizer_document([
+        'content_type' => isset($_POST['contentType']) ? sanitize_key(wp_unslash($_POST['contentType'])) : 'book',
+        'sample_id' => isset($_POST['sampleId']) ? absint($_POST['sampleId']) : 0,
+        'active_zone' => isset($_POST['activeZone']) ? sanitize_key(wp_unslash($_POST['activeZone'])) : 'header',
+        'patterns' => $patterns,
+    ]);
+
+    wp_send_json_success(['html' => $html]);
+}
+add_action('wp_ajax_modfarm_ppb_visualizer_preview', 'modfarm_ajax_ppb_visualizer_preview');
+
+/**
  * Persistent option names for chunked PPB Apply All runs.
  */
 function modfarm_ppb_apply_all_active_runs_option_name(): string {
@@ -2291,9 +2515,28 @@ function modfarm_render_settings_page() {
                                 These are used by the PPB / Apply Layout tools.
                             </p>
 
+                            <div class="mf-ppb-layout-tabs" role="tablist" aria-label="Page layout content type">
+                                <?php $mf_viz_types = modfarm_get_ppb_visualizer_content_types(); ?>
+                                <?php foreach ($mf_viz_types as $value => $type_config) : ?>
+                                    <button
+                                        type="button"
+                                        class="mf-ppb-layout-tab<?php echo $value === 'book' ? ' is-active' : ''; ?>"
+                                        data-ppb-layout-type="<?php echo esc_attr($value); ?>"
+                                        aria-selected="<?php echo $value === 'book' ? 'true' : 'false'; ?>">
+                                        <?php echo esc_html($type_config['label']); ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+
                             <div class="mf-settings-grid">
                                 <div class="mf-settings-main">
-                                    <div class="mf-settings-group">
+                                    <div class="mf-settings-group mf-ppb-layout-sample">
+                                        <h3 class="mf-group-title">Preview Content</h3>
+                                        <label for="mf-ppb-visualizer-sample" class="screen-reader-text">Preview Content</label>
+                                        <select id="mf-ppb-visualizer-sample"></select>
+                                    </div>
+
+                                    <div class="mf-settings-group mf-ppb-layout-panel is-active" data-ppb-layout-type="book">
                                         <h3 class="mf-group-title">Book Layout</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
@@ -2313,7 +2556,7 @@ function modfarm_render_settings_page() {
                                         </table>
                                     </div>
 
-                                    <div class="mf-settings-group">
+                                    <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="page">
                                         <h3 class="mf-group-title">Page Layout</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
@@ -2333,7 +2576,7 @@ function modfarm_render_settings_page() {
                                         </table>
                                     </div>
 
-                                    <div class="mf-settings-group">
+                                    <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="post">
                                         <h3 class="mf-group-title">Post Layout</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
@@ -2353,7 +2596,7 @@ function modfarm_render_settings_page() {
                                         </table>
                                     </div>
 
-                                    <div class="mf-settings-group">
+                                    <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="<?php echo post_type_exists('offer') ? 'offer' : 'mf_offer'; ?>">
                                         <h3 class="mf-group-title">Offer Layout</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
@@ -2373,7 +2616,7 @@ function modfarm_render_settings_page() {
                                         </table>
                                     </div>
 
-                                    <div class="mf-settings-group">
+                                    <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="archive">
                                         <h3 class="mf-group-title">Archive Layout</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
@@ -2500,7 +2743,24 @@ function modfarm_render_settings_page() {
                                     </div>
                                 </div>
 
-                                <aside class="mf-settings-preview">
+                                <aside class="mf-settings-preview mf-ppb-visualizer" id="mf-ppb-visualizer">
+                                    <div class="mf-ppb-visualizer__head">
+                                        <div>
+                                            <h3 class="mf-ppb-visualizer__title">Preview</h3>
+                                            <p class="description">Live view of the selected Header, Body, and Footer patterns.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="mf-ppb-visualizer__frame-wrap" data-viewport="desktop">
+                                        <iframe
+                                            id="mf-ppb-visualizer-frame"
+                                            class="mf-ppb-visualizer__frame"
+                                            title="PPB layout preview"
+                                            sandbox="allow-same-origin">
+                                        </iframe>
+                                    </div>
+
+                                    <div class="mf-ppb-visualizer__feedback" id="mf-ppb-visualizer-feedback" aria-live="polite"></div>
                                     <div class="mf-preview-card">
                                         <div class="mf-preview-cover"></div>
                                         <div class="mf-preview-meta">
@@ -2542,17 +2802,20 @@ function modfarm_admin_enqueue_scripts($hook) {
     );
 
     // Tabbed UI styles + script
+    $settings_css_path = get_template_directory() . '/assets/css/modfarm-settings-ui.css';
+    $settings_js_path = get_template_directory() . '/assets/js/modfarm-settings-ui.js';
+
     wp_enqueue_style(
         'modfarm-settings-ui',
         get_template_directory_uri() . '/assets/css/modfarm-settings-ui.css',
         [],
-        '1.0.0'
+        file_exists($settings_css_path) ? filemtime($settings_css_path) : '1.0.0'
     );
     wp_enqueue_script(
         'modfarm-settings-ui',
         get_template_directory_uri() . '/assets/js/modfarm-settings-ui.js',
         [],
-        '1.0.0',
+        file_exists($settings_js_path) ? filemtime($settings_js_path) : '1.0.0',
         true
     );
 
@@ -2563,8 +2826,11 @@ function modfarm_admin_enqueue_scripts($hook) {
         'safeConvertPreviewNonce' => wp_create_nonce('modfarm_ppb_safe_convert_preview'),
         'safeConvertExecuteNonce' => wp_create_nonce('modfarm_ppb_safe_convert_execute'),
         'processNonce' => wp_create_nonce('modfarm_ppb_apply_all_process_run'),
+        'visualizerNonce' => wp_create_nonce('modfarm_ppb_visualizer_preview'),
         'applyAllPatterns' => modfarm_get_ppb_apply_all_pattern_matrix(),
         'contentTypeLabels' => modfarm_get_ppb_apply_all_content_types(),
+        'visualizerTypes' => modfarm_get_ppb_visualizer_content_types(),
+        'visualizerSamples' => modfarm_get_ppb_visualizer_samples(),
         'messages' => [
             'loading' => __('Scanning matching items...', 'modfarm'),
             'missingPattern' => __('Select a valid pattern before running the preview.', 'modfarm'),

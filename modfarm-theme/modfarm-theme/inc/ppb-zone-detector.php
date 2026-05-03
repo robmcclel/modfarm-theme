@@ -262,17 +262,14 @@ function modfarm_get_ppb_zone_summary_for_post(int $post_id, string $post_type =
 
     if (!$detected['is_zoned'] && $is_hybrid_template && function_exists('modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post')) {
         $hybrid_defaults = [];
-        if (function_exists('modfarm_ppb_get_local_chrome_override_meta_keys') && function_exists('modfarm_ppb_resolve_pattern_slug')) {
+        if (function_exists('modfarm_ppb_get_field_id_for_post_zone') && function_exists('modfarm_ppb_resolve_pattern_slug')) {
             $opts = get_option('modfarm_theme_settings', []);
-            $hybrid_defaults = $post_type === 'page'
-                ? [
-                    'header' => modfarm_ppb_resolve_pattern_slug('page_header_pattern', $opts['page_header_pattern'] ?? null, $opts),
-                    'footer' => modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $opts['page_footer_pattern'] ?? null, $opts),
-                ]
-                : [
-                    'header' => modfarm_ppb_resolve_pattern_slug('post_header_pattern', $opts['post_header_pattern'] ?? null, $opts),
-                    'footer' => modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $opts['post_footer_pattern'] ?? null, $opts),
-                ];
+            foreach (['header', 'footer'] as $slot) {
+                $field_id = modfarm_ppb_get_field_id_for_post_zone($post_type, $slot);
+                $hybrid_defaults[$slot] = $field_id !== ''
+                    ? modfarm_ppb_resolve_pattern_slug($field_id, $opts[$field_id] ?? null, $opts)
+                    : '';
+            }
         }
 
         $hybrid_slugs = modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($post_id, $post_type);
@@ -538,7 +535,7 @@ function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, a
         return 'Hybrid (Default)';
     }
 
-    if (in_array($post_type, ['page', 'book', 'offer'], true)) {
+    if (in_array($post_type, ['page', 'book', 'modfarm_book', 'offer', 'mf_offer'], true)) {
         return 'Full PPB';
     }
 
@@ -635,7 +632,7 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
         );
     }
 
-    $convert_supported_post_type = in_array($post_type, ['page', 'post', 'book', 'offer', 'modfarm_book'], true);
+    $convert_supported_post_type = in_array($post_type, ['page', 'post', 'book', 'modfarm_book', 'offer', 'mf_offer'], true);
     if (!$is_zoned && $convert_supported_post_type && function_exists('modfarm_ppb_get_pattern_content_by_slug') && function_exists('modfarm_ppb_resolve_pattern_slug')) {
         $header_field = function_exists('modfarm_ppb_get_field_id_for_post_zone')
             ? modfarm_ppb_get_field_id_for_post_zone($post_type, 'header')

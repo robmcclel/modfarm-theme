@@ -845,6 +845,22 @@ function modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post(int $post_id, st
             ];
             break;
 
+        case 'book':
+        case 'modfarm_book':
+            $resolved = [
+                'header' => modfarm_ppb_resolve_pattern_slug('book_header_pattern', $options['book_header_pattern'] ?? null, $options),
+                'footer' => modfarm_ppb_resolve_pattern_slug('book_footer_pattern', $options['book_footer_pattern'] ?? null, $options),
+            ];
+            break;
+
+        case 'offer':
+        case 'mf_offer':
+            $resolved = [
+                'header' => modfarm_ppb_resolve_pattern_slug('offer_header_pattern', $options['offer_header_pattern'] ?? null, $options),
+                'footer' => modfarm_ppb_resolve_pattern_slug('offer_footer_pattern', $options['offer_footer_pattern'] ?? null, $options),
+            ];
+            break;
+
         case 'post':
         default:
             $resolved = [

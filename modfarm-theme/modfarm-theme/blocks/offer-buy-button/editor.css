@@ -1,3 +1,7 @@
 .wp-block-modfarm-offer-buy-button .mfs-offer-buy-button {
   margin: 0;
 }
+
+.wp-block-modfarm-offer-buy-button .book-page-button {
+  pointer-events: none;
+}

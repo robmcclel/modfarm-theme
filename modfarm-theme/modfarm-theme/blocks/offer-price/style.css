@@ -1,7 +1,35 @@
 .mfs-offer-price {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--mfs-offer-price-size, inherit);
+  font-weight: var(--mfs-offer-price-weight, 700);
   line-height: 1.2;
+}
+
+.mfs-offer-price.mfs-align-left {
+  text-align: left;
+}
+
+.mfs-offer-price.mfs-align-center {
+  text-align: center;
+}
+
+.mfs-offer-price.mfs-align-right {
+  text-align: right;
+}
+
+.mfs-offer-price--small {
+  --mfs-offer-price-size: .95rem;
+}
+
+.mfs-offer-price--medium {
+  --mfs-offer-price-size: 1.25rem;
+}
+
+.mfs-offer-price--large {
+  --mfs-offer-price-size: 1.75rem;
+}
+
+.mfs-offer-price--xlarge {
+  --mfs-offer-price-size: 2.25rem;
 }
 
 .mfs-offer-price--empty {

@@ -3,7 +3,7 @@
   const { Fragment, createElement: el } = wp.element;
   const { __ } = wp.i18n;
   const { useBlockProps, InspectorControls } = wp.blockEditor || {};
-  const { PanelBody, TextControl } = wp.components || {};
+  const { CheckboxControl, PanelBody, TextControl } = wp.components || {};
   const ServerSideRender = wp.serverSideRender;
 
   registerBlockType('modfarm/offer-details', {
@@ -17,6 +17,31 @@
         el(
           InspectorControls,
           null,
+          el(
+            PanelBody,
+            { title: __('Details to Show', 'modfarm'), initialOpen: true },
+            el(CheckboxControl, {
+              label: __('Offer type', 'modfarm'),
+              checked: attributes.showType !== false,
+              onChange: function (value) {
+                setAttributes({ showType: !!value });
+              }
+            }),
+            el(CheckboxControl, {
+              label: __('Delivery mode', 'modfarm'),
+              checked: attributes.showDelivery !== false,
+              onChange: function (value) {
+                setAttributes({ showDelivery: !!value });
+              }
+            }),
+            el(CheckboxControl, {
+              label: __('Weight when relevant', 'modfarm'),
+              checked: attributes.showWeight !== false,
+              onChange: function (value) {
+                setAttributes({ showWeight: !!value });
+              }
+            })
+          ),
           el(
             PanelBody,
             { title: __('Offer', 'modfarm'), initialOpen: false },

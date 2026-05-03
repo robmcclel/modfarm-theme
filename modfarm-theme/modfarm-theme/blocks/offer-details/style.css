@@ -1,19 +1,32 @@
+.mfs-offer-details {
+  color: inherit;
+}
+
 .mfs-offer-details__list {
-  display: grid;
-  gap: .5rem;
   margin: 0;
+  padding: 0;
 }
 
 .mfs-offer-details__row {
-  display: grid;
-  grid-template-columns: minmax(7rem, max-content) 1fr;
-  gap: .75rem;
+  margin: 0 0 .35em;
+}
+
+.mfs-offer-details dt,
+.mfs-offer-details dd {
+  display: inline;
+  margin: 0;
+  padding: 0;
 }
 
 .mfs-offer-details dt {
   font-weight: 700;
 }
 
-.mfs-offer-details dd {
-  margin: 0;
+.mfs-offer-details dt::after {
+  content: ": ";
+}
+
+.mfs-offer-details dd::after {
+  content: "\A";
+  white-space: pre;
 }

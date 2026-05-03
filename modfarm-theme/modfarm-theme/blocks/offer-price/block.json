@@ -8,7 +8,11 @@
   "keywords": ["offer", "price", "store", "modfarm"],
   "usesContext": ["postId", "postType"],
   "attributes": {
-    "offerId": { "type": "number", "default": 0 }
+    "offerId": { "type": "number", "default": 0 },
+    "alignment": { "type": "string", "default": "left" },
+    "size": { "type": "string", "default": "inherit" },
+    "customSize": { "type": "number", "default": 0 },
+    "weight": { "type": "string", "default": "700" }
   },
   "editorScript": "modfarm-offer-price-editor",
   "style": "file:./style.css",

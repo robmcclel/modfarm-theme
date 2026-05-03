@@ -8,7 +8,7 @@
  
  /**
  * Template Name: Hybrid
- * Template Post Type: post, page
+ * Template Post Type: post, page, mf_offer
  */
  
  
@@ -70,6 +70,16 @@ if (!function_exists('mf_get_ppb_chrome_slugs_for_post')) {
           'footer' => function_exists('modfarm_ppb_resolve_pattern_slug')
             ? modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $opts['page_footer_pattern'] ?? null, $opts)
             : ($opts['page_footer_pattern']  ?? 'modfarm/footer-simple'),
+        ];
+      case 'mf_offer':
+      case 'offer':
+        return [
+          'header' => function_exists('modfarm_ppb_resolve_pattern_slug')
+            ? modfarm_ppb_resolve_pattern_slug('offer_header_pattern', $opts['offer_header_pattern'] ?? null, $opts)
+            : ($opts['offer_header_pattern']  ?? 'modfarm/offer-header-basic-left'),
+          'footer' => function_exists('modfarm_ppb_resolve_pattern_slug')
+            ? modfarm_ppb_resolve_pattern_slug('offer_footer_pattern', $opts['offer_footer_pattern'] ?? null, $opts)
+            : ($opts['offer_footer_pattern']  ?? 'modfarm/offer-footer-simple'),
         ];
       case 'post':
       default:

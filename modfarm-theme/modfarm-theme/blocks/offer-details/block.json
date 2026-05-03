@@ -8,7 +8,10 @@
   "keywords": ["offer", "details", "store", "modfarm"],
   "usesContext": ["postId", "postType"],
   "attributes": {
-    "offerId": { "type": "number", "default": 0 }
+    "offerId": { "type": "number", "default": 0 },
+    "showType": { "type": "boolean", "default": true },
+    "showDelivery": { "type": "boolean", "default": true },
+    "showWeight": { "type": "boolean", "default": true }
   },
   "editorScript": "modfarm-offer-details-editor",
   "style": "file:./style.css",

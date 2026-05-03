@@ -9,7 +9,15 @@
   "usesContext": ["postId", "postType"],
   "attributes": {
     "offerId": { "type": "number", "default": 0 },
-    "label": { "type": "string", "default": "Buy Now" }
+    "label": { "type": "string", "default": "Buy Now" },
+    "alignment": { "type": "string", "default": "left" },
+    "type": { "type": "string", "default": "inherit" },
+    "radiusMode": { "type": "string", "default": "inherit" },
+    "border_radius": { "type": "number", "default": 0 },
+    "showAdvanced": { "type": "boolean", "default": false },
+    "bg_color": { "type": "string", "default": "" },
+    "text_color": { "type": "string", "default": "" },
+    "border_color": { "type": "string", "default": "" }
   },
   "editorScript": "modfarm-offer-buy-button-editor",
   "style": "file:./style.css",

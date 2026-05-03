@@ -7,18 +7,58 @@ function modfarm_render_offer_buy_button_block($attributes = [], $content = '', 
     $label = isset($attributes['label']) && is_string($attributes['label']) && trim($attributes['label']) !== ''
         ? trim($attributes['label'])
         : 'Buy Now';
+    $alignment = isset($attributes['alignment']) && in_array($attributes['alignment'], ['left', 'center', 'right'], true)
+        ? $attributes['alignment']
+        : 'left';
+    $type = isset($attributes['type']) && in_array($attributes['type'], ['inherit', 'primary', 'secondary'], true)
+        ? $attributes['type']
+        : 'inherit';
+    if ($type === 'inherit') {
+        $type = 'primary';
+    }
+
+    $classes = [
+        'mfs-offer-buy-button',
+        'mfs-align-' . $alignment,
+    ];
+
+    $button_classes = [
+        'mfs-offer-buy-button__link',
+        'book-page-button',
+        $type === 'secondary' ? 'is-secondary' : 'is-primary',
+    ];
+
+    $inline_vars = [];
+    if (($attributes['radiusMode'] ?? 'inherit') === 'custom') {
+        $inline_vars[] = '--mfb-bp-override-radius:' . max(0, intval($attributes['border_radius'] ?? 0)) . 'px';
+    }
+    if (!empty($attributes['showAdvanced'])) {
+        foreach ([
+            'bg_color' => '--mfb-bp-override-bg',
+            'text_color' => '--mfb-bp-override-fg',
+            'border_color' => '--mfb-bp-override-border',
+        ] as $attr => $var) {
+            $value = isset($attributes[$attr]) ? trim((string) $attributes[$attr]) : '';
+            if ($value !== '') {
+                $inline_vars[] = $var . ':' . esc_attr($value);
+            }
+        }
+    }
+
+    $style_attr = !empty($inline_vars) ? ' style="' . esc_attr(implode(';', $inline_vars)) . '"' : '';
 
     $ready = modfarm_store_block_readiness($offer_id);
-    $wrapper_attributes = get_block_wrapper_attributes(['class' => 'mfs-offer-buy-button']);
+    $wrapper_attributes = get_block_wrapper_attributes(['class' => implode(' ', $classes)]);
 
     if (!empty($ready['ready'])) {
         $buy_url = add_query_arg('mf_buy_offer', $offer_id, home_url('/'));
-        return '<div ' . $wrapper_attributes . '><a class="mfs-offer-buy-button__link" href="' . esc_url($buy_url) . '">' . esc_html($label) . '</a></div>';
+        return '<div ' . $wrapper_attributes . '><a class="' . esc_attr(implode(' ', $button_classes)) . '" href="' . esc_url($buy_url) . '"' . $style_attr . '>' . esc_html($label) . '</a></div>';
     }
 
     $reason = !empty($ready['reasons'][0]) ? (string) $ready['reasons'][0] : 'This offer is not available right now.';
     $message = modfarm_store_block_is_editor_context() ? $reason : 'Unavailable';
+    $button_classes[] = 'mfs-offer-buy-button__link--disabled';
 
-    return '<div ' . $wrapper_attributes . '><span class="mfs-offer-buy-button__link mfs-offer-buy-button__link--disabled" aria-disabled="true">' . esc_html($message) . '</span></div>';
+    return '<div ' . $wrapper_attributes . '><span class="' . esc_attr(implode(' ', $button_classes)) . '" aria-disabled="true"' . $style_attr . '>' . esc_html($message) . '</span></div>';
 }
 }
