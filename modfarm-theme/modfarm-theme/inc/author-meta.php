@@ -2,7 +2,7 @@
 /**
  * Author Meta Fields for the book-author taxonomy.
  *
- * Adds avatar, short description, and repeatable social/profile links.
+ * Adds short description and repeatable social/profile links.
  */
 
 if (!defined('ABSPATH')) {
@@ -191,11 +191,6 @@ foreach (['book-author', 'book-authors'] as $taxonomy) {
         wp_nonce_field('modfarm_save_author_meta', 'modfarm_author_meta_nonce');
         ?>
         <div class="form-field">
-            <label for="author_avatar"><?php esc_html_e('Author Avatar URL', 'modfarm-author'); ?></label>
-            <input type="text" name="author_avatar" id="author_avatar" class="widefat" />
-            <p class="description"><?php esc_html_e('Paste the URL of the author profile image.', 'modfarm-author'); ?></p>
-        </div>
-        <div class="form-field">
             <label for="author_short"><?php esc_html_e('Short Author Description', 'modfarm-author'); ?></label>
             <textarea name="author_short" id="author_short" class="widefat"></textarea>
             <p class="description"><?php esc_html_e('Displayed in author lists. Keep it brief.', 'modfarm-author'); ?></p>
@@ -208,21 +203,13 @@ foreach (['book-author', 'book-authors'] as $taxonomy) {
     });
 
     add_action("{$taxonomy}_edit_form_fields", function ($term) {
-        $avatar = get_term_meta($term->term_id, 'author_avatar', true);
         $short = get_term_meta($term->term_id, 'author_short', true);
         $socials = modfarm_get_author_socials((int) $term->term_id);
         ?>
         <tr class="form-field">
-            <th scope="row"><label for="author_avatar"><?php esc_html_e('Author Avatar URL', 'modfarm-author'); ?></label></th>
-            <td>
-                <?php wp_nonce_field('modfarm_save_author_meta', 'modfarm_author_meta_nonce'); ?>
-                <input type="text" name="author_avatar" id="author_avatar" value="<?php echo esc_attr($avatar); ?>" class="widefat" />
-                <p class="description"><?php esc_html_e('Paste the URL of the author profile image.', 'modfarm-author'); ?></p>
-            </td>
-        </tr>
-        <tr class="form-field">
             <th scope="row"><label for="author_short"><?php esc_html_e('Short Author Description', 'modfarm-author'); ?></label></th>
             <td>
+                <?php wp_nonce_field('modfarm_save_author_meta', 'modfarm_author_meta_nonce'); ?>
                 <textarea name="author_short" id="author_short" class="widefat"><?php echo esc_textarea($short); ?></textarea>
                 <p class="description"><?php esc_html_e('Displayed in author lists. Keep it brief.', 'modfarm-author'); ?></p>
             </td>
@@ -245,10 +232,6 @@ function modfarm_save_author_term_meta($term_id): void {
 
     if (!current_user_can('edit_term', $term_id)) {
         return;
-    }
-
-    if (isset($_POST['author_avatar'])) {
-        update_term_meta($term_id, 'author_avatar', esc_url_raw(wp_unslash($_POST['author_avatar'])));
     }
 
     if (isset($_POST['author_short'])) {

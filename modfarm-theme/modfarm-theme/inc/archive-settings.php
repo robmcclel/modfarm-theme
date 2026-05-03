@@ -176,6 +176,12 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
 
     $hero_url    = $hero_id ? wp_get_attachment_image_url($hero_id, 'large') : '';
     $default_url = $default_id ? wp_get_attachment_image_url($default_id, 'medium') : '';
+    $default_image_label = ($taxonomy === 'book-author' || $taxonomy === 'book-authors') ? 'Profile Picture' : 'Default Image';
+    $default_image_button = ($taxonomy === 'book-author' || $taxonomy === 'book-authors') ? 'Select Profile Picture' : 'Select Image';
+    $default_image_description = ($taxonomy === 'book-author' || $taxonomy === 'book-authors')
+        ? 'Profile picture for this author. Used in author blocks, archive cards, and taxonomy listing blocks.'
+        : 'Fallback/brand image for this term. Can be shown on the archive page (toggle below) and used globally in taxonomy listing blocks across the site.';
+    $default_display_label = ($taxonomy === 'book-author' || $taxonomy === 'book-authors') ? 'Display profile picture on archive page' : 'Display default image on archive page';
 
     $variants = [
         'featured'  => 'Featured (Featured Image)',
@@ -239,22 +245,19 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
         </tr>
 
         <tr class="form-field">
-            <th scope="row">Default Image</th>
+            <th scope="row"><?php echo esc_html($default_image_label); ?></th>
             <td>
                 <div class="mfs-img-wrap">
                     <img id="archive_default_image_preview" src="<?php echo esc_url($default_url); ?>" style="<?php echo $default_url ? '' : 'display:none;'; ?>">
                     <div>
                         <input type="hidden" id="archive_default_image" name="archive_default_image" value="<?php echo esc_attr($default_id); ?>">
-                        <a href="#" class="button mfs-image-select" data-target="archive_default_image" data-preview="archive_default_image_preview">Select Image</a>
+                        <a href="#" class="button mfs-image-select" data-target="archive_default_image" data-preview="archive_default_image_preview"><?php echo esc_html($default_image_button); ?></a>
                         <a href="#" class="button button-secondary mfs-image-clear" data-target="archive_default_image" data-preview="archive_default_image_preview">Clear</a>
-                        <p class="description mfs-term-note">
-                            Fallback/brand image for this term. Can be shown on the archive page (toggle below) and
-                            used globally in taxonomy listing blocks across the site.
-                        </p>
+                        <p class="description mfs-term-note"><?php echo esc_html($default_image_description); ?></p>
                     </div>
                 </div>
                 <label style="display:block;margin-top:8px;">
-                    <input type="checkbox" name="archive_display_default" value="1" <?php checked($display_default, 1); ?>> Display default image on archive page
+                    <input type="checkbox" name="archive_display_default" value="1" <?php checked($display_default, 1); ?>> <?php echo esc_html($default_display_label); ?>
                 </label>
             </td>
         </tr>
@@ -267,6 +270,12 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
  */
 function mfs_render_book_archive_add_fields($taxonomy) {
     wp_nonce_field('mfs_save_book_archive_term_fields', 'mfs_book_archive_term_nonce');
+    $default_image_label = ($taxonomy === 'book-author' || $taxonomy === 'book-authors') ? 'Profile Picture' : 'Default Image';
+    $default_image_button = ($taxonomy === 'book-author' || $taxonomy === 'book-authors') ? 'Select Profile Picture' : 'Select Default Image';
+    $default_image_description = ($taxonomy === 'book-author' || $taxonomy === 'book-authors')
+        ? 'Used in author blocks, archive cards, and taxonomy listing blocks.'
+        : 'Also used by taxonomy listing blocks around the site.';
+    $default_display_label = ($taxonomy === 'book-author' || $taxonomy === 'book-authors') ? 'Display profile picture on archive page' : 'Display default image on archive page';
 
     $variants = [
         'featured'  => 'Featured (Featured Image)',
@@ -305,17 +314,17 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         </label>
     </div>
     <div class="form-field term-group">
-        <label>Default Image</label>
+        <label><?php echo esc_html($default_image_label); ?></label>
         <input type="hidden" id="archive_default_image" name="archive_default_image" value="">
         <div>
-            <a href="#" class="button mfs-image-select" data-target="archive_default_image" data-preview="archive_default_image_preview">Select Default Image</a>
+            <a href="#" class="button mfs-image-select" data-target="archive_default_image" data-preview="archive_default_image_preview"><?php echo esc_html($default_image_button); ?></a>
             <a href="#" class="button button-secondary mfs-image-clear" data-target="archive_default_image" data-preview="archive_default_image_preview">Clear</a>
         </div>
         <img id="archive_default_image_preview" src="" style="display:none; margin-top:8px; max-width:160px;">
         <label style="display:block;margin-top:8px;">
-            <input type="checkbox" name="archive_display_default" value="1"> Display default image on archive page
+            <input type="checkbox" name="archive_display_default" value="1"> <?php echo esc_html($default_display_label); ?>
         </label>
-        <p class="description">Also used by taxonomy listing blocks around the site.</p>
+        <p class="description"><?php echo esc_html($default_image_description); ?></p>
     </div>
     <?php
 }

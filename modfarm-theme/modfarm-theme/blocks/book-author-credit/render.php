@@ -68,7 +68,8 @@ if ( ! function_exists( 'modfarm_render_book_author_credit_block' ) ) {
 		<div class="mfs-author-credit-entry <?php echo esc_attr( $alignment ); ?>" <?php if ( $style ) echo 'style="' . esc_attr( $style ) . '"'; ?>>
 			<?php if ( $show_avatar && ! empty( $authors ) ) : ?>
 				<?php foreach ( $authors as $author ) :
-					$avatar_url = get_term_meta( $author->term_id, 'author_avatar', true );
+					$profile_picture_id = absint( get_term_meta( $author->term_id, 'archive_default_image', true ) );
+					$avatar_url = $profile_picture_id ? wp_get_attachment_image_url( $profile_picture_id, 'thumbnail' ) : '';
 					if ( ! empty( $avatar_url ) ): ?>
 						<img class="mfs-author-avatar" src="<?php echo esc_url( $avatar_url ); ?>" alt="<?php echo esc_attr( $author->name ); ?>" />
 					<?php endif; ?>
