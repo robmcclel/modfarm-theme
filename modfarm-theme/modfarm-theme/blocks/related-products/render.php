@@ -4,12 +4,15 @@ require_once get_template_directory() . '/blocks/shared/offer-blocks.php';
 if (!function_exists('modfarm_render_related_products_block')) {
 function modfarm_render_related_products_block($attributes = [], $content = '', $block = null) {
     $offer_id = modfarm_store_block_get_offer_id($attributes, $block);
+    $context = modfarm_store_block_get_relationship_context($attributes, $block);
     $limit = max(1, min(24, (int) ($attributes['productsPerPage'] ?? 3)));
     $columns = max(1, min(6, (int) ($attributes['columns'] ?? 3)));
     $ids = modfarm_store_block_related_offer_ids($offer_id, [
         'limit' => $limit,
         'taxonomy' => $attributes['taxonomy'] ?? '',
         'manualIds' => $attributes['manualIds'] ?? [],
+        'contextType' => $context['type'] ?? '',
+        'contextId' => $context['id'] ?? 0,
     ]);
 
     if (empty($ids)) {
@@ -33,10 +36,26 @@ function modfarm_render_related_products_block($attributes = [], $content = '', 
                 <div class="mfs-related-products__item">
                     <?php
                     echo modfarm_store_block_render_offer_card((int) $related_id, [
-                        'layout' => $attributes['cardLayout'] ?? 'vertical',
-                        'showExcerpt' => !isset($attributes['showExcerpt']) || $attributes['showExcerpt'] !== false,
+                        'layout' => $attributes['cardLayout'] ?? 'commerce',
+                        'imageAspect' => $attributes['imageAspect'] ?? '1 / 1',
+                        'showTitle' => !empty($attributes['showTitle']),
+                        'showExcerpt' => !empty($attributes['showExcerpt']),
                         'showDetails' => !isset($attributes['showDetails']) || $attributes['showDetails'] !== false,
-                        'buttonLabel' => $attributes['buttonLabel'] ?? 'Buy Now',
+                        'showPrimaryButton' => !isset($attributes['showPrimaryButton']) || $attributes['showPrimaryButton'] !== false,
+                        'showSecondaryButton' => !isset($attributes['showSecondaryButton']) || $attributes['showSecondaryButton'] !== false,
+                        'detailOverride' => ($attributes['detailMode'] ?? 'auto') === 'custom' ? ($attributes['detailOverride'] ?? '') : '',
+                        'primaryButtonLabel' => $attributes['primaryButtonLabel'] ?? 'Buy Now',
+                        'secondaryButtonLabel' => $attributes['secondaryButtonLabel'] ?? 'Learn More',
+                        'secondaryButtonLink' => $attributes['secondaryButtonLink'] ?? 'permalink',
+                        'buttonStyleMode' => $attributes['buttonStyleMode'] ?? 'inherit',
+                        'buttonLayout' => $attributes['buttonLayout'] ?? 'joined',
+                        'buttonCorners' => $attributes['buttonCorners'] ?? 'square',
+                        'primaryButtonBg' => $attributes['primaryButtonBg'] ?? '',
+                        'primaryButtonFg' => $attributes['primaryButtonFg'] ?? '',
+                        'primaryButtonBorder' => $attributes['primaryButtonBorder'] ?? '',
+                        'secondaryButtonBg' => $attributes['secondaryButtonBg'] ?? '',
+                        'secondaryButtonFg' => $attributes['secondaryButtonFg'] ?? '',
+                        'secondaryButtonBorder' => $attributes['secondaryButtonBorder'] ?? '',
                     ]);
                     ?>
                 </div>

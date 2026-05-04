@@ -20,6 +20,45 @@ function modfarm_store_block_get_offer_id($attributes = [], $block = null): int 
 }
 }
 
+if (!function_exists('modfarm_store_block_get_relationship_context')) {
+function modfarm_store_block_get_relationship_context($attributes = [], $block = null): array {
+    $post_id = 0;
+    $post_type = '';
+
+    if ($block && !empty($block->context['postId'])) {
+        $post_id = absint($block->context['postId']);
+        $post_type = !empty($block->context['postType']) ? sanitize_key((string) $block->context['postType']) : '';
+    }
+
+    if (!$post_id) {
+        $post_id = absint(get_the_ID());
+    }
+
+    if ($post_id && $post_type === '') {
+        $post_type = sanitize_key((string) get_post_type($post_id));
+    }
+
+    $type_map = [
+        'post' => 'post',
+        'page' => 'page',
+        'book' => 'book',
+        'modfarm_book' => 'book',
+        'mf_offer' => 'mf_offer',
+    ];
+
+    $relationship_type = $type_map[$post_type] ?? $post_type;
+    if ($relationship_type && function_exists('modfarm_is_supported_relationship_object_type') && !modfarm_is_supported_relationship_object_type($relationship_type)) {
+        $relationship_type = '';
+    }
+
+    return [
+        'type' => $relationship_type,
+        'id' => $post_id,
+        'post_type' => $post_type,
+    ];
+}
+}
+
 if (!function_exists('modfarm_store_block_format_price')) {
 function modfarm_store_block_format_price($price): string {
     if ($price === '') {
@@ -140,40 +179,89 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
     }
 
     $args = wp_parse_args($args, [
-        'layout' => 'vertical',
-        'imageAspect' => '3 / 4',
+        'layout' => 'commerce',
+        'imageAspect' => '1 / 1',
         'showImage' => true,
-        'showTitle' => true,
-        'showExcerpt' => true,
+        'showTitle' => false,
+        'showExcerpt' => false,
         'showPrice' => true,
         'showDetails' => true,
-        'showButton' => true,
+        'showPrimaryButton' => true,
+        'showSecondaryButton' => true,
         'excerptWords' => 24,
-        'buttonLabel' => 'Buy Now',
-        'buttonType' => 'primary',
+        'descriptionOverride' => '',
+        'detailOverride' => '',
+        'primaryButtonLabel' => 'Buy Now',
+        'secondaryButtonLabel' => 'Learn More',
+        'secondaryButtonLink' => 'permalink',
+        'buttonStyleMode' => 'inherit',
+        'buttonLayout' => 'joined',
+        'buttonCorners' => 'square',
+        'primaryButtonBg' => '',
+        'primaryButtonFg' => '',
+        'primaryButtonBorder' => '',
+        'secondaryButtonBg' => '',
+        'secondaryButtonFg' => '',
+        'secondaryButtonBorder' => '',
         'linkTitle' => true,
     ]);
 
-    $layout = in_array((string) $args['layout'], ['vertical', 'horizontal'], true) ? (string) $args['layout'] : 'vertical';
-    $button_type = in_array((string) $args['buttonType'], ['primary', 'secondary'], true) ? (string) $args['buttonType'] : 'primary';
+    $layout = in_array((string) $args['layout'], ['commerce', 'vertical', 'horizontal'], true) ? (string) $args['layout'] : 'commerce';
+    $button_layout = in_array((string) $args['buttonLayout'], ['joined', 'gap'], true) ? (string) $args['buttonLayout'] : 'joined';
+    $button_corners = in_array((string) $args['buttonCorners'], ['inherit', 'square', 'rounded', 'pill'], true) ? (string) $args['buttonCorners'] : 'square';
     $permalink = get_permalink($offer_id);
     $title = get_the_title($offer_id);
     $image = modfarm_store_block_get_offer_image($offer_id);
     $price = modfarm_store_block_format_price(get_post_meta($offer_id, 'mf_offer_price', true));
     $details = modfarm_store_block_get_offer_details($offer_id);
+    if (trim((string) $args['detailOverride']) !== '') {
+        $details = [trim((string) $args['detailOverride'])];
+    }
     $ready = modfarm_store_block_readiness($offer_id);
     $buy_url = !empty($ready['ready']) ? add_query_arg('mf_buy_offer', $offer_id, home_url('/')) : '';
-    $excerpt = modfarm_store_block_get_offer_excerpt($offer_id, (int) $args['excerptWords']);
+    $secondary_url = (string) $args['secondaryButtonLink'] === 'checkout' && $buy_url !== '' ? $buy_url : $permalink;
+    $excerpt = trim((string) $args['descriptionOverride']);
+    if ($excerpt === '') {
+        $excerpt = modfarm_store_block_get_offer_excerpt($offer_id, (int) $args['excerptWords']);
+    }
+
+    $style_vars = [];
+    if ((string) $args['buttonStyleMode'] === 'custom') {
+        $map = [
+            'primaryButtonBg' => '--mfs-product-primary-bg',
+            'primaryButtonFg' => '--mfs-product-primary-fg',
+            'primaryButtonBorder' => '--mfs-product-primary-border',
+            'secondaryButtonBg' => '--mfs-product-secondary-bg',
+            'secondaryButtonFg' => '--mfs-product-secondary-fg',
+            'secondaryButtonBorder' => '--mfs-product-secondary-border',
+        ];
+        foreach ($map as $key => $var) {
+            $value = trim((string) $args[$key]);
+            if ($value !== '') {
+                $style_vars[] = $var . ':' . esc_attr($value);
+            }
+        }
+    }
+
+    if ($button_corners === 'square') {
+        $style_vars[] = '--mfs-product-button-radius:0px';
+    } elseif ($button_corners === 'rounded') {
+        $style_vars[] = '--mfs-product-button-radius:8px';
+    } elseif ($button_corners === 'pill') {
+        $style_vars[] = '--mfs-product-button-radius:999px';
+    }
 
     $classes = [
         'mfs-product-card',
         'mfs-product-card--' . $layout,
+        'mfs-product-card--buttons-' . $button_layout,
+        'mfs-product-card--button-count-' . ((int) !empty($args['showPrimaryButton']) + (int) !empty($args['showSecondaryButton'])),
         empty($ready['ready']) ? 'mfs-product-card--unavailable' : '',
     ];
 
     ob_start();
     ?>
-    <article class="<?php echo esc_attr(implode(' ', array_filter($classes))); ?>" data-offer-id="<?php echo esc_attr($offer_id); ?>">
+    <article class="<?php echo esc_attr(implode(' ', array_filter($classes))); ?>" data-offer-id="<?php echo esc_attr($offer_id); ?>"<?php echo $style_vars ? ' style="' . esc_attr(implode(';', $style_vars)) . ';"' : ''; ?>>
         <?php if (!empty($args['showImage']) && $image !== '') : ?>
             <a class="mfs-product-card__media" href="<?php echo esc_url($permalink); ?>" style="aspect-ratio: <?php echo esc_attr((string) $args['imageAspect']); ?>;">
                 <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($title); ?>" loading="lazy" decoding="async" />
@@ -181,14 +269,28 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
         <?php endif; ?>
 
         <div class="mfs-product-card__body">
-            <?php if (!empty($args['showTitle']) && $title !== '') : ?>
-                <h3 class="mfs-product-card__title">
-                    <?php if (!empty($args['linkTitle'])) : ?>
-                        <a href="<?php echo esc_url($permalink); ?>"><?php echo esc_html($title); ?></a>
-                    <?php else : ?>
-                        <?php echo esc_html($title); ?>
+            <?php if (!empty($args['showPrimaryButton']) || !empty($args['showSecondaryButton'])) : ?>
+                <div class="mfs-product-card__actions">
+                    <?php if (!empty($args['showPrimaryButton'])) : ?>
+                        <?php if ($buy_url !== '') : ?>
+                            <a class="mfs-product-card__button mfs-product-card__button--primary" href="<?php echo esc_url($buy_url); ?>">
+                                <?php echo esc_html((string) $args['primaryButtonLabel']); ?>
+                            </a>
+                        <?php elseif (modfarm_store_block_is_editor_context()) : ?>
+                            <span class="mfs-product-card__button mfs-product-card__button--primary mfs-product-card__button--disabled" aria-disabled="true">
+                                <?php echo esc_html(!empty($ready['reasons'][0]) ? (string) $ready['reasons'][0] : 'Unavailable'); ?>
+                            </span>
+                        <?php else : ?>
+                            <span class="mfs-product-card__button mfs-product-card__button--primary mfs-product-card__button--disabled" aria-disabled="true"><?php esc_html_e('Unavailable', 'modfarm'); ?></span>
+                        <?php endif; ?>
                     <?php endif; ?>
-                </h3>
+
+                    <?php if (!empty($args['showSecondaryButton'])) : ?>
+                        <a class="mfs-product-card__button mfs-product-card__button--secondary" href="<?php echo esc_url($secondary_url); ?>">
+                            <?php echo esc_html((string) $args['secondaryButtonLabel']); ?>
+                        </a>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
 
             <?php if (!empty($args['showPrice']) && $price !== '') : ?>
@@ -199,24 +301,18 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
                 <div class="mfs-product-card__details"><?php echo esc_html(implode(' / ', $details)); ?></div>
             <?php endif; ?>
 
-            <?php if (!empty($args['showExcerpt']) && $excerpt !== '') : ?>
-                <div class="mfs-product-card__excerpt"><?php echo esc_html($excerpt); ?></div>
+            <?php if (!empty($args['showTitle']) && $title !== '') : ?>
+                <h3 class="mfs-product-card__title">
+                    <?php if (!empty($args['linkTitle'])) : ?>
+                        <a href="<?php echo esc_url($permalink); ?>"><?php echo esc_html($title); ?></a>
+                    <?php else : ?>
+                        <?php echo esc_html($title); ?>
+                    <?php endif; ?>
+                </h3>
             <?php endif; ?>
 
-            <?php if (!empty($args['showButton'])) : ?>
-                <div class="mfs-product-card__actions">
-                    <?php if ($buy_url !== '') : ?>
-                        <a class="mfs-product-card__button mfs-product-card__button--<?php echo esc_attr($button_type); ?>" href="<?php echo esc_url($buy_url); ?>">
-                            <?php echo esc_html((string) $args['buttonLabel']); ?>
-                        </a>
-                    <?php elseif (modfarm_store_block_is_editor_context()) : ?>
-                        <span class="mfs-product-card__button mfs-product-card__button--disabled" aria-disabled="true">
-                            <?php echo esc_html(!empty($ready['reasons'][0]) ? (string) $ready['reasons'][0] : 'Unavailable'); ?>
-                        </span>
-                    <?php else : ?>
-                        <span class="mfs-product-card__button mfs-product-card__button--disabled" aria-disabled="true"><?php esc_html_e('Unavailable', 'modfarm'); ?></span>
-                    <?php endif; ?>
-                </div>
+            <?php if (!empty($args['showExcerpt']) && $excerpt !== '') : ?>
+                <div class="mfs-product-card__excerpt"><?php echo wp_kses_post(wpautop($excerpt)); ?></div>
             <?php endif; ?>
         </div>
     </article>
@@ -231,6 +327,9 @@ function modfarm_store_block_related_offer_ids(int $offer_id, array $args = []):
         'limit' => 3,
         'taxonomy' => '',
         'manualIds' => [],
+        'contextType' => '',
+        'contextId' => 0,
+        'useCoreRelationships' => true,
     ]);
 
     $limit = max(1, min(24, (int) $args['limit']));
@@ -240,6 +339,21 @@ function modfarm_store_block_related_offer_ids(int $offer_id, array $args = []):
             return $id !== $offer_id && get_post_type($id) === 'mf_offer' && get_post_status($id) === 'publish';
         }));
         return array_slice($manual_ids, 0, $limit);
+    }
+
+    $context_type = sanitize_key((string) $args['contextType']);
+    $context_id = absint($args['contextId']);
+    if (!empty($args['useCoreRelationships']) && $context_type !== '' && $context_id > 0 && function_exists('modfarm_get_promoted_display_ids')) {
+        $core_ids = modfarm_get_promoted_display_ids($context_type, $context_id, 'mf_offer', 'promotes', [
+            'limit' => $limit,
+        ]);
+        $core_ids = array_values(array_filter(array_map('absint', $core_ids), static function ($id) use ($offer_id) {
+            return $id !== $offer_id && get_post_type($id) === 'mf_offer' && get_post_status($id) === 'publish';
+        }));
+
+        if (!empty($core_ids)) {
+            return array_slice($core_ids, 0, $limit);
+        }
     }
 
     $query_args = [

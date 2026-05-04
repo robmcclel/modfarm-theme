@@ -7,17 +7,30 @@ function modfarm_render_theme_product_card_block($attributes = [], $content = ''
     $wrapper_attributes = get_block_wrapper_attributes(['class' => 'mfs-theme-product-card']);
 
     $card = modfarm_store_block_render_offer_card($offer_id, [
-        'layout' => $attributes['layout'] ?? 'vertical',
-        'imageAspect' => $attributes['imageAspect'] ?? '3 / 4',
+        'layout' => $attributes['layout'] ?? 'commerce',
+        'imageAspect' => $attributes['imageAspect'] ?? '1 / 1',
         'showImage' => !isset($attributes['showImage']) || $attributes['showImage'] !== false,
-        'showTitle' => !isset($attributes['showTitle']) || $attributes['showTitle'] !== false,
-        'showExcerpt' => !isset($attributes['showExcerpt']) || $attributes['showExcerpt'] !== false,
+        'showTitle' => !empty($attributes['showTitle']),
+        'showExcerpt' => !empty($attributes['showExcerpt']),
         'showPrice' => !isset($attributes['showPrice']) || $attributes['showPrice'] !== false,
         'showDetails' => !isset($attributes['showDetails']) || $attributes['showDetails'] !== false,
-        'showButton' => !isset($attributes['showButton']) || $attributes['showButton'] !== false,
+        'showPrimaryButton' => !isset($attributes['showPrimaryButton']) || $attributes['showPrimaryButton'] !== false,
+        'showSecondaryButton' => !isset($attributes['showSecondaryButton']) || $attributes['showSecondaryButton'] !== false,
         'excerptWords' => $attributes['excerptWords'] ?? 24,
-        'buttonLabel' => $attributes['buttonLabel'] ?? 'Buy Now',
-        'buttonType' => $attributes['buttonType'] ?? 'primary',
+        'descriptionOverride' => ($attributes['descriptionMode'] ?? 'auto') === 'custom' ? ($attributes['descriptionOverride'] ?? '') : '',
+        'detailOverride' => ($attributes['detailMode'] ?? 'auto') === 'custom' ? ($attributes['detailOverride'] ?? '') : '',
+        'primaryButtonLabel' => $attributes['primaryButtonLabel'] ?? 'Buy Now',
+        'secondaryButtonLabel' => $attributes['secondaryButtonLabel'] ?? 'Learn More',
+        'secondaryButtonLink' => $attributes['secondaryButtonLink'] ?? 'permalink',
+        'buttonStyleMode' => $attributes['buttonStyleMode'] ?? 'inherit',
+        'buttonLayout' => $attributes['buttonLayout'] ?? 'joined',
+        'buttonCorners' => $attributes['buttonCorners'] ?? 'square',
+        'primaryButtonBg' => $attributes['primaryButtonBg'] ?? '',
+        'primaryButtonFg' => $attributes['primaryButtonFg'] ?? '',
+        'primaryButtonBorder' => $attributes['primaryButtonBorder'] ?? '',
+        'secondaryButtonBg' => $attributes['secondaryButtonBg'] ?? '',
+        'secondaryButtonFg' => $attributes['secondaryButtonFg'] ?? '',
+        'secondaryButtonBorder' => $attributes['secondaryButtonBorder'] ?? '',
     ]);
 
     if ($card === '') {
