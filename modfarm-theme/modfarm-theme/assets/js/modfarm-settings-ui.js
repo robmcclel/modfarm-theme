@@ -40,6 +40,143 @@
 
   const config = typeof window.modfarmSettingsUi === 'object' ? window.modfarmSettingsUi : {};
 
+  function settingControl(fieldId) {
+    return document.querySelector(`[name="modfarm_theme_settings[${fieldId}]"]`);
+  }
+
+  function settingValue(fieldId, fallback) {
+    const control = settingControl(fieldId);
+    if (!control) {
+      return fallback || '';
+    }
+
+    if (control.type === 'checkbox') {
+      return control.checked ? '1' : '';
+    }
+
+    return control.value || fallback || '';
+  }
+
+  function setStyleVar(target, name, value) {
+    if (!target) return;
+    if (value === '' || value === null || typeof value === 'undefined') {
+      target.style.removeProperty(name);
+      return;
+    }
+    target.style.setProperty(name, value);
+  }
+
+  function bindSettingPreview(fields, callback) {
+    fields.forEach((fieldId) => {
+      const control = settingControl(fieldId);
+      if (!control) return;
+      ['change', 'input', 'keyup'].forEach((eventName) => {
+        control.addEventListener(eventName, callback);
+      });
+    });
+  }
+
+  function initScopedPanelPreviews() {
+    const themePreview = document.getElementById('mf-theme-live-preview');
+    const bookPreview = document.getElementById('mf-book-live-preview');
+    const themeFields = [
+      'primary_color',
+      'secondary_color',
+      'background_color',
+      'header_text_color',
+      'body_text_color',
+      'link_color',
+      'button_color',
+      'button_text_color',
+      'heading_font',
+      'body_font'
+    ];
+    const bookFields = [
+      'primary_color',
+      'body_text_color',
+      'button_color',
+      'button_text_color',
+      'book_card_button_bg_color',
+      'book_card_button_text_color',
+      'book_card_button_border_color',
+      'book_card_cover_shape',
+      'book_card_button_shape',
+      'book_card_shadow_style',
+      'book_card_hide_title',
+      'book_card_hide_series',
+      'book_card_hide_primary_button'
+    ];
+
+    function buttonRadius(shape) {
+      if (shape === 'pill') return '999px';
+      if (shape === 'rounded') return '14px';
+      return '0px';
+    }
+
+    function shadowValue(style) {
+      if (style === 'shadow-sm') return '0 2px 8px rgba(0,0,0,.12)';
+      if (style === 'shadow-md') return '0 8px 22px rgba(0,0,0,.16)';
+      if (style === 'shadow-lg') return '0 14px 36px rgba(0,0,0,.22)';
+      if (style === 'emboss') return '0 8px 22px rgba(0,0,0,.14), inset 0 2px 8px rgba(255,255,255,.28)';
+      return 'none';
+    }
+
+    function updateThemePreview() {
+      if (!themePreview) return;
+
+      const primary = settingValue('primary_color', '#94a3b8');
+      const secondary = settingValue('secondary_color', '#475569');
+      const background = settingValue('background_color', '#f3f4f5');
+      const body = settingValue('body_text_color', '#1d2327');
+      const heading = settingValue('header_text_color', body);
+      const buttonBg = settingValue('button_color', primary || '#2563eb');
+      const buttonText = settingValue('button_text_color', '#ffffff');
+
+      setStyleVar(themePreview, '--mf-preview-primary', primary);
+      setStyleVar(themePreview, '--mf-preview-secondary', secondary);
+      setStyleVar(themePreview, '--mf-preview-bg', background);
+      setStyleVar(themePreview, '--mf-preview-body', body);
+      setStyleVar(themePreview, '--mf-preview-heading', heading);
+      setStyleVar(themePreview, '--mf-preview-button-bg', buttonBg);
+      setStyleVar(themePreview, '--mf-preview-button-border', buttonBg);
+      setStyleVar(themePreview, '--mf-preview-button-text', buttonText);
+      setStyleVar(themePreview, '--mf-preview-heading-font', settingValue('heading_font', 'inherit'));
+      setStyleVar(themePreview, '--mf-preview-body-font', settingValue('body_font', 'inherit'));
+    }
+
+    function updateBookPreview() {
+      if (!bookPreview) return;
+
+      const globalButtonBg = settingValue('button_color', settingValue('primary_color', '#f2b100'));
+      const globalButtonText = settingValue('button_text_color', '#111111');
+      const buttonBg = settingValue('book_card_button_bg_color', globalButtonBg);
+      const buttonText = settingValue('book_card_button_text_color', globalButtonText);
+      const buttonBorder = settingValue('book_card_button_border_color', buttonBg);
+
+      setStyleVar(bookPreview, '--mf-preview-body', settingValue('body_text_color', '#1d2327'));
+      setStyleVar(bookPreview, '--mf-preview-button-bg', buttonBg);
+      setStyleVar(bookPreview, '--mf-preview-button-border', buttonBorder);
+      setStyleVar(bookPreview, '--mf-preview-button-text', buttonText);
+      setStyleVar(bookPreview, '--mf-preview-cover-radius', settingValue('book_card_cover_shape') === 'rounded' ? '14px' : '0px');
+      setStyleVar(bookPreview, '--mf-preview-button-radius', buttonRadius(settingValue('book_card_button_shape')));
+      setStyleVar(bookPreview, '--mf-preview-shadow', shadowValue(settingValue('book_card_shadow_style')));
+
+      const title = bookPreview.querySelector('.mf-preview-title');
+      const author = bookPreview.querySelector('.mf-preview-author');
+      const button = bookPreview.querySelector('.mf-preview-button');
+      if (title) title.hidden = settingValue('book_card_hide_title') === '1';
+      if (author) author.hidden = settingValue('book_card_hide_series') === '1';
+      if (button) button.hidden = settingValue('book_card_hide_primary_button') === '1';
+    }
+
+    bindSettingPreview(themeFields, updateThemePreview);
+    bindSettingPreview(bookFields, updateBookPreview);
+    updateThemePreview();
+    updateBookPreview();
+  }
+
+  initScopedPanelPreviews();
+
   function initPpbVisualizer() {
     const visualizer = document.getElementById('mf-ppb-visualizer');
     if (!visualizer || !config.ajaxUrl) return;
@@ -50,9 +187,13 @@
     const layoutPanels = document.querySelectorAll('.mf-ppb-layout-panel');
     const sampleSelect = document.getElementById('mf-ppb-visualizer-sample');
     const frame = document.getElementById('mf-ppb-visualizer-frame');
+    const frameWrap = visualizer.querySelector('.mf-ppb-visualizer__frame-wrap');
     const feedback = document.getElementById('mf-ppb-visualizer-feedback');
     const refreshButton = document.getElementById('mf-ppb-visualizer-refresh');
+    const viewportButtons = visualizer.querySelectorAll('.mf-ppb-visualizer__viewport');
     let activeType = 'book';
+    let activeViewport = 'desktop';
+    let activeViewportWidth = 1200;
     let refreshTimer = null;
     let requestId = 0;
 
@@ -124,6 +265,22 @@
       };
     }
 
+    function updateViewport() {
+      if (!frame || !frameWrap) return;
+
+      const availableWidth = Math.max(frameWrap.clientWidth - 2, 1);
+      const availableHeight = Math.max(frameWrap.clientHeight - 2, 1);
+      const targetWidth = Math.max(activeViewportWidth, 1);
+      const scale = Math.min(1, availableWidth / targetWidth);
+      const scaledWidth = targetWidth * scale;
+
+      frameWrap.setAttribute('data-viewport', activeViewport);
+      frame.style.width = `${targetWidth}px`;
+      frame.style.height = `${Math.ceil(availableHeight / scale)}px`;
+      frame.style.transform = `scale(${scale})`;
+      frame.style.marginLeft = scale === 1 && scaledWidth < availableWidth ? `${Math.floor((availableWidth - scaledWidth) / 2)}px` : '0';
+    }
+
     function queueRefresh(delay) {
       window.clearTimeout(refreshTimer);
       refreshTimer = window.setTimeout(refreshPreview, delay || 150);
@@ -140,6 +297,7 @@
       payload.set('nonce', config.visualizerNonce || '');
       payload.set('contentType', activeType);
       payload.set('activeZone', 'body');
+      payload.set('previewScope', 'ppb_layout');
       payload.set('sampleId', sampleSelect && !sampleSelect.disabled ? sampleSelect.value : '0');
       payload.set('patterns', JSON.stringify(currentPatterns()));
 
@@ -161,6 +319,7 @@
         }
 
         frame.srcdoc = data.data.html;
+        updateViewport();
         setFeedback('');
       } catch (error) {
         setFeedback(error && error.message ? error.message : 'Preview could not be generated.', true);
@@ -200,8 +359,22 @@
     if (refreshButton) {
       refreshButton.addEventListener('click', () => queueRefresh(0));
     }
+    viewportButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        activeViewport = button.getAttribute('data-viewport') || 'desktop';
+        activeViewportWidth = parseInt(button.getAttribute('data-width') || '1200', 10) || 1200;
+        viewportButtons.forEach((item) => {
+          const isActive = item === button;
+          item.classList.toggle('is-active', isActive);
+          item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+        updateViewport();
+      });
+    });
+    window.addEventListener('resize', updateViewport);
     updateLayoutTabs();
     updateSampleSelect();
+    updateViewport();
     queueRefresh(0);
   }
 

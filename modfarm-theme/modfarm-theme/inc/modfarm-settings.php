@@ -809,6 +809,67 @@ function modfarm_ppb_visualizer_resolve_slug(string $field_id, string $submitted
 }
 
 /**
+ * Return frontend stylesheet URLs needed by ModFarm blocks inside the preview iframe.
+ */
+function modfarm_ppb_visualizer_stylesheet_urls(): array {
+    $theme_dir = get_template_directory();
+    $theme_uri = get_template_directory_uri();
+    $urls = [
+        includes_url('css/dist/block-library/style.min.css'),
+        get_stylesheet_uri(),
+        $theme_uri . '/assets/css/common.css',
+        $theme_uri . '/assets/css/book-cards.css',
+        $theme_uri . '/assets/css/footers.css',
+    ];
+
+    $block_json_files = glob($theme_dir . '/blocks/*/block.json') ?: [];
+    foreach ($block_json_files as $block_json) {
+        $block_data = json_decode((string) file_get_contents($block_json), true);
+        if (!is_array($block_data) || empty($block_data['style'])) {
+            continue;
+        }
+
+        $styles = is_array($block_data['style']) ? $block_data['style'] : [$block_data['style']];
+        foreach ($styles as $style) {
+            if (!is_string($style) || !str_starts_with($style, 'file:')) {
+                continue;
+            }
+
+            $relative = ltrim(substr($style, 5), './\\');
+            $path = dirname($block_json) . '/' . str_replace('\\', '/', $relative);
+            if (!file_exists($path)) {
+                continue;
+            }
+
+            $urls[] = $theme_uri . '/blocks/' . basename(dirname($block_json)) . '/' . str_replace('\\', '/', $relative);
+        }
+    }
+
+    return array_values(array_unique(array_filter($urls)));
+}
+
+/**
+ * Capture inline design-token styles normally printed into frontend/admin heads.
+ */
+function modfarm_ppb_visualizer_inline_token_styles(): string {
+    $callbacks = [
+        'modfarm_output_global_color_tokens',
+        'modfarm_output_navigation_tokens',
+        'modfarm_output_book_card_design_tokens',
+        'modfarm_output_book_page_button_design_tokens',
+    ];
+
+    ob_start();
+    foreach ($callbacks as $callback) {
+        if (function_exists($callback)) {
+            $callback();
+        }
+    }
+
+    return (string) ob_get_clean();
+}
+
+/**
  * Render a small iframe document for the PPB visualizer.
  */
 function modfarm_build_ppb_visualizer_document(array $args): string {
@@ -816,6 +877,11 @@ function modfarm_build_ppb_visualizer_document(array $args): string {
     $content_type = sanitize_key($args['content_type'] ?? 'book');
     if (!isset($types[$content_type])) {
         $content_type = 'book';
+    }
+
+    $preview_scope = sanitize_key($args['preview_scope'] ?? 'ppb_layout');
+    if ($preview_scope === '') {
+        $preview_scope = 'ppb_layout';
     }
 
     $active_zone = sanitize_key($args['active_zone'] ?? 'header');
@@ -859,26 +925,38 @@ function modfarm_build_ppb_visualizer_document(array $args): string {
         );
     }
 
-    $body_class = 'mf-ppb-visualizer-doc mf-ppb-visualizer-doc--' . sanitize_html_class($content_type);
-    $style_uri = get_stylesheet_uri();
-    $common_uri = get_template_directory_uri() . '/assets/css/common.css';
-    $block_library_uri = includes_url('css/dist/block-library/style.min.css');
+    $body_classes = get_body_class([
+        'mf-ppb-visualizer-doc',
+        'mf-ppb-visualizer-doc--scope-' . sanitize_html_class($preview_scope),
+        'mf-ppb-visualizer-doc--' . sanitize_html_class($content_type),
+        'wp-site-blocks',
+    ]);
+    $global_styles = function_exists('wp_get_global_stylesheet') ? wp_get_global_stylesheet() : '';
 
     $document = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
-    $document .= '<link rel="stylesheet" href="' . esc_url($block_library_uri) . '">';
-    $document .= '<link rel="stylesheet" href="' . esc_url($style_uri) . '">';
-    $document .= '<link rel="stylesheet" href="' . esc_url($common_uri) . '">';
+    foreach (modfarm_ppb_visualizer_stylesheet_urls() as $stylesheet_url) {
+        $document .= '<link rel="stylesheet" href="' . esc_url($stylesheet_url) . '">';
+    }
+    $document .= modfarm_ppb_visualizer_inline_token_styles();
+    if ($global_styles !== '') {
+        $document .= '<style id="global-styles-inline-css">' . str_replace('</style', '<\/style', $global_styles) . '</style>';
+    }
     $document .= '<style>
-      html,body{margin:0;padding:0;background:#fff;color:#1d2327;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden;}
-      body{font-size:13px;line-height:1.45;}
-      .mf-ppb-viz-canvas{width:100%;min-height:100vh;background:#fff;overflow:hidden;}
-      .mf-ppb-viz-zone{position:relative;min-height:24px;overflow:hidden;}
+      html{margin:0;padding:0;background:var(--mfs-background,#fff);overflow-x:hidden;overflow-y:auto;}
+      body{margin:0;padding:0;background:var(--mfs-background,#fff);color:var(--mfs-body,#1d2327);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;line-height:1.45;overflow-x:hidden;overflow-y:auto;}
+      a{color:var(--mfs-link,#2271b1);}
+      h1,h2,h3,h4,h5,h6{color:var(--mfs-heading,var(--mfs-body,#1d2327));}
+      .mf-ppb-viz-canvas{width:100%;min-height:100vh;background:var(--mfs-background,#fff);overflow:visible;}
+      .mf-ppb-viz-zone{position:relative;min-height:24px;overflow:visible;}
       .mf-ppb-viz-zone:empty::after{content:"Pattern preview unavailable";display:block;padding:24px;color:#646970;background:#f6f7f7;}
+      .mf-ppb-viz-zone > *:first-child{margin-top:0;}
+      .mf-ppb-viz-zone > *:last-child{margin-bottom:0;}
+      .wp-site-blocks{padding:0;}
       img{max-width:100%;height:auto;}
     </style>';
-    $document .= '</head><body class="' . esc_attr($body_class) . '"><main class="mf-ppb-viz-canvas">';
+    $document .= '</head><body class="' . esc_attr(implode(' ', $body_classes)) . '"><div class="wp-site-blocks"><main class="mf-ppb-viz-canvas">';
     $document .= $zone_markup['header'] . $zone_markup['body'] . $zone_markup['footer'];
-    $document .= '</main></body></html>';
+    $document .= '</main></div></body></html>';
 
     if ($sample_is_active) {
         wp_reset_postdata();
@@ -910,6 +988,7 @@ function modfarm_ajax_ppb_visualizer_preview() {
         'content_type' => isset($_POST['contentType']) ? sanitize_key(wp_unslash($_POST['contentType'])) : 'book',
         'sample_id' => isset($_POST['sampleId']) ? absint($_POST['sampleId']) : 0,
         'active_zone' => isset($_POST['activeZone']) ? sanitize_key(wp_unslash($_POST['activeZone'])) : 'header',
+        'preview_scope' => isset($_POST['previewScope']) ? sanitize_key(wp_unslash($_POST['previewScope'])) : 'ppb_layout',
         'patterns' => $patterns,
     ]);
 
@@ -2268,7 +2347,7 @@ function modfarm_render_settings_page() {
 
                                 <!-- Theme preview -->
                                 <aside class="mf-settings-preview">
-                                    <div class="mf-preview-card">
+                                    <div class="mf-preview-card" id="mf-theme-live-preview">
                                         <div class="mf-preview-cover"></div>
                                         <div class="mf-preview-meta">
                                             <div class="mf-preview-title">The Adventure</div>
@@ -2491,7 +2570,7 @@ function modfarm_render_settings_page() {
 
                                 <!-- Book card preview -->
                                 <aside class="mf-settings-preview">
-                                    <div class="mf-preview-card mf-preview-card--book">
+                                    <div class="mf-preview-card mf-preview-card--book" id="mf-book-live-preview">
                                         <div class="mf-preview-cover mf-preview-cover--book"></div>
                                         <div class="mf-preview-meta">
                                             <div class="mf-preview-title">Tunnel Rat 3</div>
@@ -2751,11 +2830,18 @@ function modfarm_render_settings_page() {
                                         </div>
                                     </div>
 
+                                    <div class="mf-ppb-visualizer__viewports" role="group" aria-label="Preview viewport">
+                                        <button type="button" class="mf-ppb-visualizer__viewport is-active" data-viewport="desktop" data-width="1200" aria-pressed="true">Desktop</button>
+                                        <button type="button" class="mf-ppb-visualizer__viewport" data-viewport="tablet" data-width="768" aria-pressed="false">Tablet</button>
+                                        <button type="button" class="mf-ppb-visualizer__viewport" data-viewport="mobile" data-width="390" aria-pressed="false">Phone</button>
+                                    </div>
+
                                     <div class="mf-ppb-visualizer__frame-wrap" data-viewport="desktop">
                                         <iframe
                                             id="mf-ppb-visualizer-frame"
                                             class="mf-ppb-visualizer__frame"
                                             title="PPB layout preview"
+                                            scrolling="yes"
                                             sandbox="allow-same-origin">
                                         </iframe>
                                     </div>
@@ -2924,15 +3010,23 @@ function modfarm_output_book_card_design_tokens() {
 function modfarm_output_global_color_tokens() {
     $opts = get_option('modfarm_theme_settings', []);
 
-    $primary   = $opts['primary_color']      ?? '';
-    $secondary = $opts['secondary_color']    ?? '';
-    $btn_bg    = $opts['button_color']       ?? ($primary ?: '#222222');
-    $btn_fg    = $opts['button_text_color']  ?? '#ffffff';
+    $primary    = $opts['primary_color']      ?? '';
+    $secondary  = $opts['secondary_color']    ?? '';
+    $background = $opts['background_color']   ?? '#ffffff';
+    $header     = $opts['header_text_color']  ?? '';
+    $body       = $opts['body_text_color']    ?? '#1d2327';
+    $link       = $opts['link_color']         ?? ($primary ?: $body);
+    $btn_bg     = $opts['button_color']       ?? ($primary ?: '#222222');
+    $btn_fg     = $opts['button_text_color']  ?? '#ffffff';
 
     $vars = [];
 
-    if ($primary)   $vars['--mfs-primary']   = $primary;
-    if ($secondary) $vars['--mfs-secondary'] = $secondary;
+    if ($primary)    $vars['--mfs-primary']    = $primary;
+    if ($secondary)  $vars['--mfs-secondary']  = $secondary;
+    if ($background) $vars['--mfs-background'] = $background;
+    if ($header)     $vars['--mfs-heading']    = $header;
+    if ($body)       $vars['--mfs-body']       = $body;
+    if ($link)       $vars['--mfs-link']       = $link;
 
     // These are the "site button" defaults you want the style to use.
     if ($btn_bg)    $vars['--mfs-button-bg'] = $btn_bg;
