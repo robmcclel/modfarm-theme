@@ -84,3 +84,186 @@ function modfarm_store_block_label($value): string {
     return $labels[$value] ?? ucwords(str_replace('_', ' ', $value));
 }
 }
+
+if (!function_exists('modfarm_store_block_get_offer_image')) {
+function modfarm_store_block_get_offer_image(int $offer_id, string $size = 'large'): string {
+    if ($offer_id <= 0) {
+        return '';
+    }
+
+    $image = get_the_post_thumbnail_url($offer_id, $size);
+    return is_string($image) ? $image : '';
+}
+}
+
+if (!function_exists('modfarm_store_block_get_offer_excerpt')) {
+function modfarm_store_block_get_offer_excerpt(int $offer_id, int $words = 24): string {
+    if ($offer_id <= 0) {
+        return '';
+    }
+
+    $excerpt = get_the_excerpt($offer_id);
+    if ($excerpt === '') {
+        $post = get_post($offer_id);
+        $excerpt = $post ? wp_strip_all_tags(strip_shortcodes((string) $post->post_content)) : '';
+    }
+
+    return $excerpt !== '' ? wp_trim_words($excerpt, max(1, $words), '...') : '';
+}
+}
+
+if (!function_exists('modfarm_store_block_get_offer_details')) {
+function modfarm_store_block_get_offer_details(int $offer_id): array {
+    if ($offer_id <= 0) {
+        return [];
+    }
+
+    $type = get_post_meta($offer_id, 'mf_offer_type', true) ?: 'digital';
+    $mode = get_post_meta($offer_id, 'mf_offer_delivery_mode', true) ?: 'none';
+
+    $details = [];
+    if ($type !== '') {
+        $details[] = modfarm_store_block_label($type);
+    }
+    if ($mode !== '' && $mode !== 'none') {
+        $details[] = modfarm_store_block_label($mode);
+    }
+
+    return array_values(array_filter(array_unique($details)));
+}
+}
+
+if (!function_exists('modfarm_store_block_render_offer_card')) {
+function modfarm_store_block_render_offer_card(int $offer_id, array $args = []): string {
+    if ($offer_id <= 0 || get_post_type($offer_id) !== 'mf_offer') {
+        return modfarm_store_block_is_editor_context() ? '<div class="mfs-product-card mfs-product-card--empty">No Offer selected.</div>' : '';
+    }
+
+    $args = wp_parse_args($args, [
+        'layout' => 'vertical',
+        'imageAspect' => '3 / 4',
+        'showImage' => true,
+        'showTitle' => true,
+        'showExcerpt' => true,
+        'showPrice' => true,
+        'showDetails' => true,
+        'showButton' => true,
+        'excerptWords' => 24,
+        'buttonLabel' => 'Buy Now',
+        'buttonType' => 'primary',
+        'linkTitle' => true,
+    ]);
+
+    $layout = in_array((string) $args['layout'], ['vertical', 'horizontal'], true) ? (string) $args['layout'] : 'vertical';
+    $button_type = in_array((string) $args['buttonType'], ['primary', 'secondary'], true) ? (string) $args['buttonType'] : 'primary';
+    $permalink = get_permalink($offer_id);
+    $title = get_the_title($offer_id);
+    $image = modfarm_store_block_get_offer_image($offer_id);
+    $price = modfarm_store_block_format_price(get_post_meta($offer_id, 'mf_offer_price', true));
+    $details = modfarm_store_block_get_offer_details($offer_id);
+    $ready = modfarm_store_block_readiness($offer_id);
+    $buy_url = !empty($ready['ready']) ? add_query_arg('mf_buy_offer', $offer_id, home_url('/')) : '';
+    $excerpt = modfarm_store_block_get_offer_excerpt($offer_id, (int) $args['excerptWords']);
+
+    $classes = [
+        'mfs-product-card',
+        'mfs-product-card--' . $layout,
+        empty($ready['ready']) ? 'mfs-product-card--unavailable' : '',
+    ];
+
+    ob_start();
+    ?>
+    <article class="<?php echo esc_attr(implode(' ', array_filter($classes))); ?>" data-offer-id="<?php echo esc_attr($offer_id); ?>">
+        <?php if (!empty($args['showImage']) && $image !== '') : ?>
+            <a class="mfs-product-card__media" href="<?php echo esc_url($permalink); ?>" style="aspect-ratio: <?php echo esc_attr((string) $args['imageAspect']); ?>;">
+                <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($title); ?>" loading="lazy" decoding="async" />
+            </a>
+        <?php endif; ?>
+
+        <div class="mfs-product-card__body">
+            <?php if (!empty($args['showTitle']) && $title !== '') : ?>
+                <h3 class="mfs-product-card__title">
+                    <?php if (!empty($args['linkTitle'])) : ?>
+                        <a href="<?php echo esc_url($permalink); ?>"><?php echo esc_html($title); ?></a>
+                    <?php else : ?>
+                        <?php echo esc_html($title); ?>
+                    <?php endif; ?>
+                </h3>
+            <?php endif; ?>
+
+            <?php if (!empty($args['showPrice']) && $price !== '') : ?>
+                <div class="mfs-product-card__price"><?php echo esc_html($price); ?></div>
+            <?php endif; ?>
+
+            <?php if (!empty($args['showDetails']) && !empty($details)) : ?>
+                <div class="mfs-product-card__details"><?php echo esc_html(implode(' / ', $details)); ?></div>
+            <?php endif; ?>
+
+            <?php if (!empty($args['showExcerpt']) && $excerpt !== '') : ?>
+                <div class="mfs-product-card__excerpt"><?php echo esc_html($excerpt); ?></div>
+            <?php endif; ?>
+
+            <?php if (!empty($args['showButton'])) : ?>
+                <div class="mfs-product-card__actions">
+                    <?php if ($buy_url !== '') : ?>
+                        <a class="mfs-product-card__button mfs-product-card__button--<?php echo esc_attr($button_type); ?>" href="<?php echo esc_url($buy_url); ?>">
+                            <?php echo esc_html((string) $args['buttonLabel']); ?>
+                        </a>
+                    <?php elseif (modfarm_store_block_is_editor_context()) : ?>
+                        <span class="mfs-product-card__button mfs-product-card__button--disabled" aria-disabled="true">
+                            <?php echo esc_html(!empty($ready['reasons'][0]) ? (string) $ready['reasons'][0] : 'Unavailable'); ?>
+                        </span>
+                    <?php else : ?>
+                        <span class="mfs-product-card__button mfs-product-card__button--disabled" aria-disabled="true"><?php esc_html_e('Unavailable', 'modfarm'); ?></span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </article>
+    <?php
+    return ob_get_clean();
+}
+}
+
+if (!function_exists('modfarm_store_block_related_offer_ids')) {
+function modfarm_store_block_related_offer_ids(int $offer_id, array $args = []): array {
+    $args = wp_parse_args($args, [
+        'limit' => 3,
+        'taxonomy' => '',
+        'manualIds' => [],
+    ]);
+
+    $limit = max(1, min(24, (int) $args['limit']));
+    $manual_ids = array_values(array_filter(array_map('absint', (array) $args['manualIds'])));
+    if (!empty($manual_ids)) {
+        $manual_ids = array_values(array_filter($manual_ids, static function ($id) use ($offer_id) {
+            return $id !== $offer_id && get_post_type($id) === 'mf_offer' && get_post_status($id) === 'publish';
+        }));
+        return array_slice($manual_ids, 0, $limit);
+    }
+
+    $query_args = [
+        'post_type' => 'mf_offer',
+        'post_status' => 'publish',
+        'posts_per_page' => $limit,
+        'post__not_in' => $offer_id > 0 ? [$offer_id] : [],
+        'ignore_sticky_posts' => true,
+        'no_found_rows' => true,
+    ];
+
+    $taxonomy = sanitize_key((string) $args['taxonomy']);
+    if ($offer_id > 0 && $taxonomy !== '' && taxonomy_exists($taxonomy)) {
+        $terms = wp_get_post_terms($offer_id, $taxonomy, ['fields' => 'ids']);
+        if (!is_wp_error($terms) && !empty($terms)) {
+            $query_args['tax_query'] = [[
+                'taxonomy' => $taxonomy,
+                'field' => 'term_id',
+                'terms' => array_map('absint', $terms),
+            ]];
+        }
+    }
+
+    $query = new WP_Query($query_args);
+    return array_map('intval', wp_list_pluck($query->posts, 'ID'));
+}
+}

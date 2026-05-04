@@ -1,0 +1,30 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/related-products",
+  "title": "Related Products",
+  "description": "Displays related Store Offers using the Theme Product Card.",
+  "category": "modfarm-store",
+  "icon": "screenoptions",
+  "keywords": ["offer", "related", "products", "store", "modfarm"],
+  "usesContext": ["postId", "postType"],
+  "attributes": {
+    "offerId": { "type": "number", "default": 0 },
+    "heading": { "type": "string", "default": "Related Products" },
+    "showHeading": { "type": "boolean", "default": true },
+    "taxonomy": { "type": "string", "default": "" },
+    "manualIds": { "type": "array", "default": [] },
+    "productsPerPage": { "type": "number", "default": 3 },
+    "columns": { "type": "number", "default": 3 },
+    "cardLayout": { "type": "string", "default": "vertical" },
+    "showExcerpt": { "type": "boolean", "default": true },
+    "showDetails": { "type": "boolean", "default": true },
+    "buttonLabel": { "type": "string", "default": "Buy Now" }
+  },
+  "editorScript": "modfarm-related-products-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css",
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

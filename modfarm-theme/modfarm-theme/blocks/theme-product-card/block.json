@@ -1,0 +1,31 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/theme-product-card",
+  "title": "Theme Product Card",
+  "description": "Displays a Store Offer as a reusable product card.",
+  "category": "modfarm-store",
+  "icon": "products",
+  "keywords": ["offer", "product", "card", "store", "modfarm"],
+  "usesContext": ["postId", "postType"],
+  "attributes": {
+    "offerId": { "type": "number", "default": 0 },
+    "layout": { "type": "string", "default": "vertical" },
+    "imageAspect": { "type": "string", "default": "3 / 4" },
+    "showImage": { "type": "boolean", "default": true },
+    "showTitle": { "type": "boolean", "default": true },
+    "showExcerpt": { "type": "boolean", "default": true },
+    "showPrice": { "type": "boolean", "default": true },
+    "showDetails": { "type": "boolean", "default": true },
+    "showButton": { "type": "boolean", "default": true },
+    "excerptWords": { "type": "number", "default": 24 },
+    "buttonLabel": { "type": "string", "default": "Buy Now" },
+    "buttonType": { "type": "string", "default": "primary" }
+  },
+  "editorScript": "modfarm-theme-product-card-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css",
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

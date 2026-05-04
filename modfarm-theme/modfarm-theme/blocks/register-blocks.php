@@ -49,6 +49,8 @@ add_action('init', function () {
         'featured-banner'            => 'modfarm_render_featured_banner_block',
 
         // Store blocks
+        'theme-product-card'         => 'modfarm_render_theme_product_card_block',
+        'related-products'           => 'modfarm_render_related_products_block',
         'offer-price'                => 'modfarm_render_offer_price_block',
         'offer-buy-button'           => 'modfarm_render_offer_buy_button_block',
         'offer-details'              => 'modfarm_render_offer_details_block'
