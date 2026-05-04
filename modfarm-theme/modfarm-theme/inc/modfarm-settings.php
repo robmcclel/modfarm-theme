@@ -795,6 +795,82 @@ function modfarm_get_ppb_visualizer_samples(): array {
 }
 
 /**
+ * Return one representative book for the Book Presentation preview.
+ */
+function modfarm_get_book_presentation_preview_sample(): array {
+    $fallback = [
+        'title' => __('Book Title', 'modfarm'),
+        'series' => __('Series Name', 'modfarm'),
+        'coverUrl' => '',
+        'hasRealBook' => false,
+    ];
+
+    if (!post_type_exists('book')) {
+        return $fallback;
+    }
+
+    $books = get_posts([
+        'post_type' => 'book',
+        'post_status' => ['publish', 'draft', 'private'],
+        'posts_per_page' => 8,
+        'orderby' => 'date',
+        'order' => 'DESC',
+        'suppress_filters' => false,
+    ]);
+
+    foreach ($books as $book) {
+        $book_id = (int) $book->ID;
+        $cover_url = get_the_post_thumbnail_url($book_id, 'large') ?: '';
+
+        foreach (['cover_ebook', 'cover_image_kindle', 'cover_image_flat', 'cover_image_3d', 'cover_image_audio', 'cover_image_composite'] as $meta_key) {
+            if ($cover_url !== '') {
+                break;
+            }
+
+            $meta_value = get_post_meta($book_id, $meta_key, true);
+            if (!$meta_value) {
+                continue;
+            }
+
+            $cover_url = is_numeric($meta_value)
+                ? (wp_get_attachment_image_url((int) $meta_value, 'large') ?: '')
+                : esc_url_raw((string) $meta_value);
+        }
+
+        $series = '';
+        $series_terms = get_the_terms($book_id, 'book-series');
+        if (!empty($series_terms) && !is_wp_error($series_terms)) {
+            $series = $series_terms[0]->name;
+            $series_position = get_post_meta($book_id, 'series_position', true);
+            if ($series_position !== '') {
+                $series .= ' ' . __('Book', 'modfarm') . ' ' . $series_position;
+            }
+        }
+
+        if ($cover_url !== '') {
+            return [
+                'title' => get_the_title($book_id) ?: $fallback['title'],
+                'series' => $series ?: $fallback['series'],
+                'coverUrl' => $cover_url,
+                'hasRealBook' => true,
+            ];
+        }
+    }
+
+    if (!empty($books)) {
+        $book_id = (int) $books[0]->ID;
+        return [
+            'title' => get_the_title($book_id) ?: $fallback['title'],
+            'series' => $fallback['series'],
+            'coverUrl' => '',
+            'hasRealBook' => true,
+        ];
+    }
+
+    return $fallback;
+}
+
+/**
  * Resolve a submitted visualizer slug against the field's central default.
  */
 function modfarm_ppb_visualizer_resolve_slug(string $field_id, string $submitted, array $options): string {
@@ -2599,13 +2675,13 @@ function modfarm_render_settings_page() {
                                     <div class="mf-book-visualizer" id="mf-book-live-preview">
                                         <article class="mf-book-visualizer__card">
                                             <div class="mf-book-visualizer__cover">
-                                                <span>VOID<br>DRIFTER</span>
+                                                <span>BOOK<br>TITLE</span>
                                             </div>
                                             <a class="mf-book-visualizer__primary" href="#">See The Book</a>
                                             <a class="mf-book-visualizer__sample" href="#">Read Sample</a>
                                             <div class="mf-book-visualizer__meta">
-                                                <div class="mf-book-visualizer__title">Void Drifter 5</div>
-                                                <div class="mf-book-visualizer__series">Void Drifter Book 5</div>
+                                                <div class="mf-book-visualizer__title">Book Title</div>
+                                                <div class="mf-book-visualizer__series">Series Name</div>
                                             </div>
                                         </article>
                                         <div class="mf-book-visualizer__page-buttons">
@@ -2919,11 +2995,12 @@ function modfarm_admin_enqueue_scripts($hook) {
 
     // Color picker for .modfarm-color-field
     wp_enqueue_style('wp-color-picker');
+    $color_picker_js_path = get_template_directory() . '/assets/js/color-picker-init.js';
     wp_enqueue_script(
         'modfarm-color-picker',
         get_template_directory_uri() . '/assets/js/color-picker-init.js',
         ['wp-color-picker'],
-        false,
+        file_exists($color_picker_js_path) ? filemtime($color_picker_js_path) : '1.0.0',
         true
     );
 
@@ -2957,6 +3034,7 @@ function modfarm_admin_enqueue_scripts($hook) {
         'contentTypeLabels' => modfarm_get_ppb_apply_all_content_types(),
         'visualizerTypes' => modfarm_get_ppb_visualizer_content_types(),
         'visualizerSamples' => modfarm_get_ppb_visualizer_samples(),
+        'bookPreviewSample' => modfarm_get_book_presentation_preview_sample(),
         'messages' => [
             'loading' => __('Scanning matching items...', 'modfarm'),
             'missingPattern' => __('Select a valid pattern before running the preview.', 'modfarm'),

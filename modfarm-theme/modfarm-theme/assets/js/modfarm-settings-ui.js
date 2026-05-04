@@ -79,6 +79,7 @@
   function initScopedPanelPreviews() {
     const themePreview = document.getElementById('mf-theme-live-preview');
     const bookPreview = document.getElementById('mf-book-live-preview');
+    const bookSample = config.bookPreviewSample || {};
     const themeFields = [
       'primary_color',
       'secondary_color',
@@ -245,10 +246,24 @@
       setStyleVar(bookPreview, '--mf-preview-page-button-border-width', pxValue(settingValue('book_page_button_border_width'), '1px'));
       setStyleVar(bookPreview, '--mf-preview-page-button-radius', pxValue(settingValue('book_page_button_radius'), '0px'));
 
+      const cover = bookPreview.querySelector('.mf-book-visualizer__cover');
+      const coverText = cover ? cover.querySelector('span') : null;
       const title = bookPreview.querySelector('.mf-book-visualizer__title');
       const author = bookPreview.querySelector('.mf-book-visualizer__series');
       const button = bookPreview.querySelector('.mf-book-visualizer__primary');
       const sampleButton = bookPreview.querySelector('.mf-book-visualizer__sample');
+      if (cover) {
+        if (bookSample.coverUrl) {
+          cover.style.backgroundImage = `url("${String(bookSample.coverUrl).replace(/"/g, '%22')}")`;
+          cover.classList.add('has-cover-image');
+        } else {
+          cover.style.removeProperty('background-image');
+          cover.classList.remove('has-cover-image');
+        }
+      }
+      if (coverText) coverText.hidden = !!bookSample.coverUrl;
+      if (title) title.textContent = bookSample.title || 'Book Title';
+      if (author) author.textContent = bookSample.series || 'Series Name';
       if (title) title.hidden = settingValue('book_card_hide_title') === '1';
       if (author) author.hidden = settingValue('book_card_hide_series') === '1';
       if (button) button.hidden = settingValue('book_card_hide_primary_button') === '1';

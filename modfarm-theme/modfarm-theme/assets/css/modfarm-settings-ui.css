@@ -329,6 +329,8 @@
   background:
     radial-gradient(circle at 72% 20%, rgba(255,255,255,.24), transparent 24%),
     linear-gradient(145deg, #0f172a, #23425f 54%, #111827);
+  background-position: center;
+  background-size: cover;
   color: #fff;
   font-size: 28px;
   font-weight: 800;
@@ -336,6 +338,10 @@
   line-height: 1;
   text-align: center;
   text-shadow: 0 2px 10px rgba(0,0,0,.55);
+}
+
+.mf-book-visualizer__cover.has-cover-image {
+  background-color: #111827;
 }
 
 .mf-book-visualizer__cover span {
