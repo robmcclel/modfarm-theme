@@ -344,6 +344,10 @@
   background-color: #111827;
 }
 
+.mf-book-visualizer__cover.has-cover-image span {
+  display: none;
+}
+
 .mf-book-visualizer__cover span {
   display: block;
   padding: 0 12px 28px;
