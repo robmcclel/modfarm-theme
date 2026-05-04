@@ -2347,13 +2347,39 @@ function modfarm_render_settings_page() {
 
                                 <!-- Theme preview -->
                                 <aside class="mf-settings-preview">
-                                    <div class="mf-preview-card" id="mf-theme-live-preview">
-                                        <div class="mf-preview-cover"></div>
-                                        <div class="mf-preview-meta">
-                                            <div class="mf-preview-title">The Adventure</div>
-                                            <div class="mf-preview-author">by John Doe</div>
-                                            <a class="mf-preview-button" href="#">Learn More</a>
-                                        </div>
+                                    <div class="mf-theme-visualizer" id="mf-theme-live-preview">
+                                        <header class="mf-theme-visualizer__nav">
+                                            <div class="mf-theme-visualizer__brand">
+                                                <span class="mf-theme-visualizer__mark"></span>
+                                                <span class="mf-theme-visualizer__site-title">Test Site 1</span>
+                                            </div>
+                                            <nav class="mf-theme-visualizer__links" aria-label="Preview navigation">
+                                                <a href="#">Books</a>
+                                                <a href="#">About</a>
+                                                <a href="#">Updates</a>
+                                            </nav>
+                                        </header>
+                                        <main class="mf-theme-visualizer__page">
+                                            <section class="mf-theme-visualizer__hero">
+                                                <p class="mf-theme-visualizer__eyebrow">Featured Series</p>
+                                                <h3>Void Drifter</h3>
+                                                <p>Action-forward science fiction with cinematic covers, fast entry points, and clean reader paths.</p>
+                                                <div class="mf-theme-visualizer__actions">
+                                                    <a class="mf-theme-visualizer__button" href="#">Start Reading</a>
+                                                    <a class="mf-theme-visualizer__text-link" href="#">Latest News</a>
+                                                </div>
+                                            </section>
+                                            <section class="mf-theme-visualizer__book-row" aria-label="Preview books">
+                                                <div class="mf-theme-visualizer__book"></div>
+                                                <div class="mf-theme-visualizer__book"></div>
+                                                <div class="mf-theme-visualizer__book"></div>
+                                            </section>
+                                        </main>
+                                        <footer class="mf-theme-visualizer__footer">
+                                            <a href="#">Home</a>
+                                            <a href="#">Catalog</a>
+                                            <a href="#">Contact</a>
+                                        </footer>
                                     </div>
                                 </aside>
                             </div>
@@ -2570,13 +2596,27 @@ function modfarm_render_settings_page() {
 
                                 <!-- Book card preview -->
                                 <aside class="mf-settings-preview">
-                                    <div class="mf-preview-card mf-preview-card--book" id="mf-book-live-preview">
-                                        <div class="mf-preview-cover mf-preview-cover--book"></div>
-                                        <div class="mf-preview-meta">
-                                            <div class="mf-preview-title">Tunnel Rat 3</div>
-                                            <div class="mf-preview-author">WalrusKing</div>
-                                            <a class="mf-preview-button" href="#">See The Book</a>
+                                    <div class="mf-book-visualizer" id="mf-book-live-preview">
+                                        <article class="mf-book-visualizer__card">
+                                            <div class="mf-book-visualizer__cover">
+                                                <span>VOID<br>DRIFTER</span>
+                                            </div>
+                                            <a class="mf-book-visualizer__primary" href="#">See The Book</a>
+                                            <a class="mf-book-visualizer__sample" href="#">Read Sample</a>
+                                            <div class="mf-book-visualizer__meta">
+                                                <div class="mf-book-visualizer__title">Void Drifter 5</div>
+                                                <div class="mf-book-visualizer__series">Void Drifter Book 5</div>
+                                            </div>
+                                        </article>
+                                        <div class="mf-book-visualizer__page-buttons">
+                                            <a class="mf-book-visualizer__page-primary" href="#">Buy Now</a>
+                                            <a class="mf-book-visualizer__page-secondary" href="#">Read Sample</a>
                                         </div>
+                                        <nav class="mf-book-visualizer__pagination" aria-label="Preview pagination">
+                                            <a href="#">1</a>
+                                            <span>2</span>
+                                            <a href="#">3</a>
+                                        </nav>
                                     </div>
                                 </aside>
                             </div>

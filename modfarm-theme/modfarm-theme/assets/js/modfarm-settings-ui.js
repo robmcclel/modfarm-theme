@@ -89,28 +89,70 @@
       'button_color',
       'button_text_color',
       'heading_font',
-      'body_font'
+      'body_font',
+      'site_title_font',
+      'nav_font',
+      'nav_bg_color',
+      'nav_text_color',
+      'nav_hover_color',
+      'nav_font_size',
+      'nav_padding',
+      'nav_transparent',
+      'footer_nav_mode',
+      'footer_nav_bg_color',
+      'footer_nav_text_color',
+      'footer_nav_transparent'
     ];
     const bookFields = [
       'primary_color',
+      'header_text_color',
       'body_text_color',
       'button_color',
       'button_text_color',
       'book_card_button_bg_color',
       'book_card_button_text_color',
       'book_card_button_border_color',
+      'book_card_sample_bg_color',
+      'book_card_sample_text_color',
+      'book_card_sample_border_color',
+      'book_card_pagination_accent_color',
       'book_card_cover_shape',
       'book_card_button_shape',
+      'book_card_sample_shape',
+      'book_card_cta_mode',
       'book_card_shadow_style',
       'book_card_hide_title',
       'book_card_hide_series',
-      'book_card_hide_primary_button'
+      'book_card_hide_primary_button',
+      'book_card_hide_sample_button',
+      'book_page_primary_bg_color',
+      'book_page_primary_text_color',
+      'book_page_primary_border_color',
+      'book_page_secondary_bg_color',
+      'book_page_secondary_text_color',
+      'book_page_secondary_border_color',
+      'book_page_button_border_width',
+      'book_page_button_radius'
     ];
 
     function buttonRadius(shape) {
       if (shape === 'pill') return '999px';
       if (shape === 'rounded') return '14px';
       return '0px';
+    }
+
+    function navPadding(value) {
+      if (value === 'compact') return '10px 14px';
+      if (value === 'spacious') return '20px 22px';
+      return '14px 16px';
+    }
+
+    function pxValue(value, fallback) {
+      const number = parseInt(value, 10);
+      if (Number.isNaN(number) || number < 0) {
+        return fallback;
+      }
+      return `${number}px`;
     }
 
     function shadowValue(style) {
@@ -129,19 +171,34 @@
       const background = settingValue('background_color', '#f3f4f5');
       const body = settingValue('body_text_color', '#1d2327');
       const heading = settingValue('header_text_color', body);
+      const link = settingValue('link_color', primary || '#2271b1');
       const buttonBg = settingValue('button_color', primary || '#2563eb');
       const buttonText = settingValue('button_text_color', '#ffffff');
+      const navBg = settingValue('nav_transparent') === '1' ? 'transparent' : settingValue('nav_bg_color', '#111827');
+      const navText = settingValue('nav_text_color', '#ffffff');
+      const footerBg = settingValue('footer_nav_transparent') === '1' ? 'transparent' : settingValue('footer_nav_bg_color', navBg);
+      const footerText = settingValue('footer_nav_text_color', navText);
 
       setStyleVar(themePreview, '--mf-preview-primary', primary);
       setStyleVar(themePreview, '--mf-preview-secondary', secondary);
       setStyleVar(themePreview, '--mf-preview-bg', background);
       setStyleVar(themePreview, '--mf-preview-body', body);
       setStyleVar(themePreview, '--mf-preview-heading', heading);
+      setStyleVar(themePreview, '--mf-preview-link', link);
       setStyleVar(themePreview, '--mf-preview-button-bg', buttonBg);
       setStyleVar(themePreview, '--mf-preview-button-border', buttonBg);
       setStyleVar(themePreview, '--mf-preview-button-text', buttonText);
       setStyleVar(themePreview, '--mf-preview-heading-font', settingValue('heading_font', 'inherit'));
       setStyleVar(themePreview, '--mf-preview-body-font', settingValue('body_font', 'inherit'));
+      setStyleVar(themePreview, '--mf-preview-site-title-font', settingValue('site_title_font', 'inherit'));
+      setStyleVar(themePreview, '--mf-preview-nav-font', settingValue('nav_font', 'inherit'));
+      setStyleVar(themePreview, '--mf-preview-nav-bg', navBg);
+      setStyleVar(themePreview, '--mf-preview-nav-text', navText);
+      setStyleVar(themePreview, '--mf-preview-nav-hover', settingValue('nav_hover_color', link));
+      setStyleVar(themePreview, '--mf-preview-nav-size', pxValue(settingValue('nav_font_size'), '13px'));
+      setStyleVar(themePreview, '--mf-preview-nav-pad', navPadding(settingValue('nav_padding')));
+      setStyleVar(themePreview, '--mf-preview-footer-bg', footerBg);
+      setStyleVar(themePreview, '--mf-preview-footer-text', footerText);
     }
 
     function updateBookPreview() {
@@ -152,21 +209,50 @@
       const buttonBg = settingValue('book_card_button_bg_color', globalButtonBg);
       const buttonText = settingValue('book_card_button_text_color', globalButtonText);
       const buttonBorder = settingValue('book_card_button_border_color', buttonBg);
+      const sampleBg = settingValue('book_card_sample_bg_color', 'transparent');
+      const sampleText = settingValue('book_card_sample_text_color', settingValue('body_text_color', '#1d2327'));
+      const sampleBorder = settingValue('book_card_sample_border_color', sampleText);
+      const paginationAccent = settingValue('book_card_pagination_accent_color', settingValue('primary_color', '#111111'));
+      const pagePrimaryBg = settingValue('book_page_primary_bg_color', globalButtonBg);
+      const pagePrimaryText = settingValue('book_page_primary_text_color', globalButtonText);
+      const pagePrimaryBorder = settingValue('book_page_primary_border_color', pagePrimaryBg);
+      const pageSecondaryBg = settingValue('book_page_secondary_bg_color', 'transparent');
+      const pageSecondaryText = settingValue('book_page_secondary_text_color', settingValue('body_text_color', '#1d2327'));
+      const pageSecondaryBorder = settingValue('book_page_secondary_border_color', pageSecondaryText);
+      const ctaMode = settingValue('book_card_cta_mode');
 
       setStyleVar(bookPreview, '--mf-preview-body', settingValue('body_text_color', '#1d2327'));
+      setStyleVar(bookPreview, '--mf-preview-heading', settingValue('header_text_color', settingValue('body_text_color', '#1d2327')));
       setStyleVar(bookPreview, '--mf-preview-button-bg', buttonBg);
       setStyleVar(bookPreview, '--mf-preview-button-border', buttonBorder);
       setStyleVar(bookPreview, '--mf-preview-button-text', buttonText);
+      setStyleVar(bookPreview, '--mf-preview-sample-bg', sampleBg);
+      setStyleVar(bookPreview, '--mf-preview-sample-border', sampleBorder);
+      setStyleVar(bookPreview, '--mf-preview-sample-text', sampleText);
       setStyleVar(bookPreview, '--mf-preview-cover-radius', settingValue('book_card_cover_shape') === 'rounded' ? '14px' : '0px');
       setStyleVar(bookPreview, '--mf-preview-button-radius', buttonRadius(settingValue('book_card_button_shape')));
+      setStyleVar(bookPreview, '--mf-preview-sample-radius', buttonRadius(settingValue('book_card_sample_shape')));
+      setStyleVar(bookPreview, '--mf-preview-cta-gap', ctaMode === 'gap' ? '10px' : '0px');
       setStyleVar(bookPreview, '--mf-preview-shadow', shadowValue(settingValue('book_card_shadow_style')));
+      setStyleVar(bookPreview, '--mf-preview-pagination-accent', paginationAccent);
+      setStyleVar(bookPreview, '--mf-preview-pagination-on-accent', settingValue('button_text_color', '#ffffff'));
+      setStyleVar(bookPreview, '--mf-preview-page-primary-bg', pagePrimaryBg);
+      setStyleVar(bookPreview, '--mf-preview-page-primary-text', pagePrimaryText);
+      setStyleVar(bookPreview, '--mf-preview-page-primary-border', pagePrimaryBorder);
+      setStyleVar(bookPreview, '--mf-preview-page-secondary-bg', pageSecondaryBg);
+      setStyleVar(bookPreview, '--mf-preview-page-secondary-text', pageSecondaryText);
+      setStyleVar(bookPreview, '--mf-preview-page-secondary-border', pageSecondaryBorder);
+      setStyleVar(bookPreview, '--mf-preview-page-button-border-width', pxValue(settingValue('book_page_button_border_width'), '1px'));
+      setStyleVar(bookPreview, '--mf-preview-page-button-radius', pxValue(settingValue('book_page_button_radius'), '0px'));
 
-      const title = bookPreview.querySelector('.mf-preview-title');
-      const author = bookPreview.querySelector('.mf-preview-author');
-      const button = bookPreview.querySelector('.mf-preview-button');
+      const title = bookPreview.querySelector('.mf-book-visualizer__title');
+      const author = bookPreview.querySelector('.mf-book-visualizer__series');
+      const button = bookPreview.querySelector('.mf-book-visualizer__primary');
+      const sampleButton = bookPreview.querySelector('.mf-book-visualizer__sample');
       if (title) title.hidden = settingValue('book_card_hide_title') === '1';
       if (author) author.hidden = settingValue('book_card_hide_series') === '1';
       if (button) button.hidden = settingValue('book_card_hide_primary_button') === '1';
+      if (sampleButton) sampleButton.hidden = settingValue('book_card_hide_sample_button') === '1';
     }
 
     bindSettingPreview(themeFields, updateThemePreview);
