@@ -78,9 +78,15 @@ function modfarm_store_block_readiness(int $offer_id): array {
     if ($offer_id <= 0) {
         return [
             'ready' => false,
+            'provider' => 'none',
             'product_id' => 0,
+            'buy_url' => '',
             'reasons' => ['No Offer selected.'],
         ];
+    }
+
+    if (function_exists('modfarm_store_get_offer_purchase_readiness')) {
+        return modfarm_store_get_offer_purchase_readiness($offer_id);
     }
 
     if (class_exists('ModFarm_Store_Offer_Sync')) {
@@ -89,7 +95,9 @@ function modfarm_store_block_readiness(int $offer_id): array {
 
     return [
         'ready' => false,
+        'provider' => 'none',
         'product_id' => 0,
+        'buy_url' => '',
         'reasons' => ['ModFarm Store is not active.'],
     ];
 }
@@ -218,7 +226,10 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
         $details = [trim((string) $args['detailOverride'])];
     }
     $ready = modfarm_store_block_readiness($offer_id);
-    $buy_url = !empty($ready['ready']) ? add_query_arg('mf_buy_offer', $offer_id, home_url('/')) : '';
+    $buy_url = !empty($ready['ready']) && !empty($ready['buy_url']) ? (string) $ready['buy_url'] : '';
+    if ($buy_url === '' && !empty($ready['ready'])) {
+        $buy_url = add_query_arg('mf_buy_offer', $offer_id, home_url('/'));
+    }
     $secondary_url = (string) $args['secondaryButtonLink'] === 'checkout' && $buy_url !== '' ? $buy_url : $permalink;
     $excerpt = trim((string) $args['descriptionOverride']);
     if ($excerpt === '') {
