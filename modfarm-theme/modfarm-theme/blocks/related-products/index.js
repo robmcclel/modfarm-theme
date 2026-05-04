@@ -116,7 +116,7 @@
     }
 
     return el('div', { className: 'mfs-picked-offers' },
-      el('div', { style: { marginBottom: '6px', fontWeight: 600 } }, __('Picked Offers', 'modfarm')),
+      el('div', { style: { marginBottom: '6px', fontWeight: 600 } }, __('Manual Offers', 'modfarm')),
       ids.map(function (id, index) {
         return el('div', {
           key: id,
@@ -140,7 +140,7 @@
           el(Button, { isSmall: true, isDestructive: true, onClick: function () { onRemove(id); } }, __('Remove', 'modfarm'))
         );
       }),
-      el(Button, { variant: 'secondary', isDestructive: true, onClick: onClear }, __('Clear picked Offers', 'modfarm'))
+      el(Button, { variant: 'secondary', isDestructive: true, onClick: onClear }, __('Clear manual Offers', 'modfarm'))
     );
   }
 
@@ -279,21 +279,24 @@
 
       return el(Fragment, null,
         el(InspectorControls, null,
-          el(PanelBody, { title: __('Products', 'modfarm'), initialOpen: true },
+          el(PanelBody, { title: __('Source', 'modfarm'), initialOpen: true },
+            el(Notice, { status: 'info', isDismissible: false },
+              __('Core Promotions are used first. Manual Offers override them; taxonomy is only a fallback when no promoted Offers are found.', 'modfarm')
+            ),
             el(OfferSearch, {
-              label: __('Current Offer override', 'modfarm'),
-              help: __('Optional. Leave empty to use the current Offer page context.', 'modfarm'),
+              label: __('Current Offer fallback', 'modfarm'),
+              help: __('Optional. Used only to avoid showing the current Offer in fallback results.', 'modfarm'),
               onPick: function (id) { setAttributes({ offerId: id }); }
             }),
-            attributes.offerId ? el(Notice, { status: 'info', isDismissible: false }, __('Current Offer override selected: ', 'modfarm') + `#${attributes.offerId}`) : null,
+            attributes.offerId ? el(Notice, { status: 'info', isDismissible: false }, __('Current Offer fallback selected: ', 'modfarm') + `#${attributes.offerId}`) : null,
             attributes.offerId ? el(Button, {
               variant: 'secondary',
               onClick: function () { setAttributes({ offerId: 0 }); }
-            }, __('Use current Offer context', 'modfarm')) : null,
+            }, __('Clear current Offer fallback', 'modfarm')) : null,
             el('hr', null),
             el(OfferSearch, {
-              label: __('Add related Offer', 'modfarm'),
-              help: __('Search and pick Offers to show manually. Drag picked Offers to reorder.', 'modfarm'),
+              label: __('Manual Offers override', 'modfarm'),
+              help: __('Optional. Pick Offers only when this block should ignore Core Promotions.', 'modfarm'),
               onPick: addOffer
             }),
             el(PickedOffers, {
@@ -303,7 +306,7 @@
               onMove: moveOffer
             }),
             el(ComboboxControl, {
-              label: __('Related taxonomy', 'modfarm'),
+              label: __('Fallback taxonomy', 'modfarm'),
               value: attributes.taxonomy || '',
               options: taxonomyOptions,
               onChange: function (value) { setAttributes({ taxonomy: value || '' }); }
