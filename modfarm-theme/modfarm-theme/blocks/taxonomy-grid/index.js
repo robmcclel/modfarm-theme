@@ -103,12 +103,13 @@
           'book-tags': 'Book Tags'
         };
         const base = (taxonomies || [])
-          .filter((t) => allowed.includes(t.slug))
+          .map((t) => Object.assign({}, t, { _slug: t.slug || t.name || t.rest_base }))
+          .filter((t) => allowed.includes(t._slug))
           .map((t) => ({
-            label: labels[t.slug] || t.labels?.singular_name || t.name,
-            value: t.slug
+            label: labels[t._slug] || t.labels?.singular_name || t.name,
+            value: t._slug
           }));
-        return allowed.map((s) => base.find((b) => b.value === s)).filter(Boolean);
+        return allowed.map((s) => base.find((b) => b.value === s) || { label: labels[s], value: s });
       }, [taxonomies]);
 
       const imageSourceOptions = [
@@ -146,12 +147,23 @@
             PanelBody,
             { title: 'Data', initialOpen: true },
             el(SelectControl, {
+              label: 'Mode',
+              value: attributes.groupMode || 'terms',
+              options: [
+                { label: 'Terms grid', value: 'terms' },
+                { label: 'Series grouped by genre', value: 'series_by_genre' },
+                { label: 'Books grouped by series', value: 'books_by_series' }
+              ],
+              onChange: (v) => setAttributes({ groupMode: v })
+            }),
+            el(SelectControl, {
               label: 'Taxonomy',
               value: attributes.taxonomy,
               options: taxonomyOptions,
               onChange: (v) => setAttributes({ taxonomy: v, parentId: 0 })
             }),
-            el(SelectControl, {
+            (attributes.groupMode || 'terms') === 'terms' &&
+              el(SelectControl, {
               label: 'Display',
               value: attributes.displayMode,
               options: [
@@ -161,7 +173,7 @@
               ],
               onChange: (v) => setAttributes({ displayMode: v })
             }),
-            attributes.displayMode === 'children' &&
+            (attributes.groupMode || 'terms') === 'terms' && attributes.displayMode === 'children' &&
               el(TreeSelect, {
                 label: 'Parent term',
                 noOptionLabel: '— Select a parent —',
@@ -169,11 +181,12 @@
                 tree: termTree,
                 onChange: (id) => setAttributes({ parentId: parseInt(id, 10) || 0 })
               }),
-            el(ToggleControl, {
-              label: 'Hide Parent Terms (leaf only)',
-              checked: !!attributes.hideParents,
-              onChange: (v) => setAttributes({ hideParents: !!v })
-            }),
+            (attributes.groupMode || 'terms') === 'terms' &&
+              el(ToggleControl, {
+                label: 'Hide Parent Terms (leaf only)',
+                checked: !!attributes.hideParents,
+                onChange: (v) => setAttributes({ hideParents: !!v })
+              }),
             attributes.taxonomy === 'book-series' &&
               el(TextControl, {
                 label: 'Series primary genre slug',

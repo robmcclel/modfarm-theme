@@ -4,6 +4,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
     $a = wp_parse_args($attributes, [
       'taxonomy'           => 'book-series',
+      'groupMode'          => 'terms',
       'displayMode'        => 'all',     // all | top | children
       'parentId'           => 0,
       'hideParents'        => false,
@@ -33,7 +34,11 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       'trackEvent'         => 'taxonomy_click', // swap to your Core standard if needed
     ]);
 
+    $group_mode = in_array($a['groupMode'], ['terms','series_by_genre','books_by_series'], true) ? $a['groupMode'] : 'terms';
     $tax = sanitize_key($a['taxonomy']);
+    if (in_array($group_mode, ['series_by_genre','books_by_series'], true)) {
+      $tax = 'book-series';
+    }
     if (!taxonomy_exists($tax)) {
       return current_user_can('edit_posts')
         ? '<div class="mfb-taxgrid mfb-warn">Taxonomy “'.esc_html($tax).'” does not exist.</div>'
@@ -199,14 +204,28 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     $first_cover_img = function($term) use ($first_book_id_for_term, $emit_id, $emit_url) {
       $pid = $first_book_id_for_term($term->term_id);
       if (!$pid) return '';
-      $cover = get_post_meta($pid, 'cover_image_kindle', true);
-      if ($cover) {
+      foreach (['cover_ebook','cover_paperback','cover_hardcover','cover_image_audio','cover_image_kindle','coverart'] as $key) {
+        $cover = get_post_meta($pid, $key, true);
+        if (!$cover) continue;
         if (is_numeric($cover)) { $o=$emit_id($cover, get_the_title($pid)); if ($o) return $o; }
         if (is_string($cover) && stripos($cover,'http')===0) { $o=$emit_url($cover, get_the_title($pid)); if ($o) return $o; }
       }
       $thumb = get_post_thumbnail_id($pid);
       if ($thumb) { $o=$emit_id($thumb, get_the_title($pid)); if ($o) return $o; }
       return '';
+    };
+
+    $book_cover_img = function($book_id) use ($emit_id, $emit_url) {
+      foreach (['cover_ebook','cover_paperback','cover_hardcover','cover_image_audio','cover_image_kindle','coverart','hero_image'] as $key) {
+        $cover = get_post_meta($book_id, $key, true);
+        if (!$cover) continue;
+        if (is_numeric($cover)) { $o=$emit_id($cover, get_the_title($book_id)); if ($o) return $o; }
+        if (is_string($cover) && stripos($cover,'http')===0) { $o=$emit_url($cover, get_the_title($book_id)); if ($o) return $o; }
+      }
+      $thumb = get_post_thumbnail_id($book_id);
+      if ($thumb) { $o=$emit_id($thumb, get_the_title($book_id)); if ($o) return $o; }
+
+      return '<div class="mfc-headshot mfc-fallback" aria-hidden="true">' . esc_html(mb_substr(get_the_title($book_id), 0, 1)) . '</div>';
     };
 
     $hero_img = function($term) use ($emit_id) {
@@ -251,6 +270,118 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
     $tracker = !empty($a['trackerLoc']) ? sanitize_key($a['trackerLoc']) : 'taxonomy-grid';
     $event   = !empty($a['trackEvent']) ? sanitize_key($a['trackEvent']) : 'taxonomy_click';
+
+    if ('series_by_genre' === $group_mode) {
+      $groups = [];
+      foreach ($terms_for_paging as $term) {
+        if (!($term instanceof WP_Term)) continue;
+        $profile = function_exists('modfarm_get_series_genre_profile') ? modfarm_get_series_genre_profile((int)$term->term_id) : [];
+        $genre_name = !empty($profile['primary_genre']) ? (string)$profile['primary_genre'] : __('Unclassified', 'modfarm');
+        $genre_slug = !empty($profile['primary_genre_slug']) ? (string)$profile['primary_genre_slug'] : 'unclassified';
+        if (!isset($groups[$genre_slug])) {
+          $groups[$genre_slug] = [
+            'name' => $genre_name,
+            'items' => [],
+          ];
+        }
+        $groups[$genre_slug]['items'][] = $term;
+      }
+      uasort($groups, static fn($left, $right) => strcasecmp((string)$left['name'], (string)$right['name']));
+
+      ob_start(); ?>
+      <div class="mfb-taxgrid-wrapper mfb-taxgrid-wrapper--grouped<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
+        <?php foreach ($groups as $group): ?>
+          <section class="mfb-taxgrid-group">
+            <h2 class="mfb-taxgrid-group-title"><?php echo esc_html($group['name']); ?></h2>
+            <div class="mfb-taxgrid" style="<?php printf('--mfb-cols:%d;--mfb-cols-phone:%d;--mfb-cols-smtab:%d;--mfb-cols-lgtab:%d;--mfb-gutter:%dpx;', $cols_sel, $cols_phone, $cols_smtab, $cols_lgtab, $gutter); ?>">
+              <?php foreach ($group['items'] as $term): ?>
+                <?php
+                $thumb_html = $resolve_html($term, $a['primaryImageSource'], $a['fallbackImageSource']);
+                $link = get_term_link($term);
+                if (is_wp_error($link)) $link = '#';
+                ?>
+                <div class="mfb-taxgrid-card">
+                  <a class="mfb-taxgrid-thumb" href="<?php echo esc_url($link); ?>" style="<?php echo $ratio; ?>">
+                    <?php echo $thumb_html; ?>
+                  </a>
+                  <div class="mfb-taxgrid-meta">
+                    <a class="mfb-taxgrid-title" href="<?php echo esc_url($link); ?>"><?php echo esc_html($term->name); ?></a>
+                    <?php if (!empty($a['showCounts'])): ?>
+                      <span class="mfb-taxgrid-count"><?php echo intval($term->count); ?></span>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </section>
+        <?php endforeach; ?>
+      </div>
+      <?php
+      return ob_get_clean();
+    }
+
+    if ('books_by_series' === $group_mode) {
+      ob_start(); ?>
+      <div class="mfb-taxgrid-wrapper mfb-taxgrid-wrapper--series-books<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
+        <?php foreach ($terms_for_paging as $term): ?>
+          <?php
+          if (!($term instanceof WP_Term)) continue;
+          $book_ids = get_posts([
+            'post_type'      => 'book',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'tax_query'      => [[
+              'taxonomy' => 'book-series',
+              'field'    => 'term_id',
+              'terms'    => [(int)$term->term_id],
+            ]],
+          ]);
+          $book_ids = array_values(array_filter(array_map('absint', is_array($book_ids) ? $book_ids : [])));
+          usort($book_ids, static function($left, $right) {
+            $left_position = trim((string)get_post_meta($left, 'series_position', true));
+            $right_position = trim((string)get_post_meta($right, 'series_position', true));
+            if ($left_position !== '' && $right_position !== '' && is_numeric($left_position) && is_numeric($right_position)) {
+              $comparison = (float)$left_position <=> (float)$right_position;
+              if ($comparison !== 0) return $comparison;
+            } elseif ($left_position !== '' || $right_position !== '') {
+              if ($left_position === '') return 1;
+              if ($right_position === '') return -1;
+              $comparison = strnatcasecmp($left_position, $right_position);
+              if ($comparison !== 0) return $comparison;
+            }
+            return strcasecmp(get_the_title($left), get_the_title($right));
+          });
+          if (empty($book_ids)) continue;
+          $series_link = get_term_link($term);
+          if (is_wp_error($series_link)) $series_link = '#';
+          ?>
+          <section class="mfb-taxgrid-group">
+            <h2 class="mfb-taxgrid-group-title"><a href="<?php echo esc_url($series_link); ?>"><?php echo esc_html($term->name); ?></a></h2>
+            <div class="mfb-taxgrid" style="<?php printf('--mfb-cols:%d;--mfb-cols-phone:%d;--mfb-cols-smtab:%d;--mfb-cols-lgtab:%d;--mfb-gutter:%dpx;', $cols_sel, $cols_phone, $cols_smtab, $cols_lgtab, $gutter); ?>">
+              <?php foreach ($book_ids as $book_id): ?>
+                <?php $book_link = get_permalink($book_id); ?>
+                <div class="mfb-taxgrid-card mfb-taxgrid-card--book">
+                  <a class="mfb-taxgrid-thumb" href="<?php echo esc_url($book_link); ?>" style="<?php echo $ratio; ?>">
+                    <?php echo $book_cover_img($book_id); ?>
+                  </a>
+                  <div class="mfb-taxgrid-meta">
+                    <a class="mfb-taxgrid-title" href="<?php echo esc_url($book_link); ?>"><?php echo esc_html(get_the_title($book_id)); ?></a>
+                    <?php $position = trim((string)get_post_meta($book_id, 'series_position', true)); ?>
+                    <?php if ($position !== ''): ?>
+                      <span class="mfb-taxgrid-count"><?php echo esc_html($position); ?></span>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </section>
+        <?php endforeach; ?>
+      </div>
+      <?php
+      return ob_get_clean();
+    }
 
     ob_start(); ?>
     <div class="mfb-taxgrid-wrapper<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
