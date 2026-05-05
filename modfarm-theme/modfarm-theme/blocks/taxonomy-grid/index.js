@@ -187,6 +187,13 @@
                 checked: !!attributes.hideParents,
                 onChange: (v) => setAttributes({ hideParents: !!v })
               }),
+            (attributes.groupMode || 'terms') === 'series_by_genre' &&
+              el(ToggleControl, {
+                label: 'Hide Parent Series',
+                help: 'Useful when parent series represent universes or collections and should not appear beside individual series.',
+                checked: !!attributes.hideParents,
+                onChange: (v) => setAttributes({ hideParents: !!v })
+              }),
             attributes.taxonomy === 'book-series' &&
               el(TextControl, {
                 label: 'Series primary genre slug',

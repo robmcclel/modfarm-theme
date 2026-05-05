@@ -28,6 +28,7 @@ function mfb_ui_media(array $args): string {
 
     // NEW: meta key/source for SmartLinks + tracking context
     'meta_key' => '',
+    'analytics_context' => [],
   ]);
 
   $id       = (int)($a['id'] ?? 0);
@@ -37,6 +38,7 @@ function mfb_ui_media(array $args): string {
   $series   = (string)($a['series'] ?? '');
   $format   = (string)(($a['format'] ?? '') ?: '');
   $meta_key = (string)($a['meta_key'] ?? '');
+  $analytics_context = (isset($a['analytics_context']) && is_array($a['analytics_context'])) ? $a['analytics_context'] : [];
 
   // ---- COVER click payload (internal)
   $cover_destination = (string)($a['link'] ?? '');
@@ -54,6 +56,9 @@ function mfb_ui_media(array $args): string {
     'tracker'        => $tracker,
     'smartlinks'     => 'none',
   ];
+  if (!empty($analytics_context)) {
+    $cover_payload = array_merge($cover_payload, $analytics_context);
+  }
   $cover_data = esc_attr(wp_json_encode($cover_payload));
 
   // ---- BUTTON: destination vs href + SmartLinks wrap
@@ -84,6 +89,9 @@ function mfb_ui_media(array $args): string {
     'button_style'   => 'primary',
     'smartlinks'     => ($smart_wrapped ? 'genius_quickbuild' : 'none'),
   ];
+  if (!empty($analytics_context)) {
+    $btn_payload = array_merge($btn_payload, $analytics_context);
+  }
   $btn_data = esc_attr(wp_json_encode($btn_payload));
 
   ob_start(); ?>
@@ -396,6 +404,7 @@ function mfb_ui_card(array $card): string {
       'format'   => ($format ?: ''),
       'id'       => $id,
       'meta_key' => (string)$btn_meta_key,
+      'analytics_context' => (isset($card['analytics_context']) && is_array($card['analytics_context'])) ? $card['analytics_context'] : [],
     ]); ?>
 
     <?php echo mfb_ui_audio([

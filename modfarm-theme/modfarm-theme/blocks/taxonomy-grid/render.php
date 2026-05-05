@@ -255,7 +255,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
     $tracker = !empty($a['trackerLoc']) ? sanitize_key($a['trackerLoc']) : 'taxonomy-grid';
 
-    $book_card = function($book_id, $series_term) use ($book_image_url, $tracker): array {
+    $book_card = function($book_id, $series_term, array $analytics_context = []) use ($book_image_url, $tracker): array {
       $permalink = get_permalink($book_id);
       $button_url = $permalink;
       $opts = get_option('modfarm_theme_settings', []);
@@ -291,6 +291,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           'tracker' => $tracker,
           'origin'  => 'taxonomy-grid-series-books',
         ],
+        'analytics_context' => $analytics_context,
       ];
     };
 
@@ -336,6 +337,19 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
     $tracker = !empty($a['trackerLoc']) ? sanitize_key($a['trackerLoc']) : 'taxonomy-grid';
     $event   = !empty($a['trackEvent']) ? sanitize_key($a['trackEvent']) : 'taxonomy_click';
+    $index_type = 'taxonomy_index';
+    if ('series_by_genre' === $group_mode) {
+      $index_type = 'genre_index';
+    } elseif ('books_by_series' === $group_mode) {
+      $index_type = 'series_book_index';
+    } elseif ('book-genre' === $tax) {
+      $index_type = 'genre_index';
+    } elseif ('book-author' === $tax) {
+      $index_type = 'author_index';
+    } elseif ('book-series' === $tax) {
+      $index_type = 'series_index';
+    }
+    $index_id = sanitize_title($index_type . ':' . $tax . ':' . $group_mode . ':' . ($series_genre_slug !== '' ? $series_genre_slug : 'all') . ':' . ($anchor !== '' ? trim($a['anchor']) : 'auto'));
     $section_heading_align = in_array($a['sectionHeadingAlign'], ['left','center','right'], true) ? $a['sectionHeadingAlign'] : 'left';
     $section_heading_size = max(16, min(72, (int)$a['sectionHeadingSize']));
     $section_prompt_text = sanitize_text_field((string)$a['sectionPromptText']);
@@ -348,6 +362,38 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     $section_prompt_style = 'text-align:' . esc_attr($section_prompt_align) . ';font-size:' . esc_attr((string)$section_prompt_size) . 'px;';
     $section_id = function($prefix, $label) {
       return sanitize_title($prefix . '-' . $label);
+    };
+    $analytics_payload = function(array $overrides = []) use ($group_mode, $tax, $index_type, $index_id, $tracker): array {
+      return array_merge([
+        'event_type'    => 'taxonomy_grid_click',
+        'event_origin'  => 'book_index',
+        'block_name'    => 'modfarm/taxonomy-grid',
+        'display_mode'  => $group_mode,
+        'taxonomy'      => $tax,
+        'index_type'    => $index_type,
+        'index_id'      => $index_id,
+        'page_id'       => (int)get_queried_object_id(),
+        'tracker'       => $tracker,
+      ], $overrides);
+    };
+    $term_event_attrs = function(WP_Term $term, string $slot, int $position, string $group_slug = '', string $group_label = '') use ($analytics_payload, $tax): string {
+      $link = get_term_link($term);
+      if (is_wp_error($link)) $link = '#';
+      $entity_type = 'book-series' === $tax ? 'series' : ('book-author' === $tax ? 'author' : 'term');
+      $payload = $analytics_payload([
+        'clicked_entity_type'     => $entity_type,
+        'clicked_entity_id'       => (int)$term->term_id,
+        'clicked_entity_slug'     => (string)$term->slug,
+        'clicked_entity_label'    => (string)$term->name,
+        'clicked_entity_position' => $position,
+        'clicked_slot'            => $slot,
+        'group_slug'              => $group_slug,
+        'group_label'             => $group_label,
+      ]);
+
+      return ' data-mf-event="' . esc_attr(wp_json_encode($payload)) . '"' .
+        ' data-mf-href="' . esc_attr($link) . '"' .
+        ' data-mf-destination="' . esc_attr($link) . '"';
     };
     $render_section_toc = function($items) use ($toc_columns, $toc_align, $toc_collapse_mobile) {
       if (empty($items)) return;
@@ -400,6 +446,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       ob_start(); ?>
       <div class="mfb-taxgrid-wrapper mfb-taxgrid-wrapper--grouped<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
         <?php if (!empty($a['showTOC'])) $render_section_toc($toc_items); ?>
+        <?php $series_position = 0; ?>
         <?php foreach ($groups as $group_key => $group): ?>
           <?php $group_id = $section_id('taxgrid-genre', (string)$group_key); ?>
           <section class="mfb-taxgrid-group" id="<?php echo esc_attr($group_id); ?>">
@@ -410,16 +457,19 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
             <div class="mfb-taxgrid" style="<?php printf('--mfb-cols:%d;--mfb-cols-phone:%d;--mfb-cols-smtab:%d;--mfb-cols-lgtab:%d;--mfb-gutter:%dpx;', $cols_sel, $cols_phone, $cols_smtab, $cols_lgtab, $gutter); ?>">
               <?php foreach ($group['items'] as $term): ?>
                 <?php
+                $series_position++;
                 $thumb_html = $resolve_html($term, $a['primaryImageSource'], $a['fallbackImageSource']);
                 $link = get_term_link($term);
                 if (is_wp_error($link)) $link = '#';
+                $thumb_attrs = $term_event_attrs($term, 'thumb', $series_position, (string)$group_key, (string)$group['name']);
+                $title_attrs = $term_event_attrs($term, 'title', $series_position, (string)$group_key, (string)$group['name']);
                 ?>
                 <div class="mfb-taxgrid-card">
-                  <a class="mfb-taxgrid-thumb" href="<?php echo esc_url($link); ?>" style="<?php echo $ratio; ?>">
+                  <a class="mfb-taxgrid-thumb" href="<?php echo esc_url($link); ?>" style="<?php echo $ratio; ?>"<?php echo $thumb_attrs; ?>>
                     <?php echo $thumb_html; ?>
                   </a>
                   <div class="mfb-taxgrid-meta">
-                    <a class="mfb-taxgrid-title" href="<?php echo esc_url($link); ?>"><?php echo esc_html($term->name); ?></a>
+                    <a class="mfb-taxgrid-title" href="<?php echo esc_url($link); ?>"<?php echo $title_attrs; ?>><?php echo esc_html($term->name); ?></a>
                     <?php if (!empty($a['showCounts'])): ?>
                       <span class="mfb-taxgrid-count"><?php echo intval($term->count); ?></span>
                     <?php endif; ?>
@@ -448,7 +498,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       ob_start(); ?>
       <div class="mfb-wrapper mfb-taxgrid-wrapper mfb-taxgrid-wrapper--series-books<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
         <?php if (!empty($a['showTOC'])) $render_section_toc($toc_items); ?>
-        <?php foreach ($terms_for_paging as $term): ?>
+        <?php foreach ($terms_for_paging as $series_loop_index => $term): ?>
           <?php
           if (!($term instanceof WP_Term)) continue;
           $book_ids = get_posts([
@@ -483,13 +533,24 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           if (is_wp_error($series_link)) $series_link = '#';
           ?>
           <section class="mfb-taxgrid-group" id="<?php echo esc_attr($section_id('taxgrid-series', (string)$term->term_id)); ?>">
-            <h2 class="mfb-taxgrid-group-title" style="<?php echo esc_attr($section_heading_style); ?>"><a href="<?php echo esc_url($series_link); ?>"><?php echo esc_html($term->name); ?></a></h2>
+            <h2 class="mfb-taxgrid-group-title" style="<?php echo esc_attr($section_heading_style); ?>"><a href="<?php echo esc_url($series_link); ?>"<?php echo $term_event_attrs($term, 'section_title', (int)$series_loop_index + 1, (string)$term->slug, (string)$term->name); ?>><?php echo esc_html($term->name); ?></a></h2>
             <div class="mfb-grid mfb-taxgrid-book-grid" style="<?php printf('--mfb-cols:%d;', $cols_sel); ?>">
-              <?php foreach ($book_ids as $book_id): ?>
+              <?php foreach ($book_ids as $book_position => $book_id): ?>
                 <div class="mfb-item">
                   <?php
                   if (function_exists('modfarm_render_book_card')) {
-                    modfarm_render_book_card($book_card($book_id, $term));
+                    modfarm_render_book_card($book_card($book_id, $term, $analytics_payload([
+                      'clicked_entity_type'     => 'book',
+                      'clicked_entity_id'       => (int)$book_id,
+                      'clicked_entity_slug'     => sanitize_title(get_the_title($book_id)),
+                      'clicked_entity_label'    => get_the_title($book_id),
+                      'clicked_entity_position' => (int)$book_position + 1,
+                      'series_id'               => (int)$term->term_id,
+                      'series_slug'             => (string)$term->slug,
+                      'series_name'             => (string)$term->name,
+                      'group_slug'              => (string)$term->slug,
+                      'group_label'             => (string)$term->name,
+                    ])));
                   } else {
                     $book_link = get_permalink($book_id);
                     echo '<article class="mfb-card"><a class="mfb-image" href="' . esc_url($book_link) . '">' . $book_cover_img($book_id) . '</a><span class="mfb-title">' . esc_html(get_the_title($book_id)) . '</span></article>';
@@ -527,7 +588,9 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       >
         <?php
         $current_letter = null;
+        $term_position = 0;
         foreach ($terms as $term):
+          $term_position++;
           $first = strtoupper(mb_substr(preg_replace('/[^A-Za-z0-9]/u', '', $term->name), 0, 1));
           if ($first === '') $first = '#';
 
@@ -551,7 +614,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
             ' data-term="' . esc_attr($term->slug) . '"' .
             ' data-label="' . esc_attr($term->name) . '"' .
             ' data-tracker="' . esc_attr($tracker) . '"' .
-            ' data-permalink="' . esc_attr($link) . '"';
+            ' data-permalink="' . esc_attr($link) . '"' .
+            $term_event_attrs($term, 'term', $term_position, (string)$first, (string)$first);
 
           $thumb_attrs = $common_attrs . ' data-slot="thumb"';
           $title_attrs = $common_attrs . ' data-slot="title"';
