@@ -23,6 +23,11 @@
 
     "orderBy":          { "type": "string",  "default": "name_asc" },
     "showTOC":          { "type": "boolean", "default": true },
+    "tocColumns":       { "type": "number",  "default": 2 },
+    "tocAlign":         { "type": "string",  "default": "left" },
+    "tocCollapseMobile": { "type": "boolean", "default": true },
+    "sectionHeadingAlign": { "type": "string", "default": "left" },
+    "sectionHeadingSize":  { "type": "number", "default": 28 },
 
     "primaryImageSource":  { "type": "string", "default": "archive_default_image" },
     "fallbackImageSource": { "type": "string", "default": "first_cover_in_series" },

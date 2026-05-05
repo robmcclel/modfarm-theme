@@ -88,6 +88,11 @@
                 { label: __('Numbered', 'modfarm'), value: 'numbered' }
               ],
               onChange: set('listStyle')
+            }),
+            el(ToggleControl, {
+              label: __('Collapse on mobile', 'modfarm'),
+              checked: attributes.collapseOnMobile !== false,
+              onChange: (v) => setAttributes({ collapseOnMobile: !!v })
             })
           )
         )

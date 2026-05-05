@@ -16,6 +16,11 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
       'orderBy'            => 'name_asc', // name_asc | name_desc | count_desc
       'showTOC'            => true,
+      'tocColumns'         => 2,
+      'tocAlign'           => 'left',
+      'tocCollapseMobile'  => true,
+      'sectionHeadingAlign'=> 'left',
+      'sectionHeadingSize' => 28,
 
       'primaryImageSource' => 'archive_default_image',  // archive_default_image | first_cover_in_series | archive_hero_image | initials
       'fallbackImageSource'=> 'first_cover_in_series',
@@ -327,6 +332,38 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
     $tracker = !empty($a['trackerLoc']) ? sanitize_key($a['trackerLoc']) : 'taxonomy-grid';
     $event   = !empty($a['trackEvent']) ? sanitize_key($a['trackEvent']) : 'taxonomy_click';
+    $section_heading_align = in_array($a['sectionHeadingAlign'], ['left','center','right'], true) ? $a['sectionHeadingAlign'] : 'left';
+    $section_heading_size = max(16, min(72, (int)$a['sectionHeadingSize']));
+    $toc_columns = max(1, min(3, (int)$a['tocColumns']));
+    $toc_align = in_array($a['tocAlign'], ['left','center','right'], true) ? $a['tocAlign'] : 'left';
+    $toc_collapse_mobile = !empty($a['tocCollapseMobile']);
+    $section_heading_style = 'text-align:' . esc_attr($section_heading_align) . ';font-size:' . esc_attr((string)$section_heading_size) . 'px;';
+    $section_id = function($prefix, $label) {
+      return sanitize_title($prefix . '-' . $label);
+    };
+    $render_section_toc = function($items) use ($toc_columns, $toc_align, $toc_collapse_mobile) {
+      if (empty($items)) return;
+      $toc_classes = 'mftoc mftoc--cols-' . (int)$toc_columns . ' mftoc--align-' . $toc_align . ' mftoc--plain mfb-taxgrid-section-toc';
+      if ($toc_collapse_mobile) {
+        $toc_classes .= ' mftoc--collapse-mobile';
+      }
+      ?>
+      <nav class="<?php echo esc_attr($toc_classes); ?>" aria-label="<?php esc_attr_e('Table of Contents', 'modfarm'); ?>">
+        <?php if ($toc_collapse_mobile): ?>
+          <details class="mftoc-details">
+            <summary class="mftoc-summary"><?php esc_html_e('Table of Contents', 'modfarm'); ?></summary>
+        <?php endif; ?>
+          <ul class="mftoc-list" data-anchor-count="<?php echo esc_attr((string)count($items)); ?>">
+            <?php foreach ($items as $item): ?>
+              <li class="mftoc-item mftoc-l2"><a href="#<?php echo esc_attr((string)$item['id']); ?>"><?php echo esc_html((string)$item['label']); ?></a></li>
+            <?php endforeach; ?>
+          </ul>
+        <?php if ($toc_collapse_mobile): ?>
+          </details>
+        <?php endif; ?>
+      </nav>
+      <?php
+    };
 
     if ('series_by_genre' === $group_mode) {
       $groups = [];
@@ -344,12 +381,21 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         $groups[$genre_slug]['items'][] = $term;
       }
       uasort($groups, static fn($left, $right) => strcasecmp((string)$left['name'], (string)$right['name']));
+      $toc_items = [];
+      foreach ($groups as $group_key => $group) {
+        $toc_items[] = [
+          'id' => $section_id('taxgrid-genre', (string)$group_key),
+          'label' => (string)$group['name'],
+        ];
+      }
 
       ob_start(); ?>
       <div class="mfb-taxgrid-wrapper mfb-taxgrid-wrapper--grouped<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
-        <?php foreach ($groups as $group): ?>
-          <section class="mfb-taxgrid-group">
-            <h2 class="mfb-taxgrid-group-title"><?php echo esc_html($group['name']); ?></h2>
+        <?php if (!empty($a['showTOC'])) $render_section_toc($toc_items); ?>
+        <?php foreach ($groups as $group_key => $group): ?>
+          <?php $group_id = $section_id('taxgrid-genre', (string)$group_key); ?>
+          <section class="mfb-taxgrid-group" id="<?php echo esc_attr($group_id); ?>">
+            <h2 class="mfb-taxgrid-group-title" style="<?php echo esc_attr($section_heading_style); ?>"><?php echo esc_html($group['name']); ?></h2>
             <div class="mfb-taxgrid" style="<?php printf('--mfb-cols:%d;--mfb-cols-phone:%d;--mfb-cols-smtab:%d;--mfb-cols-lgtab:%d;--mfb-gutter:%dpx;', $cols_sel, $cols_phone, $cols_smtab, $cols_lgtab, $gutter); ?>">
               <?php foreach ($group['items'] as $term): ?>
                 <?php
@@ -378,8 +424,19 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     }
 
     if ('books_by_series' === $group_mode) {
+      $toc_items = [];
+      foreach ($terms_for_paging as $toc_term) {
+        if ($toc_term instanceof WP_Term) {
+          $toc_items[] = [
+            'id' => $section_id('taxgrid-series', (string)$toc_term->term_id),
+            'label' => (string)$toc_term->name,
+          ];
+        }
+      }
+
       ob_start(); ?>
       <div class="mfb-wrapper mfb-taxgrid-wrapper mfb-taxgrid-wrapper--series-books<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
+        <?php if (!empty($a['showTOC'])) $render_section_toc($toc_items); ?>
         <?php foreach ($terms_for_paging as $term): ?>
           <?php
           if (!($term instanceof WP_Term)) continue;
@@ -414,8 +471,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           $series_link = get_term_link($term);
           if (is_wp_error($series_link)) $series_link = '#';
           ?>
-          <section class="mfb-taxgrid-group">
-            <h2 class="mfb-taxgrid-group-title"><a href="<?php echo esc_url($series_link); ?>"><?php echo esc_html($term->name); ?></a></h2>
+          <section class="mfb-taxgrid-group" id="<?php echo esc_attr($section_id('taxgrid-series', (string)$term->term_id)); ?>">
+            <h2 class="mfb-taxgrid-group-title" style="<?php echo esc_attr($section_heading_style); ?>"><a href="<?php echo esc_url($series_link); ?>"><?php echo esc_html($term->name); ?></a></h2>
             <div class="mfb-grid mfb-taxgrid-book-grid" style="<?php printf('--mfb-cols:%d;', $cols_sel); ?>">
               <?php foreach ($book_ids as $book_id): ?>
                 <div class="mfb-item">

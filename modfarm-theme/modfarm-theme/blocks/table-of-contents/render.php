@@ -10,6 +10,7 @@ function modfarm_render_table_of_contents_block( $attributes, $content, $block )
         'columns'   => 1,
         'align'     => 'left',
         'listStyle' => 'plain',
+        'collapseOnMobile' => true,
         'title'     => '',
     ]);
 
@@ -68,6 +69,9 @@ function modfarm_render_table_of_contents_block( $attributes, $content, $block )
         'mftoc--align-' . $align,
         'mftoc--' . $list,
     ];
+    if (!empty($args['collapseOnMobile'])) {
+        $wrapper_classes[] = 'mftoc--collapse-mobile';
+    }
     
     $levels_attr = implode(',', $allowed); // "2,3,4"
     
@@ -90,15 +94,22 @@ function modfarm_render_table_of_contents_block( $attributes, $content, $block )
       <?php if (trim((string)$args['title']) !== ''): ?>
         <div class="mftoc-title"><?php echo esc_html($args['title']); ?></div>
       <?php endif; ?>
-      <ul class="mftoc-list" data-anchor-count="<?php echo count($items); ?>">
-        <?php foreach ($items as $it): ?>
-          <li class="mftoc-item mftoc-l<?php echo (int)$it['level']; ?>">
-            <a data-mftoc-text="<?php echo esc_attr($it['text']); ?>"
-               data-mftoc-slug="<?php echo esc_attr($it['slug']); ?>"
-               href="#<?php echo esc_attr($it['slug']); ?>"><?php echo esc_html($it['text']); ?></a>
-          </li>
-        <?php endforeach; ?>
-      </ul>
+      <?php if (!empty($args['collapseOnMobile'])): ?>
+        <details class="mftoc-details">
+          <summary class="mftoc-summary"><?php echo esc_html(trim((string)$args['title']) !== '' ? (string)$args['title'] : __('Table of Contents', 'modfarm')); ?></summary>
+      <?php endif; ?>
+        <ul class="mftoc-list" data-anchor-count="<?php echo count($items); ?>">
+          <?php foreach ($items as $it): ?>
+            <li class="mftoc-item mftoc-l<?php echo (int)$it['level']; ?>">
+              <a data-mftoc-text="<?php echo esc_attr($it['text']); ?>"
+                 data-mftoc-slug="<?php echo esc_attr($it['slug']); ?>"
+                 href="#<?php echo esc_attr($it['slug']); ?>"><?php echo esc_html($it['text']); ?></a>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      <?php if (!empty($args['collapseOnMobile'])): ?>
+        </details>
+      <?php endif; ?>
     </nav>
     <?php
     return ob_get_clean();

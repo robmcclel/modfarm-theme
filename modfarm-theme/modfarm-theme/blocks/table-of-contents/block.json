@@ -20,6 +20,7 @@
     "columns":     { "type": "number",  "default": 1 },
     "align":       { "type": "string",  "default": "left",    "enum": ["left", "center", "right"] },
     "listStyle":   { "type": "string",  "default": "plain",   "enum": ["plain", "bulleted", "numbered"] },
+    "collapseOnMobile": { "type": "boolean", "default": true },
     "title":       { "type": "string",  "default": "" }
   },
   "editorScript": "modfarm-table-of-contents-editor",

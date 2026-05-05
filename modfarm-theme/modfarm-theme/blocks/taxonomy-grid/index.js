@@ -246,6 +246,23 @@
               max: 40,
               value: attributes.gutter,
               onChange: (v) => setAttributes({ gutter: v })
+            }),
+            el(SelectControl, {
+              label: 'Section title alignment',
+              value: attributes.sectionHeadingAlign || 'left',
+              options: [
+                { label: 'Left', value: 'left' },
+                { label: 'Center', value: 'center' },
+                { label: 'Right', value: 'right' }
+              ],
+              onChange: (v) => setAttributes({ sectionHeadingAlign: v })
+            }),
+            el(RangeControl, {
+              label: 'Section title size',
+              min: 16,
+              max: 56,
+              value: attributes.sectionHeadingSize || 28,
+              onChange: (v) => setAttributes({ sectionHeadingSize: v })
             })
           ),
 
@@ -266,7 +283,32 @@
               label: 'Show A–Z TOC (from all terms)',
               checked: !!attributes.showTOC,
               onChange: (v) => setAttributes({ showTOC: !!v })
-            })
+            }),
+            (attributes.groupMode || 'terms') !== 'terms' &&
+              el(RangeControl, {
+                label: 'TOC columns',
+                min: 1,
+                max: 3,
+                value: attributes.tocColumns || 2,
+                onChange: (v) => setAttributes({ tocColumns: v })
+              }),
+            (attributes.groupMode || 'terms') !== 'terms' &&
+              el(SelectControl, {
+                label: 'TOC alignment',
+                value: attributes.tocAlign || 'left',
+                options: [
+                  { label: 'Left', value: 'left' },
+                  { label: 'Center', value: 'center' },
+                  { label: 'Right', value: 'right' }
+                ],
+                onChange: (v) => setAttributes({ tocAlign: v })
+              }),
+            (attributes.groupMode || 'terms') !== 'terms' &&
+              el(ToggleControl, {
+                label: 'Collapse TOC on mobile',
+                checked: attributes.tocCollapseMobile !== false,
+                onChange: (v) => setAttributes({ tocCollapseMobile: !!v })
+              })
           ),
 
           el(

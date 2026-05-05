@@ -45,6 +45,69 @@
   text-decoration: none;
 }
 
+.mfb-taxgrid-section-toc {
+  margin: 0 0 2rem;
+}
+
+.mfb-taxgrid-section-toc .mftoc-summary {
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.mfb-taxgrid-section-toc .mftoc-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mfb-taxgrid-section-toc.mftoc--cols-1 .mftoc-list { grid-template-columns: 1fr; }
+.mfb-taxgrid-section-toc.mftoc--cols-2 .mftoc-list { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+.mfb-taxgrid-section-toc.mftoc--cols-3 .mftoc-list { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+.mfb-taxgrid-section-toc.mftoc--align-left .mftoc-list { text-align: left; }
+.mfb-taxgrid-section-toc.mftoc--align-center .mftoc-list { text-align: center; }
+.mfb-taxgrid-section-toc.mftoc--align-right .mftoc-list { text-align: right; }
+
+.mfb-taxgrid-section-toc a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.mfb-taxgrid-section-toc a:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 641px) {
+  .mfb-taxgrid-section-toc.mftoc--collapse-mobile .mftoc-summary { display: none; }
+  .mfb-taxgrid-section-toc.mftoc--collapse-mobile .mftoc-details:not([open]) > .mftoc-list { display: grid; }
+}
+
+@media (max-width: 640px) {
+  .mfb-taxgrid-section-toc.mftoc--collapse-mobile .mftoc-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 2.5rem;
+    padding: .55rem .75rem;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+  }
+  .mfb-taxgrid-section-toc.mftoc--collapse-mobile .mftoc-summary::after {
+    content: "+";
+    font-weight: 700;
+    margin-left: 1rem;
+  }
+  .mfb-taxgrid-section-toc.mftoc--collapse-mobile .mftoc-details[open] .mftoc-summary::after {
+    content: "-";
+  }
+  .mfb-taxgrid-section-toc.mftoc--collapse-mobile .mftoc-list {
+    grid-template-columns: 1fr;
+    margin-top: .75rem;
+  }
+}
+
 /* Cards */
 .mfb-taxgrid-card { display:flex; flex-direction:column; gap:.5rem; align-items: center; margin-bottom:30px}
 .mfb-taxgrid-thumb { display:block; width:100%; overflow:hidden; }
@@ -84,7 +147,7 @@
 
 /* 4-column stage (>=920px): if count ≡ 1 mod 4, center last card by spanning 2 middle cols */
 @media (min-width: 920px) {
-  .mfb-taxgrid > .mfb-taxgrid-card:last-child:nth-child(4n + 1) {
+  .mfb-taxgrid > .mfb-taxgrid-card:last-child:nth-child(4n + 1):not(:first-child) {
     grid-column: 1 / -1;
     justify-self: center;
     width: calc((100% - (var(--mfb-gutter, 16px) + var(--mfb-gutter, 16px) + var(--mfb-gutter, 16px))) / 4);
@@ -93,7 +156,7 @@
 
 /* 3-column stage (700–919px): if count ≡ 1 mod 3, put last card in the middle column */
 @media (min-width: 700px) and (max-width: 919.98px) {
-  .mfb-taxgrid > .mfb-taxgrid-card:last-child:nth-child(3n + 1) {
+  .mfb-taxgrid > .mfb-taxgrid-card:last-child:nth-child(3n + 1):not(:first-child) {
     grid-column: 1 / -1;
     justify-self: center;
     width: calc((100% - (var(--mfb-gutter, 16px) + var(--mfb-gutter, 16px))) / 3);
@@ -102,7 +165,7 @@
 
 /* 2-column stage (<=699px): if count is odd, center last card across the row */
 @media (max-width: 699.98px) {
-  .mfb-taxgrid > .mfb-taxgrid-card:last-child:nth-child(2n + 1) {
+  .mfb-taxgrid > .mfb-taxgrid-card:last-child:nth-child(2n + 1):not(:first-child) {
     grid-column: 1 / -1;
     justify-self: center;
     width: calc((100% - var(--mfb-gutter, 16px)) / 2);
