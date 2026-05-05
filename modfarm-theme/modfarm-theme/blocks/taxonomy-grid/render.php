@@ -351,7 +351,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     } elseif ('book-series' === $tax) {
       $index_type = 'series_index';
     }
-    $index_id_parts = [$index_type, $tax, $group_mode, ($series_genre_slug !== '' ? $series_genre_slug : 'all'), ($anchor !== '' ? trim((string)$a['anchor']) : 'auto')];
+    $index_id_parts = [$index_type, $tax, $group_mode, ($series_genre_slug !== '' ? $series_genre_slug : ''), 'page-' . (int)get_queried_object_id(), ($anchor !== '' ? trim((string)$a['anchor']) : 'block-1')];
     $index_id = implode(':', array_map('sanitize_title', array_filter($index_id_parts)));
     $section_heading_align = in_array($a['sectionHeadingAlign'], ['left','center','right'], true) ? $a['sectionHeadingAlign'] : 'left';
     $section_heading_size = max(16, min(72, (int)$a['sectionHeadingSize']));
@@ -375,6 +375,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         'taxonomy'      => $tax,
         'index_type'    => $index_type,
         'index_id'      => $index_id,
+        'origin_type'   => 'collection_index',
+        'origin_id'     => $index_id,
         'page_id'       => (int)get_queried_object_id(),
         'tracker'       => $tracker,
       ], $overrides);
