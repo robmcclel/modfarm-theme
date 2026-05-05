@@ -350,7 +350,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       ?>
       <nav class="<?php echo esc_attr($toc_classes); ?>" aria-label="<?php esc_attr_e('Table of Contents', 'modfarm'); ?>">
         <?php if ($toc_collapse_mobile): ?>
-          <details class="mftoc-details">
+          <details class="mftoc-details" open>
             <summary class="mftoc-summary"><?php esc_html_e('Table of Contents', 'modfarm'); ?></summary>
         <?php endif; ?>
           <ul class="mftoc-list" data-anchor-count="<?php echo esc_attr((string)count($items)); ?>">

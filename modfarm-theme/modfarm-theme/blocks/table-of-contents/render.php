@@ -95,7 +95,7 @@ function modfarm_render_table_of_contents_block( $attributes, $content, $block )
         <div class="mftoc-title"><?php echo esc_html($args['title']); ?></div>
       <?php endif; ?>
       <?php if (!empty($args['collapseOnMobile'])): ?>
-        <details class="mftoc-details">
+        <details class="mftoc-details" open>
           <summary class="mftoc-summary"><?php echo esc_html(trim((string)$args['title']) !== '' ? (string)$args['title'] : __('Table of Contents', 'modfarm')); ?></summary>
       <?php endif; ?>
         <ul class="mftoc-list" data-anchor-count="<?php echo count($items); ?>">

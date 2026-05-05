@@ -65,6 +65,15 @@
     // Ensure USED reflects any pre-existing IDs
     document.querySelectorAll('[id]').forEach(function(el){ USED.add(el.id); });
     document.querySelectorAll('nav.mftoc').forEach(processOneTOC);
+    syncMobileCollapse();
+  }
+
+  function syncMobileCollapse(){
+    var mq = window.matchMedia ? window.matchMedia('(max-width: 640px)') : null;
+    var shouldCollapse = mq ? mq.matches : false;
+    document.querySelectorAll('.mftoc--collapse-mobile details.mftoc-details').forEach(function(details){
+      details.open = !shouldCollapse;
+    });
   }
 
   function debouncedRun(){
@@ -77,6 +86,15 @@
     document.addEventListener('DOMContentLoaded', runAll);
   } else {
     runAll();
+  }
+
+  if (window.matchMedia) {
+    var collapseQuery = window.matchMedia('(max-width: 640px)');
+    if (collapseQuery.addEventListener) {
+      collapseQuery.addEventListener('change', syncMobileCollapse);
+    } else if (collapseQuery.addListener) {
+      collapseQuery.addListener(syncMobileCollapse);
+    }
   }
 
   // Observe changes (editor canvas & dynamic pages)
