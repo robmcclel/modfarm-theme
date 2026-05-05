@@ -342,6 +342,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       $index_type = 'genre_index';
     } elseif ('books_by_series' === $group_mode) {
       $index_type = 'series_book_index';
+    } elseif ('book-series' === $tax && $series_genre_slug !== '') {
+      $index_type = 'genre_index';
     } elseif ('book-genre' === $tax) {
       $index_type = 'genre_index';
     } elseif ('book-author' === $tax) {
@@ -349,7 +351,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     } elseif ('book-series' === $tax) {
       $index_type = 'series_index';
     }
-    $index_id = sanitize_title($index_type . ':' . $tax . ':' . $group_mode . ':' . ($series_genre_slug !== '' ? $series_genre_slug : 'all') . ':' . ($anchor !== '' ? trim($a['anchor']) : 'auto'));
+    $index_id_parts = [$index_type, $tax, $group_mode, ($series_genre_slug !== '' ? $series_genre_slug : 'all'), ($anchor !== '' ? trim((string)$a['anchor']) : 'auto')];
+    $index_id = implode(':', array_map('sanitize_title', array_filter($index_id_parts)));
     $section_heading_align = in_array($a['sectionHeadingAlign'], ['left','center','right'], true) ? $a['sectionHeadingAlign'] : 'left';
     $section_heading_size = max(16, min(72, (int)$a['sectionHeadingSize']));
     $section_prompt_text = sanitize_text_field((string)$a['sectionPromptText']);
