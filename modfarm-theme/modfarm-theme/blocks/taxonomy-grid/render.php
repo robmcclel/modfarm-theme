@@ -7,6 +7,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       'displayMode'        => 'all',     // all | top | children
       'parentId'           => 0,
       'hideParents'        => false,
+      'seriesGenreSlug'    => '',
 
       'columns'            => 4,
       'perPage'            => 24,
@@ -76,6 +77,18 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       }
       $terms_for_paging = array_values(array_filter($all_terms, function($t) use ($has_children) {
         return empty($has_children[$t->term_id]); // keep leaves only
+      }));
+    }
+
+    $series_genre_slug = sanitize_title($a['seriesGenreSlug']);
+    if ('book-series' === $tax && $series_genre_slug !== '' && function_exists('modfarm_get_series_genre_profile')) {
+      $terms_for_paging = array_values(array_filter($terms_for_paging, function($t) use ($series_genre_slug) {
+        if (!($t instanceof WP_Term)) {
+          return false;
+        }
+
+        $profile = modfarm_get_series_genre_profile((int)$t->term_id);
+        return $series_genre_slug === sanitize_title((string)($profile['primary_genre_slug'] ?? ''));
       }));
     }
 

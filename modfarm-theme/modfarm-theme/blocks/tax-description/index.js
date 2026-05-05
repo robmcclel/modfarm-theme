@@ -64,6 +64,11 @@
               min: 120, max: 360, step: 10,
               onChange: v => setAttributes({ imgSize: v })
             }),
+            el(ToggleControl, {
+              label: __('Show series genre profile', 'modfarm'),
+              checked: attributes.showSeriesGenreProfile !== false,
+              onChange: v => setAttributes({ showSeriesGenreProfile: !!v })
+            })
           ),
 
           /* === Colors Panel === */

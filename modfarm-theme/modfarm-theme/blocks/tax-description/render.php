@@ -23,6 +23,7 @@ if (!function_exists('modfarm_render_tax_description_block')) {
       'imgSize'         => 240,
       'linkToArchive'   => false,
       'showDescription' => true,
+      'showSeriesGenreProfile' => true,
       'hideIfEmpty'     => false,
       'accentColor'     => '',
       'textColor'       => '',
@@ -110,6 +111,14 @@ if (!function_exists('modfarm_render_tax_description_block')) {
 
     $img_html = $resolve_img($term);
     $desc     = $a['showDescription'] ? term_description($term_id, $taxonomy) : '';
+    $genre_profile = [];
+    if (
+      'book-series' === $taxonomy
+      && !empty($a['showSeriesGenreProfile'])
+      && function_exists('modfarm_get_series_genre_profile')
+    ) {
+      $genre_profile = modfarm_get_series_genre_profile($term_id);
+    }
 
     // Hide if empty (no image AND no description)
     if ($a['hideIfEmpty']) {
@@ -159,6 +168,19 @@ if (!function_exists('modfarm_render_tax_description_block')) {
           <div class="mf-taxdesc__content">
             <?php if (!empty($desc)): ?>
               <div class="mf-taxdesc__description"><?php echo wp_kses_post($desc); ?></div>
+            <?php endif; ?>
+
+            <?php if (!empty($genre_profile) && !empty($genre_profile['primary_genre'])): ?>
+              <div class="mf-taxdesc__genre-profile">
+                <span class="mf-taxdesc__genre-label"><?php esc_html_e('Series genre', 'modfarm'); ?></span>
+                <span class="mf-taxdesc__genre-primary"><?php echo esc_html((string)$genre_profile['primary_genre']); ?></span>
+                <?php if (isset($genre_profile['confidence'])): ?>
+                  <span class="mf-taxdesc__genre-confidence"><?php echo esc_html(number_format_i18n((float)$genre_profile['confidence'] * 100, 0)); ?>%</span>
+                <?php endif; ?>
+                <?php if (!empty($genre_profile['is_hybrid'])): ?>
+                  <span class="mf-taxdesc__genre-hybrid"><?php esc_html_e('Hybrid', 'modfarm'); ?></span>
+                <?php endif; ?>
+              </div>
             <?php endif; ?>
           </div>
 

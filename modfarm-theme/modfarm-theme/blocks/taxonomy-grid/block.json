@@ -12,6 +12,7 @@
     "displayMode":      { "type": "string",  "default": "all" },
     "parentId":         { "type": "number",  "default": 0 },
     "hideParents":      { "type": "boolean", "default": false },
+    "seriesGenreSlug":  { "type": "string",  "default": "" },
 
     "columns":          { "type": "number",  "default": 4 },
     "perPage":          { "type": "number",  "default": 24 },

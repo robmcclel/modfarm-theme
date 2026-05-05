@@ -11,6 +11,7 @@
     "layout":          { "type": "string",  "default": "auto" },
     "imageShape":      { "type": "string",  "default": "circle" },
     "imgSize":         { "type": "number",  "default": 240 },
+    "showSeriesGenreProfile": { "type": "boolean", "default": true },
     "textColor":       { "type": "string",  "default": "" }
   },
   "editorScript": "modfarm-tax-description-editor",

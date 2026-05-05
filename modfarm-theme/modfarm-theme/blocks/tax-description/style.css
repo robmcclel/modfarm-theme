@@ -56,6 +56,40 @@
 
 .mf-taxdesc__description p { margin: 0 0 .8rem 0; }
 
+.mf-taxdesc__genre-profile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
+  margin-top: 1rem;
+  font-size: .9rem;
+}
+
+.mf-taxdesc__genre-label {
+  color: #646970;
+  font-weight: 600;
+}
+
+.mf-taxdesc__genre-primary,
+.mf-taxdesc__genre-confidence,
+.mf-taxdesc__genre-hybrid {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: .2rem .55rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
+.mf-taxdesc__genre-primary {
+  font-weight: 700;
+}
+
+.mf-taxdesc__genre-confidence,
+.mf-taxdesc__genre-hybrid {
+  color: #50575e;
+}
+
 /* Fallback letter avatar */
 .mf-taxdesc__image .mf-taxdesc-avatar--fallback {
   width: var(--mf-taxdesc-img-size);

@@ -14,6 +14,7 @@
     SelectControl,
     ToggleControl,
     RangeControl,
+    TextControl,
     TreeSelect
   } = wp.components;
 
@@ -92,16 +93,22 @@
 
       // Options
       const taxonomyOptions = useMemo(() => {
-        const base = (taxonomies || []).map((t) => ({
-          label: t.labels?.singular_name || t.name,
-          value: t.slug
-        }));
-        const preferred = ['book-series', 'book-genre', 'book-author', 'book-tags']
-          .filter((s) => base.find((b) => b.value === s));
-        return [
-          ...preferred.map((s) => base.find((b) => b.value === s)).filter(Boolean),
-          ...base.filter((b) => !preferred.includes(b.value))
-        ];
+        const allowed = ['book-series', 'book-author', 'book-genre', 'book-format', 'book-language', 'book-tags'];
+        const labels = {
+          'book-series': 'Book Series',
+          'book-author': 'Book Authors',
+          'book-genre': 'Book Genres',
+          'book-format': 'Book Formats',
+          'book-language': 'Book Languages',
+          'book-tags': 'Book Tags'
+        };
+        const base = (taxonomies || [])
+          .filter((t) => allowed.includes(t.slug))
+          .map((t) => ({
+            label: labels[t.slug] || t.labels?.singular_name || t.name,
+            value: t.slug
+          }));
+        return allowed.map((s) => base.find((b) => b.value === s)).filter(Boolean);
       }, [taxonomies]);
 
       const imageSourceOptions = [
@@ -167,6 +174,13 @@
               checked: !!attributes.hideParents,
               onChange: (v) => setAttributes({ hideParents: !!v })
             }),
+            attributes.taxonomy === 'book-series' &&
+              el(TextControl, {
+                label: 'Series primary genre slug',
+                help: 'Optional. Example: fantasy or litrpg.',
+                value: attributes.seriesGenreSlug || '',
+                onChange: (v) => setAttributes({ seriesGenreSlug: v })
+              }),
             el(ToggleControl, {
               label: 'Hide Empty',
               checked: !!attributes.hideEmpty,
