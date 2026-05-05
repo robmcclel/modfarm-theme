@@ -28,6 +28,10 @@
     "tocCollapseMobile": { "type": "boolean", "default": true },
     "sectionHeadingAlign": { "type": "string", "default": "left" },
     "sectionHeadingSize":  { "type": "number", "default": 28 },
+    "showSectionPrompt": { "type": "boolean", "default": false },
+    "sectionPromptText": { "type": "string", "default": "Click on the cover art to see all books in the series" },
+    "sectionPromptAlign": { "type": "string", "default": "center" },
+    "sectionPromptSize": { "type": "number", "default": 26 },
 
     "primaryImageSource":  { "type": "string", "default": "archive_default_image" },
     "fallbackImageSource": { "type": "string", "default": "first_cover_in_series" },

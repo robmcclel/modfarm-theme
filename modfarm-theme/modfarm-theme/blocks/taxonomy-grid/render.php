@@ -21,6 +21,10 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       'tocCollapseMobile'  => true,
       'sectionHeadingAlign'=> 'left',
       'sectionHeadingSize' => 28,
+      'showSectionPrompt'  => false,
+      'sectionPromptText'  => __('Click on the cover art to see all books in the series', 'modfarm'),
+      'sectionPromptAlign' => 'center',
+      'sectionPromptSize'  => 26,
 
       'primaryImageSource' => 'archive_default_image',  // archive_default_image | first_cover_in_series | archive_hero_image | initials
       'fallbackImageSource'=> 'first_cover_in_series',
@@ -334,10 +338,14 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     $event   = !empty($a['trackEvent']) ? sanitize_key($a['trackEvent']) : 'taxonomy_click';
     $section_heading_align = in_array($a['sectionHeadingAlign'], ['left','center','right'], true) ? $a['sectionHeadingAlign'] : 'left';
     $section_heading_size = max(16, min(72, (int)$a['sectionHeadingSize']));
+    $section_prompt_text = sanitize_text_field((string)$a['sectionPromptText']);
+    $section_prompt_align = in_array($a['sectionPromptAlign'], ['left','center','right'], true) ? $a['sectionPromptAlign'] : 'center';
+    $section_prompt_size = max(12, min(48, (int)$a['sectionPromptSize']));
     $toc_columns = max(1, min(3, (int)$a['tocColumns']));
     $toc_align = in_array($a['tocAlign'], ['left','center','right'], true) ? $a['tocAlign'] : 'left';
     $toc_collapse_mobile = !empty($a['tocCollapseMobile']);
     $section_heading_style = 'text-align:' . esc_attr($section_heading_align) . ';font-size:' . esc_attr((string)$section_heading_size) . 'px;';
+    $section_prompt_style = 'text-align:' . esc_attr($section_prompt_align) . ';font-size:' . esc_attr((string)$section_prompt_size) . 'px;';
     $section_id = function($prefix, $label) {
       return sanitize_title($prefix . '-' . $label);
     };
@@ -396,6 +404,9 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           <?php $group_id = $section_id('taxgrid-genre', (string)$group_key); ?>
           <section class="mfb-taxgrid-group" id="<?php echo esc_attr($group_id); ?>">
             <h2 class="mfb-taxgrid-group-title" style="<?php echo esc_attr($section_heading_style); ?>"><?php echo esc_html($group['name']); ?></h2>
+            <?php if (!empty($a['showSectionPrompt']) && $section_prompt_text !== ''): ?>
+              <p class="mfb-taxgrid-section-prompt" style="<?php echo esc_attr($section_prompt_style); ?>"><?php echo esc_html($section_prompt_text); ?></p>
+            <?php endif; ?>
             <div class="mfb-taxgrid" style="<?php printf('--mfb-cols:%d;--mfb-cols-phone:%d;--mfb-cols-smtab:%d;--mfb-cols-lgtab:%d;--mfb-gutter:%dpx;', $cols_sel, $cols_phone, $cols_smtab, $cols_lgtab, $gutter); ?>">
               <?php foreach ($group['items'] as $term): ?>
                 <?php

@@ -45,6 +45,12 @@
   text-decoration: none;
 }
 
+.mfb-taxgrid-section-prompt {
+  margin: -.25rem 0 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 .mfb-taxgrid-section-toc {
   margin: 0 0 2rem;
 }

@@ -263,7 +263,38 @@
               max: 56,
               value: attributes.sectionHeadingSize || 28,
               onChange: (v) => setAttributes({ sectionHeadingSize: v })
-            })
+            }),
+            (attributes.groupMode || 'terms') === 'series_by_genre' &&
+              el(ToggleControl, {
+                label: 'Show section prompt',
+                checked: !!attributes.showSectionPrompt,
+                onChange: (v) => setAttributes({ showSectionPrompt: !!v })
+              }),
+            (attributes.groupMode || 'terms') === 'series_by_genre' && !!attributes.showSectionPrompt &&
+              el(TextControl, {
+                label: 'Prompt text',
+                value: attributes.sectionPromptText || 'Click on the cover art to see all books in the series',
+                onChange: (v) => setAttributes({ sectionPromptText: v })
+              }),
+            (attributes.groupMode || 'terms') === 'series_by_genre' && !!attributes.showSectionPrompt &&
+              el(SelectControl, {
+                label: 'Prompt alignment',
+                value: attributes.sectionPromptAlign || 'center',
+                options: [
+                  { label: 'Left', value: 'left' },
+                  { label: 'Center', value: 'center' },
+                  { label: 'Right', value: 'right' }
+                ],
+                onChange: (v) => setAttributes({ sectionPromptAlign: v })
+              }),
+            (attributes.groupMode || 'terms') === 'series_by_genre' && !!attributes.showSectionPrompt &&
+              el(RangeControl, {
+                label: 'Prompt size',
+                min: 12,
+                max: 40,
+                value: attributes.sectionPromptSize || 26,
+                onChange: (v) => setAttributes({ sectionPromptSize: v })
+              })
           ),
 
           el(
