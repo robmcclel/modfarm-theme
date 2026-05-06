@@ -806,6 +806,21 @@ function modfarm_ppb_get_field_id_for_post_zone(string $post_type, string $slot)
             'body' => 'post_body_pattern',
             'footer' => 'post_footer_pattern',
         ],
+        'mf_update' => [
+            'header' => 'post_header_pattern',
+            'body' => 'post_body_pattern',
+            'footer' => 'post_footer_pattern',
+        ],
+        'mf_event' => [
+            'header' => 'post_header_pattern',
+            'body' => 'post_body_pattern',
+            'footer' => 'post_footer_pattern',
+        ],
+        'modfarm_event' => [
+            'header' => 'post_header_pattern',
+            'body' => 'post_body_pattern',
+            'footer' => 'post_footer_pattern',
+        ],
         'book' => [
             'header' => 'book_header_pattern',
             'body' => 'book_body_pattern',
@@ -850,6 +865,15 @@ function modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post(int $post_id, st
             $resolved = [
                 'header' => modfarm_ppb_resolve_pattern_slug('book_header_pattern', $options['book_header_pattern'] ?? null, $options),
                 'footer' => modfarm_ppb_resolve_pattern_slug('book_footer_pattern', $options['book_footer_pattern'] ?? null, $options),
+            ];
+            break;
+
+        case 'mf_update':
+        case 'mf_event':
+        case 'modfarm_event':
+            $resolved = [
+                'header' => modfarm_ppb_resolve_pattern_slug('post_header_pattern', $options['post_header_pattern'] ?? null, $options),
+                'footer' => modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $options['post_footer_pattern'] ?? null, $options),
             ];
             break;
 

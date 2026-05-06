@@ -8,7 +8,7 @@
  
  /**
  * Template Name: Hybrid
- * Template Post Type: post, page, mf_offer
+ * Template Post Type: post, page, mf_offer, mf_update, mf_event, modfarm_event
  */
  
  
