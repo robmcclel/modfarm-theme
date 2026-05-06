@@ -36,6 +36,22 @@ if (!function_exists('modfarm_render_featured_book_block')) {
     // Allow optional override (keeps your "FeaturedBlock" naming)
     $event_origin = (string)($a['eventOrigin'] ?? 'FeaturedBlock');
 
+    $cover_event_payload = [
+      'event_type'     => 'click',
+      'event_category' => 'book_card',
+      'origin'         => $event_origin !== '' ? $event_origin : 'featured-book',
+      'book_id'        => $book_id,
+      'book_title'     => $title,
+      'meta_key'       => 'permalink',
+      'label'          => 'cover',
+      'button_style'   => 'cover',
+      'smartlinks'     => 'none',
+      'block'          => 'featured-book',
+    ];
+    $headline_event_payload = $cover_event_payload;
+    $headline_event_payload['label'] = 'headline';
+    $headline_event_payload['button_style'] = 'headline';
+
     // ---- Description: override first; else BMS field, preserve formatting
     $desc_raw = (string)($a['descOverride'] ?? '');
     if ($desc_raw === '') {
@@ -111,10 +127,11 @@ if (!function_exists('modfarm_render_featured_book_block')) {
           <a
             class="mftb__cover-link"
             href="<?php echo esc_url($permalink); ?>"
-            data-mf-event="book_click"
+            data-mf-event="<?php echo esc_attr(wp_json_encode($cover_event_payload)); ?>"
+            data-mf-href="<?php echo esc_attr($permalink); ?>"
+            data-mf-destination="<?php echo esc_attr($permalink); ?>"
             data-mf-cta="cover"
             data-mf-source="permalink"
-            data-mf-destination="internal"
             data-mf-link-type="permalink"
           >
             <img class="mftb__cover" src="<?php echo esc_url($cover_url); ?>" alt="<?php echo esc_attr($alt); ?>" loading="lazy" decoding="async" />
@@ -133,10 +150,11 @@ if (!function_exists('modfarm_render_featured_book_block')) {
           <h2 class="mftb__headline">
             <a
               href="<?php echo esc_url($permalink); ?>"
-              data-mf-event="book_click"
+              data-mf-event="<?php echo esc_attr(wp_json_encode($headline_event_payload)); ?>"
+              data-mf-href="<?php echo esc_attr($permalink); ?>"
+              data-mf-destination="<?php echo esc_attr($permalink); ?>"
               data-mf-cta="headline"
               data-mf-source="permalink"
-              data-mf-destination="internal"
               data-mf-link-type="permalink"
             >
               <?php echo esc_html($headline); ?>
@@ -350,23 +368,16 @@ if (!function_exists('mfb_buttons')) {
       }
       if (!$url) { $i++; continue; }
 
-      // ---- SmartLinks hook (Core-level resolver; safe if absent)
-      $resolved_type = '';
-      $resolved_destination = '';
-      if (function_exists('mfc_smartlink_resolve')) {
-        $resolved = mfc_smartlink_resolve([
-          'book_id'  => (int)$book_id,
-          'asin'     => mfb_get_asin($book_id),
-          'source'   => $src,
-          'raw_url'  => $url,
-          'context'  => 'featured-book',
-          'variant'  => $variant,
-        ]);
-
-        if (is_array($resolved) && !empty($resolved['url'])) {
-          $url = (string)$resolved['url'];
-          $resolved_type = (string)($resolved['type'] ?? '');
-          $resolved_destination = (string)($resolved['destination'] ?? '');
+      // ---- SmartLinks hook (Genius Quick Build Proxy; safe if Core is absent)
+      $destination = (string)$url;
+      $href = $destination;
+      $smart_wrapped = 0;
+      $smartlink_eligible_url = !function_exists('mfc_smartlinks_url_is_eligible') || mfc_smartlinks_url_is_eligible($destination);
+      if ($destination !== '' && $src !== 'permalink' && $smartlink_eligible_url && function_exists('mfc_smartlinks_wrap_url')) {
+        $maybe = mfc_smartlinks_wrap_url($destination, $src);
+        if (is_string($maybe) && $maybe !== '' && $maybe !== $destination) {
+          $href = $maybe;
+          $smart_wrapped = 1;
         }
       }
 
@@ -389,17 +400,30 @@ if (!function_exists('mfb_buttons')) {
         $style_bits[] = '--mfb-bp-override-radius:' . $radius_override;
       }
 
-      $attrs = [
-        'class' => 'mftb__btn book-page-button ' . ($is_primary ? 'is-primary' : 'is-secondary'),
-        'href'  => esc_url($url),
-
-        'data-mf-event'  => 'book_click',
-        'data-mf-cta'    => $is_primary ? 'primary' : 'secondary',
-        'data-mf-source' => $src,
+      $event_payload = [
+        'event_type'     => 'click',
+        'event_category' => 'book_card_button',
+        'origin'         => $origin !== '' ? $origin : 'featured-book',
+        'book_id'        => (int)$book_id,
+        'book_title'     => get_the_title($book_id) ?: '',
+        'meta_key'       => $src,
+        'label'          => wp_strip_all_tags($label),
+        'button_style'   => $is_primary ? 'primary' : 'secondary',
+        'smartlinks'     => $smart_wrapped ? 'genius_quickbuild' : 'none',
+        'block'          => 'featured-book',
       ];
 
-      if ($resolved_type !== '')        $attrs['data-mf-link-type']   = $resolved_type;
-      if ($resolved_destination !== '') $attrs['data-mf-destination'] = $resolved_destination;
+      $attrs = [
+        'class' => 'mftb__btn book-page-button ' . ($is_primary ? 'is-primary' : 'is-secondary'),
+        'href'  => esc_url($href),
+
+        'data-mf-event'       => wp_json_encode($event_payload),
+        'data-mf-href'        => $href,
+        'data-mf-destination' => $destination,
+        'data-mf-cta'         => $is_primary ? 'primary' : 'secondary',
+        'data-mf-source'      => $src,
+        'data-mf-link-type'   => $src === 'permalink' ? 'permalink' : ($smart_wrapped ? 'genius_quickbuild' : 'direct'),
+      ];
 
       if (!empty($style_bits)) {
         $attrs['style'] = implode(';', $style_bits) . ';';

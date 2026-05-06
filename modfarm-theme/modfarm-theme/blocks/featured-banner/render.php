@@ -64,24 +64,16 @@ if (!function_exists('mfbb_buttons')) {
 
       if (!$url) { $i++; continue; }
 
-      // SmartLinks hook (optional)
-      $resolved_type = '';
-      $resolved_destination = '';
-      if (function_exists('mfc_smartlink_resolve')) {
-        $asin = function_exists('mfb_get_asin') ? (string)mfb_get_asin($book_id) : '';
-        $resolved = mfc_smartlink_resolve([
-          'book_id'  => (int)$book_id,
-          'asin'     => $asin,
-          'source'   => $src,
-          'raw_url'  => $url,
-          'context'  => $context,
-          'variant'  => $variant,
-        ]);
-
-        if (is_array($resolved) && !empty($resolved['url'])) {
-          $url = (string)$resolved['url'];
-          $resolved_type = (string)($resolved['type'] ?? '');
-          $resolved_destination = (string)($resolved['destination'] ?? '');
+      // SmartLinks hook (Genius Quick Build Proxy; safe if Core is absent)
+      $destination = (string)$url;
+      $href = $destination;
+      $smart_wrapped = 0;
+      $smartlink_eligible_url = !function_exists('mfc_smartlinks_url_is_eligible') || mfc_smartlinks_url_is_eligible($destination);
+      if ($destination !== '' && $src !== 'permalink' && $src !== 'series_permalink' && $smartlink_eligible_url && function_exists('mfc_smartlinks_wrap_url')) {
+        $maybe = mfc_smartlinks_wrap_url($destination, $src);
+        if (is_string($maybe) && $maybe !== '' && $maybe !== $destination) {
+          $href = $maybe;
+          $smart_wrapped = 1;
         }
       }
 
@@ -101,16 +93,29 @@ if (!function_exists('mfbb_buttons')) {
         $style_bits[] = '--mfb-bp-override-radius:' . $radius_override;
       }
 
-      $attrs = [
-        'class' => 'mfbb__btn book-page-button ' . ($is_primary ? 'is-primary' : 'is-secondary'),
-        'href'  => esc_url($url),
-        'data-mf-event'  => 'book_click',
-        'data-mf-cta'    => $is_primary ? 'primary' : 'secondary',
-        'data-mf-source' => $src,
+      $event_payload = [
+        'event_type'     => 'click',
+        'event_category' => 'book_card_button',
+        'origin'         => $origin !== '' ? $origin : $context,
+        'book_id'        => (int)$book_id,
+        'book_title'     => get_the_title($book_id) ?: '',
+        'meta_key'       => $src,
+        'label'          => wp_strip_all_tags($label),
+        'button_style'   => $is_primary ? 'primary' : 'secondary',
+        'smartlinks'     => $smart_wrapped ? 'genius_quickbuild' : 'none',
+        'block'          => $context,
       ];
 
-      if ($resolved_type !== '')        $attrs['data-mf-link-type']   = $resolved_type;
-      if ($resolved_destination !== '') $attrs['data-mf-destination'] = $resolved_destination;
+      $attrs = [
+        'class' => 'mfbb__btn book-page-button ' . ($is_primary ? 'is-primary' : 'is-secondary'),
+        'href'  => esc_url($href),
+        'data-mf-event'       => wp_json_encode($event_payload),
+        'data-mf-href'        => $href,
+        'data-mf-destination' => $destination,
+        'data-mf-cta'         => $is_primary ? 'primary' : 'secondary',
+        'data-mf-source'      => $src,
+        'data-mf-link-type'   => ($src === 'permalink' || $src === 'series_permalink') ? 'permalink' : ($smart_wrapped ? 'genius_quickbuild' : 'direct'),
+      ];
 
       if (!empty($style_bits)) $attrs['style'] = implode(';', $style_bits) . ';';
 
@@ -150,6 +155,7 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
 
     $title     = get_the_title($book_id) ?: '';
     $permalink = get_permalink($book_id) ?: '#';
+    $alt       = $title ? ('Cover: ' . $title) : 'Book Cover';
 
     // Headline
     $show_headline = !empty($a['showHeadline']);
@@ -175,6 +181,19 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
     $page_id   = (int)get_queried_object_id();
     $page_type = is_front_page() ? 'home' : (is_singular('book') ? 'book' : (is_page() ? 'page' : 'other'));
     $event_origin = (string)($a['eventOrigin'] ?? 'FeaturedBanner');
+
+    $cover_event_payload = [
+      'event_type'     => 'click',
+      'event_category' => 'book_card',
+      'origin'         => $event_origin !== '' ? $event_origin : 'featured-banner',
+      'book_id'        => $book_id,
+      'book_title'     => $title,
+      'meta_key'       => 'permalink',
+      'label'          => 'cover',
+      'button_style'   => 'cover',
+      'smartlinks'     => 'none',
+      'block'          => 'featured-banner',
+    ];
 
     // Description
     $desc_raw = '';
@@ -428,7 +447,16 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
                 ?>
               <?php else: ?>
                 <?php if ($cover_url): ?>
-                  <a class="mfbb__cover-link" href="<?php echo esc_url($permalink); ?>">
+                  <a
+                    class="mfbb__cover-link"
+                    href="<?php echo esc_url($permalink); ?>"
+                    data-mf-event="<?php echo esc_attr(wp_json_encode($cover_event_payload)); ?>"
+                    data-mf-href="<?php echo esc_attr($permalink); ?>"
+                    data-mf-destination="<?php echo esc_attr($permalink); ?>"
+                    data-mf-cta="cover"
+                    data-mf-source="permalink"
+                    data-mf-link-type="permalink"
+                  >
                     <img class="mfbb__cover" src="<?php echo esc_url($cover_url); ?>" alt="<?php echo esc_attr($alt); ?>" loading="lazy" decoding="async" />
                   </a>
                 <?php else: ?>
