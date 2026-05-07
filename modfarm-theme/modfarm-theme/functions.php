@@ -473,6 +473,7 @@ add_action('wp_enqueue_scripts', function () {
     $dir   = get_template_directory();
     wp_enqueue_style('modfarm-book-cards', $theme . '/assets/css/book-cards.css', [], filemtime($dir . '/assets/css/book-cards.css'));
     wp_enqueue_script('modfarm-book-analytics', $theme . '/assets/js/analytics-book-cards.js', [], filemtime($dir . '/assets/js/analytics-book-cards.js'), true);
+    wp_enqueue_script('modfarm-book-card-scroll', $theme . '/assets/js/book-card-scroll.js', [], filemtime($dir . '/assets/js/book-card-scroll.js'), true);
 });
 
 

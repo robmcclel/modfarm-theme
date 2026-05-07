@@ -31,6 +31,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         'image-type'      => 'featured',
 
         'books-in-row'    => '25%',
+        'display-layout'  => 'grid',
         'display-order'   => 'DESC',
         'books-per-page'  => 12,
         'show-pagination' => false,
@@ -310,6 +311,9 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     // 7. WRAPPER CLASSES + GRID STYLE
     // --------------------------------------------------
     $books_per_row   = (string) $a['books-in-row'];
+    $display_layout  = in_array( (string) ( $a['display-layout'] ?? 'grid' ), array( 'grid', 'horizontal' ), true )
+        ? (string) $a['display-layout']
+        : 'grid';
     $image_type      = (string) $a['image-type'];
     $show_pagination = ! empty( $a['show-pagination'] );
     $btn_link        = (string) $a['button-link'];
@@ -327,6 +331,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         'mfb-button--' . sanitize_html_class( $button_shape ),
         'mfb-sample--' . sanitize_html_class( $sample_shape ),
         'mfb-cta--'    . sanitize_html_class( $cta_mode ),
+        'mfb-wrapper--' . sanitize_html_class( $display_layout ),
     );
 
     $pct  = floatval( str_replace( '%', '', $books_per_row ) );
@@ -363,8 +368,18 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         }
     }
 
-    echo '<div class="' . esc_attr( implode( ' ', array_filter( $wrapper_classes ) ) ) . '">';
-    echo '<div class="mfb-grid" style="' . esc_attr( $wrapper_style ) . '">';
+    static $scroll_count = 0;
+    $scroll_count++;
+    $scroll_id = 'mfb-archive-book-list-scroll-' . $scroll_count;
+
+    echo '<div class="' . esc_attr( implode( ' ', array_filter( $wrapper_classes ) ) ) . '"' . ( $display_layout === 'horizontal' ? ' data-mf-card-scroll-wrap' : '' ) . '>';
+    if ( $display_layout === 'horizontal' ) {
+        echo '<div class="mfb-scroll-head"><div class="mfb-scroll-controls" aria-label="' . esc_attr__( 'Book carousel controls', 'modfarm' ) . '">';
+        echo '<button type="button" class="mfb-scroll-control mfb-scroll-control--prev" data-mf-card-scroll-target="' . esc_attr( $scroll_id ) . '" data-mf-card-scroll-direction="-1" aria-label="' . esc_attr__( 'Previous books', 'modfarm' ) . '"><span aria-hidden="true">&larr;</span></button>';
+        echo '<button type="button" class="mfb-scroll-control mfb-scroll-control--next" data-mf-card-scroll-target="' . esc_attr( $scroll_id ) . '" data-mf-card-scroll-direction="1" aria-label="' . esc_attr__( 'Next books', 'modfarm' ) . '"><span aria-hidden="true">&rarr;</span></button>';
+        echo '</div></div>';
+    }
+    echo '<div id="' . esc_attr( $scroll_id ) . '" class="mfb-grid' . ( $display_layout === 'horizontal' ? ' mfb-grid--horizontal' : '' ) . '" style="' . esc_attr( $wrapper_style ) . '"' . ( $display_layout === 'horizontal' ? ' data-mf-card-scroll-rail' : '' ) . '>';
 
     if ( $query->have_posts() ) {
         while ( $query->have_posts() ) {

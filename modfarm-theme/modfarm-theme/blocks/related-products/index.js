@@ -327,6 +327,15 @@
             })
           ),
           el(PanelBody, { title: __('Display', 'modfarm'), initialOpen: false },
+            el(SelectControl, {
+              label: __('Presentation', 'modfarm'),
+              value: attributes.displayLayout || 'grid',
+              options: [
+                { label: __('Grid', 'modfarm'), value: 'grid' },
+                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
+              ],
+              onChange: function (value) { setAttributes({ displayLayout: value || 'grid' }); }
+            }),
             el(ToggleControl, {
               label: __('Show heading', 'modfarm'),
               checked: attributes.showHeading !== false,

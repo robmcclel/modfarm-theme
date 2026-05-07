@@ -142,6 +142,15 @@
           // Archive Controls (query + basic presentation)
           el(PanelBody, { title: __('Archive Controls', 'modfarm'), initialOpen: true },
             el(SelectControl, {
+              label: __('Presentation', 'modfarm'),
+              value: attributes['display-layout'] || 'grid',
+              options: [
+                { label: __('Grid', 'modfarm'), value: 'grid' },
+                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
+              ],
+              onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
+            }),
+            el(SelectControl, {
               label: __('Image Type', 'modfarm'),
               value: attributes['image-type'],
               options: [

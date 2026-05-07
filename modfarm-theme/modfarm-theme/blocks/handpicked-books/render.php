@@ -11,6 +11,9 @@ function modfarm_render_handpicked_books_block( $attributes ) {
   }
 
   $books_per_row   = $attributes['books-in-row'] ?? '25%';
+  $display_layout  = in_array(($attributes['display-layout'] ?? 'grid'), ['grid', 'horizontal'], true)
+    ? $attributes['display-layout']
+    : 'grid';
   $books_per_page  = max(1, min(50, (int)($attributes['books-per-page'] ?? 12)));
   $show_pagination = !empty($attributes['show-pagination']);
 
@@ -119,6 +122,7 @@ function modfarm_render_handpicked_books_block( $attributes ) {
     'mfb-button--' . sanitize_html_class($button_shape),
     'mfb-sample--' . sanitize_html_class($sample_shape),
     'mfb-cta--'    . sanitize_html_class($cta_mode),
+    'mfb-wrapper--' . sanitize_html_class($display_layout),
   ];
 
   $custom_vars = [];
@@ -192,8 +196,18 @@ function modfarm_render_handpicked_books_block( $attributes ) {
 
   ob_start();
 
-  echo '<div class="' . esc_attr(implode(' ', array_filter($wrapper_classes))) . '">';
-  echo '<div class="mfb-grid" style="' . esc_attr($wrapper_style) . '">';
+  static $scroll_count = 0;
+  $scroll_count++;
+  $scroll_id = 'mfb-handpicked-books-scroll-' . $scroll_count;
+
+  echo '<div class="' . esc_attr(implode(' ', array_filter($wrapper_classes))) . '"' . ($display_layout === 'horizontal' ? ' data-mf-card-scroll-wrap' : '') . '>';
+  if ($display_layout === 'horizontal') {
+    echo '<div class="mfb-scroll-head"><div class="mfb-scroll-controls" aria-label="' . esc_attr__('Book carousel controls', 'modfarm') . '">';
+    echo '<button type="button" class="mfb-scroll-control mfb-scroll-control--prev" data-mf-card-scroll-target="' . esc_attr($scroll_id) . '" data-mf-card-scroll-direction="-1" aria-label="' . esc_attr__('Previous books', 'modfarm') . '"><span aria-hidden="true">&larr;</span></button>';
+    echo '<button type="button" class="mfb-scroll-control mfb-scroll-control--next" data-mf-card-scroll-target="' . esc_attr($scroll_id) . '" data-mf-card-scroll-direction="1" aria-label="' . esc_attr__('Next books', 'modfarm') . '"><span aria-hidden="true">&rarr;</span></button>';
+    echo '</div></div>';
+  }
+  echo '<div id="' . esc_attr($scroll_id) . '" class="mfb-grid' . ($display_layout === 'horizontal' ? ' mfb-grid--horizontal' : '') . '" style="' . esc_attr($wrapper_style) . '"' . ($display_layout === 'horizontal' ? ' data-mf-card-scroll-rail' : '') . '>';
 
   if ($q->have_posts()) {
     while ($q->have_posts()) {

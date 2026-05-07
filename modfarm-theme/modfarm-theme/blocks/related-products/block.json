@@ -15,6 +15,7 @@
     "manualIds": { "type": "array", "default": [] },
     "productsPerPage": { "type": "number", "default": 3 },
     "columns": { "type": "number", "default": 3 },
+    "displayLayout": { "type": "string", "default": "grid" },
     "cardLayout": { "type": "string", "default": "commerce" },
     "imageAspect": { "type": "string", "default": "1 / 1" },
     "showTitle": { "type": "boolean", "default": false },

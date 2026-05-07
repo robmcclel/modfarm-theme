@@ -24,6 +24,7 @@
     "image-type":      { "type": "string",  "default": "featured" },
 
     "books-in-row":    { "type": "string",  "default": "25%" },
+    "display-layout":  { "type": "string",  "default": "grid" },
     "display-order":   { "type": "string",  "default": "DESC" },
     "books-per-page":  { "type": "number",  "default": 12 },
     "show-pagination": { "type": "boolean", "default": false },

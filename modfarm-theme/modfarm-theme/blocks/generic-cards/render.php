@@ -6,6 +6,9 @@ function modfarm_render_generic_cards_block( $attributes ) {
   $items = isset($attributes['items']) && is_array($attributes['items']) ? $attributes['items'] : [];
 
   $books_per_row = $attributes['books-in-row'] ?? '25%';
+  $display_layout = in_array(($attributes['display-layout'] ?? 'grid'), ['grid', 'horizontal'], true)
+    ? $attributes['display-layout']
+    : 'grid';
   $show_title    = (($attributes['show-title']  ?? 'none') === 'block');
   $show_series   = (($attributes['show-series'] ?? 'none') === 'block');
   $show_button   = (($attributes['show-button'] ?? 'block') === 'block');
@@ -39,6 +42,7 @@ function modfarm_render_generic_cards_block( $attributes ) {
     'mfb-cover--' . sanitize_html_class($cover_shape),
     'mfb-button--' . sanitize_html_class($button_shape),
     'mfb-cta--' . sanitize_html_class($cta_join),
+    'mfb-wrapper--' . sanitize_html_class($display_layout),
   ];
 
   // Only output local style vars when NOT using global styling
@@ -53,9 +57,20 @@ function modfarm_render_generic_cards_block( $attributes ) {
   }
 
   ob_start();
+  static $scroll_count = 0;
+  $scroll_count++;
+  $scroll_id = 'mfb-generic-cards-scroll-' . $scroll_count;
   ?>
-  <div class="<?php echo esc_attr(implode(' ', $wrap_classes)); ?>"<?php echo $style_vars ? ' style="' . esc_attr($style_vars) . '"' : ''; ?>>
-    <div class="mfb-grid" style="--mfb-cols:<?php echo (int)$cols; ?>;">
+  <div class="<?php echo esc_attr(implode(' ', $wrap_classes)); ?>"<?php echo $style_vars ? ' style="' . esc_attr($style_vars) . '"' : ''; ?><?php echo $display_layout === 'horizontal' ? ' data-mf-card-scroll-wrap' : ''; ?>>
+    <?php if ($display_layout === 'horizontal'): ?>
+      <div class="mfb-scroll-head">
+        <div class="mfb-scroll-controls" aria-label="<?php esc_attr_e('Book carousel controls', 'modfarm'); ?>">
+          <button type="button" class="mfb-scroll-control mfb-scroll-control--prev" data-mf-card-scroll-target="<?php echo esc_attr($scroll_id); ?>" data-mf-card-scroll-direction="-1" aria-label="<?php esc_attr_e('Previous books', 'modfarm'); ?>"><span aria-hidden="true">&larr;</span></button>
+          <button type="button" class="mfb-scroll-control mfb-scroll-control--next" data-mf-card-scroll-target="<?php echo esc_attr($scroll_id); ?>" data-mf-card-scroll-direction="1" aria-label="<?php esc_attr_e('Next books', 'modfarm'); ?>"><span aria-hidden="true">&rarr;</span></button>
+        </div>
+      </div>
+    <?php endif; ?>
+    <div id="<?php echo esc_attr($scroll_id); ?>" class="mfb-grid<?php echo $display_layout === 'horizontal' ? ' mfb-grid--horizontal' : ''; ?>" style="--mfb-cols:<?php echo (int)$cols; ?>;"<?php echo $display_layout === 'horizontal' ? ' data-mf-card-scroll-rail' : ''; ?>>
       <?php foreach ($items as $item):
 
         $image_id  = isset($item['imageId']) ? (int)$item['imageId'] : 0;

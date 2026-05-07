@@ -433,6 +433,15 @@
           // === Display Settings =============================================
           el(PanelBody, { title: __('Display Settings', 'modfarm'), initialOpen: false },
             el(SelectControl, {
+              label: __('Presentation', 'modfarm'),
+              value: attributes['display-layout'] || 'grid',
+              options: [
+                { label: __('Grid', 'modfarm'), value: 'grid' },
+                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
+              ],
+              onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
+            }),
+            el(SelectControl, {
               label: __('Books Per Row', 'modfarm'),
               value: attributes['books-in-row'],
               options: [

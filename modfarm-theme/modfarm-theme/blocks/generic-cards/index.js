@@ -74,6 +74,7 @@
       items: { type: 'array', default: [] },
 
       'books-in-row': { type: 'string', default: '25%' },
+      'display-layout': { type: 'string', default: 'grid' },
       'show-title': { type: 'string', default: 'none' },
       'show-series': { type: 'string', default: 'none' },
       'show-button': { type: 'string', default: 'block' },
@@ -273,6 +274,15 @@
           el(
             PanelBody,
             { title: __('Display Settings', 'modfarm'), initialOpen: false },
+            el(SelectControl, {
+              label: __('Presentation', 'modfarm'),
+              value: attributes['display-layout'] || 'grid',
+              options: [
+                { label: __('Grid', 'modfarm'), value: 'grid' },
+                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
+              ],
+              onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
+            }),
             el(SelectControl, {
               label: __('Cards Per Row', 'modfarm'),
               value: attributes['books-in-row'],

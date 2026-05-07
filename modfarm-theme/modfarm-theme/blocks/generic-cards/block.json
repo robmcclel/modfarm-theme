@@ -11,6 +11,7 @@
     "items": { "type": "array", "default": [] },
 
     "books-in-row":    { "type": "string",  "default": "25%" },
+    "display-layout":  { "type": "string",  "default": "grid" },
     "show-title":      { "type": "string",  "default": "none" },
     "show-series":     { "type": "string",  "default": "none" },
     "show-button":     { "type": "string",  "default": "block" },
