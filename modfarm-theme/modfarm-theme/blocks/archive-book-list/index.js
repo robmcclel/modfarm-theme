@@ -61,6 +61,8 @@
     edit: function (props) {
       const { attributes, setAttributes } = props;
       const blockProps = useBlockProps();
+      const displayLayout = attributes['display-layout'] || 'grid';
+      const isHorizontal = displayLayout === 'horizontal';
 
       // Card-level flags with sensible defaults (same as multi-tax & book-page-tax)
       const cardUseGlobal = attributes.cardUseGlobal !== false; // default true
@@ -139,17 +141,20 @@
 
         el(InspectorControls, {},
 
-          // Archive Controls (query + basic presentation)
-          el(PanelBody, { title: __('Archive Controls', 'modfarm'), initialOpen: true },
+          el(PanelBody, { title: __('Presentation', 'modfarm'), initialOpen: true },
             el(SelectControl, {
-              label: __('Presentation', 'modfarm'),
-              value: attributes['display-layout'] || 'grid',
+              label: __('Layout', 'modfarm'),
+              value: displayLayout,
               options: [
                 { label: __('Grid', 'modfarm'), value: 'grid' },
                 { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
               ],
               onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
-            }),
+            })
+          ),
+
+          // Archive Controls (query + basic presentation)
+          el(PanelBody, { title: __('Archive Controls', 'modfarm'), initialOpen: true },
             el(SelectControl, {
               label: __('Image Type', 'modfarm'),
               value: attributes['image-type'],
@@ -166,7 +171,7 @@
               ],
               onChange: (val) => setAttributes({ 'image-type': val })
             }),
-            el(SelectControl, {
+            !isHorizontal && el(SelectControl, {
               label: __('Books Per Row', 'modfarm'),
               value: attributes['books-in-row'],
               options: [
@@ -188,12 +193,12 @@
               onChange: (val) => setAttributes({ 'display-order': val })
             }),
             el(RangeControl, {
-              label: __('Books Per Page', 'modfarm'),
+              label: isHorizontal ? __('Total Books', 'modfarm') : __('Books Per Page', 'modfarm'),
               value: attributes['books-per-page'],
               onChange: (val) => setAttributes({ 'books-per-page': val }),
               min: 1, max: 100
             }),
-            el(ToggleControl, {
+            !isHorizontal && el(ToggleControl, {
               label: __('Show Pagination', 'modfarm'),
               checked: !!attributes['show-pagination'],
               onChange: (val) => setAttributes({ 'show-pagination': !!val })

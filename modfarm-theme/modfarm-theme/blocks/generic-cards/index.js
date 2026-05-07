@@ -122,6 +122,8 @@
 
       const moveUp = (index) => setAttributes({ items: move(items, index, index - 1) });
       const moveDown = (index) => setAttributes({ items: move(items, index, index + 1) });
+      const displayLayout = attributes['display-layout'] || 'grid';
+      const isHorizontal = displayLayout === 'horizontal';
 
       // Multi-Tax style: if global is enabled, we keep local overrides empty
       const enableGlobal = (val) => {
@@ -149,6 +151,18 @@
         el(
           InspectorControls,
           {},
+
+          el(PanelBody, { title: __('Presentation', 'modfarm'), initialOpen: true },
+            el(SelectControl, {
+              label: __('Layout', 'modfarm'),
+              value: displayLayout,
+              options: [
+                { label: __('Grid', 'modfarm'), value: 'grid' },
+                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
+              ],
+              onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
+            })
+          ),
 
           // Cards (repeater)
           el(
@@ -274,16 +288,7 @@
           el(
             PanelBody,
             { title: __('Display Settings', 'modfarm'), initialOpen: false },
-            el(SelectControl, {
-              label: __('Presentation', 'modfarm'),
-              value: attributes['display-layout'] || 'grid',
-              options: [
-                { label: __('Grid', 'modfarm'), value: 'grid' },
-                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
-              ],
-              onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
-            }),
-            el(SelectControl, {
+            !isHorizontal && el(SelectControl, {
               label: __('Cards Per Row', 'modfarm'),
               value: attributes['books-in-row'],
               options: [

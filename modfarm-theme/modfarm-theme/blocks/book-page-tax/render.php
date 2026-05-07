@@ -27,7 +27,7 @@ function modfarm_render_book_page_tax_block( $attributes ) {
         ? $attributes['display-layout']
         : 'grid';
     $image_type      = $attributes['image-type']      ?? 'featured';
-    $show_pagination = ! empty( $attributes['show-pagination'] );
+    $show_pagination = $display_layout === 'horizontal' ? false : ! empty( $attributes['show-pagination'] );
 
     // Primary CTA
     $btn_text   = $attributes['button-text']      ?? __( 'See The Book', 'modfarm' );

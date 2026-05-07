@@ -69,6 +69,9 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     );
 
     $a   = wp_parse_args( $attributes, $defaults );
+    $display_layout  = in_array( (string) ( $a['display-layout'] ?? 'grid' ), array( 'grid', 'horizontal' ), true )
+        ? (string) $a['display-layout']
+        : 'grid';
     $qo  = get_queried_object();
 
     // --------------------------------------------------
@@ -285,15 +288,16 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     $order         = ( $order_setting === 'ASC' )  ? 'ASC'  : 'DESC';
 
     $ppp = (int) $a['books-per-page'];
-    $ppp = ! empty( $a['show-pagination'] ) ? max( 1, $ppp ) : -1;
+    $ppp = $display_layout === 'horizontal' ? max( 1, $ppp ) : ( ! empty( $a['show-pagination'] ) ? max( 1, $ppp ) : -1 );
+    $query_has_pagination = $display_layout !== 'horizontal' && ! empty( $a['show-pagination'] );
 
     $args = array(
         'post_type'      => 'book',
         'post_status'    => 'publish',
         'posts_per_page' => $ppp,
-        'paged'          => ! empty( $a['show-pagination'] ) ? $paged : 1,
+        'paged'          => $query_has_pagination ? $paged : 1,
         'tax_query'      => $tax_query,
-        'no_found_rows'  => empty( $a['show-pagination'] ),
+        'no_found_rows'  => ! $query_has_pagination,
     );
 
     if ( $orderby === 'rand' ) {
@@ -311,11 +315,8 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     // 7. WRAPPER CLASSES + GRID STYLE
     // --------------------------------------------------
     $books_per_row   = (string) $a['books-in-row'];
-    $display_layout  = in_array( (string) ( $a['display-layout'] ?? 'grid' ), array( 'grid', 'horizontal' ), true )
-        ? (string) $a['display-layout']
-        : 'grid';
     $image_type      = (string) $a['image-type'];
-    $show_pagination = ! empty( $a['show-pagination'] );
+    $show_pagination = $query_has_pagination;
     $btn_link        = (string) $a['button-link'];
     $btn_text        = (string) $a['button-text'];
     $btn_target      = (string) $a['button-target'];

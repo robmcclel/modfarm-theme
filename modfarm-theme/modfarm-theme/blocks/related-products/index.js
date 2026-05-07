@@ -245,6 +245,8 @@
       const { attributes, setAttributes } = props;
       const blockProps = useBlockProps();
       const manualIds = sanitizeIds(attributes.manualIds);
+      const displayLayout = attributes.displayLayout || 'grid';
+      const isHorizontal = displayLayout === 'horizontal';
       const [taxonomies, setTaxonomies] = useState([]);
 
       useEffect(function () {
@@ -279,6 +281,17 @@
 
       return el(Fragment, null,
         el(InspectorControls, null,
+          el(PanelBody, { title: __('Presentation', 'modfarm'), initialOpen: true },
+            el(SelectControl, {
+              label: __('Layout', 'modfarm'),
+              value: displayLayout,
+              options: [
+                { label: __('Grid', 'modfarm'), value: 'grid' },
+                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
+              ],
+              onChange: function (value) { setAttributes({ displayLayout: value || 'grid' }); }
+            })
+          ),
           el(PanelBody, { title: __('Source', 'modfarm'), initialOpen: true },
             el(Notice, { status: 'info', isDismissible: false },
               __('Core Promotions are used first. Manual Offers override them; taxonomy is only a fallback when no promoted Offers are found.', 'modfarm')
@@ -312,13 +325,13 @@
               onChange: function (value) { setAttributes({ taxonomy: value || '' }); }
             }),
             el(RangeControl, {
-              label: __('Products to show', 'modfarm'),
+              label: isHorizontal ? __('Total Products', 'modfarm') : __('Products to show', 'modfarm'),
               value: attributes.productsPerPage || 3,
               min: 1,
               max: 12,
               onChange: function (value) { setAttributes({ productsPerPage: value || 3 }); }
             }),
-            el(RangeControl, {
+            !isHorizontal && el(RangeControl, {
               label: __('Columns', 'modfarm'),
               value: attributes.columns || 3,
               min: 1,
@@ -327,15 +340,6 @@
             })
           ),
           el(PanelBody, { title: __('Display', 'modfarm'), initialOpen: false },
-            el(SelectControl, {
-              label: __('Presentation', 'modfarm'),
-              value: attributes.displayLayout || 'grid',
-              options: [
-                { label: __('Grid', 'modfarm'), value: 'grid' },
-                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
-              ],
-              onChange: function (value) { setAttributes({ displayLayout: value || 'grid' }); }
-            }),
             el(ToggleControl, {
               label: __('Show heading', 'modfarm'),
               checked: attributes.showHeading !== false,

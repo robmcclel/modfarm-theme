@@ -15,7 +15,7 @@ function modfarm_render_handpicked_books_block( $attributes ) {
     ? $attributes['display-layout']
     : 'grid';
   $books_per_page  = max(1, min(50, (int)($attributes['books-per-page'] ?? 12)));
-  $show_pagination = !empty($attributes['show-pagination']);
+  $show_pagination = $display_layout === 'horizontal' ? false : !empty($attributes['show-pagination']);
 
   $image_type      = $attributes['image-type'] ?? 'featured';
 
