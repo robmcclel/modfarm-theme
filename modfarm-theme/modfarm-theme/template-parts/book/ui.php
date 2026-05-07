@@ -388,7 +388,15 @@ function mfb_ui_card(array $card): string {
       }
     }
     echo $has_audio ? ' has-audio' : '';
-  ?>" data-book-id="<?php echo esc_attr($id); ?>">
+  ?>"
+    data-book-id="<?php echo esc_attr($id); ?>"
+    data-mf-impression="book_impression"
+    data-mf-origin="<?php echo esc_attr($origin); ?>"
+    data-mf-block="<?php echo esc_attr((string)($card['block'] ?? 'book-card')); ?>"
+    data-mf-book-id="<?php echo esc_attr($id); ?>"
+    data-mf-book-title="<?php echo esc_attr($title); ?>"
+    data-mf-asin="<?php echo esc_attr((string)($card['asin'] ?? $amazon_asin)); ?>"
+  >
 
     <?php echo mfb_ui_media([
       'title'    => $title,
