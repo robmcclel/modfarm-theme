@@ -180,6 +180,36 @@ function modfarm_store_block_get_offer_details(int $offer_id): array {
 }
 }
 
+if (!function_exists('modfarm_store_block_offer_event_attrs')) {
+function modfarm_store_block_offer_event_attrs(int $offer_id, string $action, string $label, string $href, string $destination = ''): string {
+    if ($offer_id <= 0) {
+        return '';
+    }
+
+    $destination = $destination !== '' ? $destination : $href;
+    $meta_key = in_array($action, ['product_buy', 'offer_buy'], true) ? 'product_buy' : 'product_click';
+    $payload = [
+        'event_type'      => 'click',
+        'event_category'  => $meta_key === 'product_buy' ? 'commerce_intent' : 'discovery',
+        'intent_category' => $meta_key === 'product_buy' ? 'commerce_intent' : 'discovery',
+        'origin'          => 'product_card',
+        'meta_key'        => $meta_key,
+        'offer_id'        => $offer_id,
+        'product_id'      => $offer_id,
+        'label'           => wp_strip_all_tags($label),
+    ];
+
+    $context = modfarm_store_block_get_relationship_context();
+    if (($context['type'] ?? '') === 'book' && !empty($context['id'])) {
+        $payload['book_id'] = absint($context['id']);
+    }
+
+    return ' data-mf-event="' . esc_attr(wp_json_encode($payload)) . '"' .
+        ' data-mf-href="' . esc_attr($href) . '"' .
+        ' data-mf-destination="' . esc_attr($destination) . '"';
+}
+}
+
 if (!function_exists('modfarm_store_block_render_offer_card')) {
 function modfarm_store_block_render_offer_card(int $offer_id, array $args = []): string {
     if ($offer_id <= 0 || get_post_type($offer_id) !== 'mf_offer') {
@@ -274,7 +304,7 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
     ?>
     <article class="<?php echo esc_attr(implode(' ', array_filter($classes))); ?>" data-offer-id="<?php echo esc_attr($offer_id); ?>"<?php echo $style_vars ? ' style="' . esc_attr(implode(';', $style_vars)) . ';"' : ''; ?>>
         <?php if (!empty($args['showImage']) && $image !== '') : ?>
-            <a class="mfs-product-card__media" href="<?php echo esc_url($permalink); ?>" style="aspect-ratio: <?php echo esc_attr((string) $args['imageAspect']); ?>;">
+            <a class="mfs-product-card__media" href="<?php echo esc_url($permalink); ?>" style="aspect-ratio: <?php echo esc_attr((string) $args['imageAspect']); ?>;"<?php echo modfarm_store_block_offer_event_attrs($offer_id, 'product_click', $title ?: 'Product', $permalink, $permalink); ?>>
                 <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($title); ?>" loading="lazy" decoding="async" />
             </a>
         <?php endif; ?>
@@ -284,7 +314,7 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
                 <div class="mfs-product-card__actions">
                     <?php if (!empty($args['showPrimaryButton'])) : ?>
                         <?php if ($buy_url !== '') : ?>
-                            <a class="mfs-product-card__button mfs-product-card__button--primary" href="<?php echo esc_url($buy_url); ?>">
+                            <a class="mfs-product-card__button mfs-product-card__button--primary" href="<?php echo esc_url($buy_url); ?>"<?php echo modfarm_store_block_offer_event_attrs($offer_id, 'product_buy', (string) $args['primaryButtonLabel'], $buy_url, $buy_url); ?>>
                                 <?php echo esc_html((string) $args['primaryButtonLabel']); ?>
                             </a>
                         <?php elseif (modfarm_store_block_is_editor_context()) : ?>
@@ -297,7 +327,7 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
                     <?php endif; ?>
 
                     <?php if (!empty($args['showSecondaryButton'])) : ?>
-                        <a class="mfs-product-card__button mfs-product-card__button--secondary" href="<?php echo esc_url($secondary_url); ?>">
+                        <a class="mfs-product-card__button mfs-product-card__button--secondary" href="<?php echo esc_url($secondary_url); ?>"<?php echo modfarm_store_block_offer_event_attrs($offer_id, 'product_click', (string) $args['secondaryButtonLabel'], $secondary_url, $secondary_url); ?>>
                             <?php echo esc_html((string) $args['secondaryButtonLabel']); ?>
                         </a>
                     <?php endif; ?>
@@ -315,7 +345,7 @@ function modfarm_store_block_render_offer_card(int $offer_id, array $args = []):
             <?php if (!empty($args['showTitle']) && $title !== '') : ?>
                 <h3 class="mfs-product-card__title">
                     <?php if (!empty($args['linkTitle'])) : ?>
-                        <a href="<?php echo esc_url($permalink); ?>"><?php echo esc_html($title); ?></a>
+                        <a href="<?php echo esc_url($permalink); ?>"<?php echo modfarm_store_block_offer_event_attrs($offer_id, 'product_click', $title ?: 'Product', $permalink, $permalink); ?>><?php echo esc_html($title); ?></a>
                     <?php else : ?>
                         <?php echo esc_html($title); ?>
                     <?php endif; ?>
