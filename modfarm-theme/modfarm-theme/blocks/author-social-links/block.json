@@ -1,0 +1,24 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/author-social-links",
+  "title": "Author Social Links",
+  "category": "modfarm-theme",
+  "icon": "share",
+  "description": "Displays social and profile links from a selected author taxonomy term.",
+  "keywords": ["author", "social", "links", "taxonomy"],
+  "supports": { "html": false, "align": false },
+  "attributes": {
+    "authorId": { "type": "number", "default": 0 },
+    "useArchiveAuthor": { "type": "boolean", "default": true },
+    "align": { "type": "string", "default": "left" },
+    "iconSize": { "type": "number", "default": 36 },
+    "gap": { "type": "number", "default": 14 },
+    "colorMode": { "type": "string", "default": "native" },
+    "monotoneColor": { "type": "string", "default": "" },
+    "openInNewTab": { "type": "boolean", "default": true },
+    "hideIfEmpty": { "type": "boolean", "default": false }
+  },
+  "editorScript": "modfarm-author-social-links-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./style.css"
+}

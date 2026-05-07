@@ -26,6 +26,7 @@ add_action('init', function () {
         'handpicked-books'           => 'modfarm_render_handpicked_books_block',
         'content-slot'               => 'modfarm_render_content_slot_block',
         'theme-icon'                 => 'modfarm_render_theme_icon_block',
+        'author-social-links'        => 'modfarm_render_author_social_links_block',
         'taxonomy-grid'              => 'modfarm_render_taxonomy_grid_block',
         'tax-description'            => 'modfarm_render_tax_description_block',
         'coming-soon-list'           => 'modfarm_render_coming_soon_list_block',
@@ -73,7 +74,7 @@ add_action('init', function () {
             wp_register_script(
                 $script_handle,
                 get_template_directory_uri() . "/blocks/{$slug}/index.js",
-                [ 'wp-blocks', 'wp-element', 'wp-components', 'wp-i18n', 'wp-block-editor' ],
+                [ 'wp-blocks', 'wp-element', 'wp-components', 'wp-i18n', 'wp-block-editor', 'wp-data', 'wp-api-fetch', 'wp-server-side-render' ],
                 filemtime($editor_script),
                 true
             );
