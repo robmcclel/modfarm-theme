@@ -191,7 +191,10 @@
         el('div', blockProps,
           el(ServerSideRender, {
             block: 'modfarm/multi-tax-format',
-            attributes
+            attributes: Object.assign({}, attributes, {
+              'display-layout': displayLayout,
+              'horizontal-columns': parseInt(attributes['horizontal-columns'], 10) || 4
+            })
           })
         ),
 
@@ -206,6 +209,16 @@
                 { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
               ],
               onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
+            }),
+            isHorizontal && el(SelectControl, {
+              label: __('Visible Columns', 'modfarm'),
+              value: String(attributes['horizontal-columns'] || 4),
+              options: [
+                { label: __('Three', 'modfarm'), value: '3' },
+                { label: __('Four', 'modfarm'), value: '4' },
+                { label: __('Five', 'modfarm'), value: '5' }
+              ],
+              onChange: (val) => setAttributes({ 'horizontal-columns': parseInt(val, 10) || 4 })
             })
           ),
 

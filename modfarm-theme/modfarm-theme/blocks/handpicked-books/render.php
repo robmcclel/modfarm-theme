@@ -14,6 +14,8 @@ function modfarm_render_handpicked_books_block( $attributes ) {
   $display_layout  = in_array(($attributes['display-layout'] ?? 'grid'), ['grid', 'horizontal'], true)
     ? $attributes['display-layout']
     : 'grid';
+  $horizontal_cols = max(3, min(5, (int)($attributes['horizontal-columns'] ?? 4)));
+  $horizontal_width = 'calc(' . round(100 / $horizontal_cols, 6) . '% - ' . round(10 * ($horizontal_cols - 1) / $horizontal_cols, 4) . 'px)';
   $books_per_page  = max(1, min(50, (int)($attributes['books-per-page'] ?? 12)));
   $show_pagination = $display_layout === 'horizontal' ? false : !empty($attributes['show-pagination']);
 
@@ -141,7 +143,7 @@ function modfarm_render_handpicked_books_block( $attributes ) {
     $custom_vars[] = '--mfb-sample-fg:' . $attributes['cardSampleFg'];
   }
 
-  $wrapper_style = '--mfb-cols:' . (int)$cols . ';' . implode(';', $custom_vars) . ';';
+  $wrapper_style = '--mfb-cols:' . (int)$cols . ';--mfb-scroll-cols:' . (int)$horizontal_cols . ';--mfb-scroll-card-width:' . $horizontal_width . ';' . implode(';', $custom_vars) . ';';
 
   // Pagination
   $paged = max(1, (int)(get_query_var('paged') ?: get_query_var('page') ?: 1));

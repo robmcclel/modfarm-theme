@@ -9,6 +9,8 @@ function modfarm_render_generic_cards_block( $attributes ) {
   $display_layout = in_array(($attributes['display-layout'] ?? 'grid'), ['grid', 'horizontal'], true)
     ? $attributes['display-layout']
     : 'grid';
+  $horizontal_cols = max(3, min(5, (int)($attributes['horizontal-columns'] ?? 4)));
+  $horizontal_width = 'calc(' . round(100 / $horizontal_cols, 6) . '% - ' . round(10 * ($horizontal_cols - 1) / $horizontal_cols, 4) . 'px)';
   $show_title    = (($attributes['show-title']  ?? 'none') === 'block');
   $show_series   = (($attributes['show-series'] ?? 'none') === 'block');
   $show_button   = (($attributes['show-button'] ?? 'block') === 'block');
@@ -70,7 +72,7 @@ function modfarm_render_generic_cards_block( $attributes ) {
         </div>
       </div>
     <?php endif; ?>
-    <div id="<?php echo esc_attr($scroll_id); ?>" class="mfb-grid<?php echo $display_layout === 'horizontal' ? ' mfb-grid--horizontal' : ''; ?>" style="--mfb-cols:<?php echo (int)$cols; ?>;"<?php echo $display_layout === 'horizontal' ? ' data-mf-card-scroll-rail' : ''; ?>>
+    <div id="<?php echo esc_attr($scroll_id); ?>" class="mfb-grid<?php echo $display_layout === 'horizontal' ? ' mfb-grid--horizontal' : ''; ?>" style="--mfb-cols:<?php echo (int)$cols; ?>;--mfb-scroll-cols:<?php echo (int)$horizontal_cols; ?>;--mfb-scroll-card-width:<?php echo esc_attr($horizontal_width); ?>;"<?php echo $display_layout === 'horizontal' ? ' data-mf-card-scroll-rail' : ''; ?>>
       <?php foreach ($items as $item):
 
         $image_id  = isset($item['imageId']) ? (int)$item['imageId'] : 0;

@@ -181,6 +181,17 @@ add_action('init', function () {
             register_post_meta($post_type, $meta_key, $shared_args);
         }
     }
+
+    $scroll_script = get_theme_file_path('assets/js/book-card-scroll.js');
+    if (file_exists($scroll_script)) {
+        wp_enqueue_script(
+            'modfarm-editor-book-card-scroll',
+            get_theme_file_uri('assets/js/book-card-scroll.js'),
+            [],
+            filemtime($scroll_script),
+            true
+        );
+    }
 });
 
 /**

@@ -214,7 +214,8 @@ body.mfb-hide-sample-button {
 
 .mfb-wrapper--horizontal .mfb-grid,
 .mfb-grid--horizontal {
-  --mfb-scroll-card-width:clamp(220px, 24vw, 320px);
+  --mfb-scroll-cols:4;
+  --mfb-scroll-card-width:calc(25% - 7.5px);
   flex-wrap:nowrap !important;
   overflow-x:auto;
   overflow-y:hidden;
@@ -223,8 +224,32 @@ body.mfb-hide-sample-button {
   scroll-padding-inline:2px;
   scrollbar-width:none;
   -ms-overflow-style:none;
+}
+
+.mfb-wrapper--horizontal .mfb-grid.is-mf-card-scroll-can-scroll,
+.mfb-grid--horizontal.is-mf-card-scroll-can-scroll {
   -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
   mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+}
+
+.mfb-wrapper--horizontal .mfb-grid.is-mf-card-scroll-at-start,
+.mfb-grid--horizontal.is-mf-card-scroll-at-start {
+  -webkit-mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 20px), transparent 100%);
+  mask-image:linear-gradient(90deg, #000 0, #000 calc(100% - 20px), transparent 100%);
+}
+
+.mfb-wrapper--horizontal .mfb-grid.is-mf-card-scroll-at-end,
+.mfb-grid--horizontal.is-mf-card-scroll-at-end {
+  -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 100%);
+  mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 100%);
+}
+
+.mfb-wrapper--horizontal .mfb-grid.is-mf-card-scroll-at-start.is-mf-card-scroll-at-end,
+.mfb-grid--horizontal.is-mf-card-scroll-at-start.is-mf-card-scroll-at-end,
+.mfb-wrapper--horizontal .mfb-grid:not(.is-mf-card-scroll-can-scroll),
+.mfb-grid--horizontal:not(.is-mf-card-scroll-can-scroll) {
+  -webkit-mask-image:none;
+  mask-image:none;
 }
 
 .mfb-wrapper--horizontal .mfb-grid::-webkit-scrollbar,
@@ -247,7 +272,13 @@ body.mfb-hide-sample-button {
 
   .mfb-wrapper--horizontal .mfb-grid,
   .mfb-grid--horizontal {
-    --mfb-scroll-card-width:min(78vw, 300px);
+    --mfb-scroll-cols:2;
+    --mfb-scroll-card-width:calc(50% - 5px);
+  }
+
+  .mfb-wrapper--horizontal .mfb-item,
+  .mfb-grid--horizontal .mfb-item {
+    flex-basis:calc(50% - 5px);
   }
 }
 

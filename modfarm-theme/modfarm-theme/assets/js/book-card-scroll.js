@@ -40,6 +40,10 @@
     var atStart = rail.scrollLeft <= 2;
     var atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
 
+    rail.classList.toggle('is-mf-card-scroll-can-scroll', canScroll);
+    rail.classList.toggle('is-mf-card-scroll-at-start', !canScroll || atStart);
+    rail.classList.toggle('is-mf-card-scroll-at-end', !canScroll || atEnd);
+
     buttons.forEach(function (button) {
       var direction = parseInt(button.getAttribute('data-mf-card-scroll-direction') || '0', 10);
       button.disabled = !canScroll || (direction < 0 && atStart) || (direction > 0 && atEnd);
@@ -78,6 +82,11 @@
   });
 
   window.addEventListener('resize', init);
+
+  if ('MutationObserver' in window) {
+    var observer = new MutationObserver(function () { init(); });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

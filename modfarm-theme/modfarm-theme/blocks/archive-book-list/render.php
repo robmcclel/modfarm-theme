@@ -72,6 +72,8 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     $display_layout  = in_array( (string) ( $a['display-layout'] ?? 'grid' ), array( 'grid', 'horizontal' ), true )
         ? (string) $a['display-layout']
         : 'grid';
+    $horizontal_cols = max( 3, min( 5, (int) ( $a['horizontal-columns'] ?? 4 ) ) );
+    $horizontal_width = 'calc(' . round( 100 / $horizontal_cols, 6 ) . '% - ' . round( 10 * ( $horizontal_cols - 1 ) / $horizontal_cols, 4 ) . 'px)';
     $qo  = get_queried_object();
 
     // --------------------------------------------------
@@ -337,7 +339,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
 
     $pct  = floatval( str_replace( '%', '', $books_per_row ) );
     $cols = ( $pct > 0 ) ? max( 1, (int) round( 100 / $pct ) ) : 4;
-    $grid_style = '--mfb-cols:' . (int) $cols . ';';
+    $grid_style = '--mfb-cols:' . (int) $cols . ';--mfb-scroll-cols:' . (int) $horizontal_cols . ';--mfb-scroll-card-width:' . $horizontal_width . ';';
 
     $wrapper_style = $grid_style;
     if ( ! empty( $custom_vars ) ) {

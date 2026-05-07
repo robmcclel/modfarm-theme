@@ -26,6 +26,8 @@ function modfarm_render_book_page_tax_block( $attributes ) {
     $display_layout  = in_array( ( $attributes['display-layout'] ?? 'grid' ), [ 'grid', 'horizontal' ], true )
         ? $attributes['display-layout']
         : 'grid';
+    $horizontal_cols = max( 3, min( 5, (int) ( $attributes['horizontal-columns'] ?? 4 ) ) );
+    $horizontal_width = 'calc(' . round( 100 / $horizontal_cols, 6 ) . '% - ' . round( 10 * ( $horizontal_cols - 1 ) / $horizontal_cols, 4 ) . 'px)';
     $image_type      = $attributes['image-type']      ?? 'featured';
     $show_pagination = $display_layout === 'horizontal' ? false : ! empty( $attributes['show-pagination'] );
 
@@ -253,7 +255,7 @@ function modfarm_render_book_page_tax_block( $attributes ) {
     // Columns
     $pct  = floatval( str_replace( '%', '', $books_per_row ) );
     $cols = ( $pct > 0 ) ? max( 1, (int) round( 100 / $pct ) ) : 4;
-    $grid_style = '--mfb-cols:' . (int) $cols . ';';
+    $grid_style = '--mfb-cols:' . (int) $cols . ';--mfb-scroll-cols:' . (int) $horizontal_cols . ';--mfb-scroll-card-width:' . $horizontal_width . ';';
 
     $wrapper_style = $grid_style;
     if ( ! empty( $custom_vars ) ) {

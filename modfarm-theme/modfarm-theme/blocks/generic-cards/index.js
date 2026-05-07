@@ -75,6 +75,7 @@
 
       'books-in-row': { type: 'string', default: '25%' },
       'display-layout': { type: 'string', default: 'grid' },
+      'horizontal-columns': { type: 'number', default: 4 },
       'show-title': { type: 'string', default: 'none' },
       'show-series': { type: 'string', default: 'none' },
       'show-button': { type: 'string', default: 'block' },
@@ -161,6 +162,16 @@
                 { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
               ],
               onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
+            }),
+            isHorizontal && el(SelectControl, {
+              label: __('Visible Columns', 'modfarm'),
+              value: String(attributes['horizontal-columns'] || 4),
+              options: [
+                { label: __('Three', 'modfarm'), value: '3' },
+                { label: __('Four', 'modfarm'), value: '4' },
+                { label: __('Five', 'modfarm'), value: '5' }
+              ],
+              onChange: (val) => setAttributes({ 'horizontal-columns': parseInt(val, 10) || 4 })
             })
           ),
 
