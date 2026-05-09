@@ -244,7 +244,7 @@
               value: attributes.mode,
               options: [
                 { label: 'Manual (pick a book)', value: 'manual' },
-                { label: 'Auto (latest by date type)', value: 'auto' }
+                { label: 'Most Recent Published', value: 'auto' }
               ],
               onChange: val => {
                 const next = { mode: val };
@@ -253,7 +253,7 @@
               }
             }),
             el(SelectControl, {
-              label: 'Date Type (Auto mode)',
+              label: 'Date Type',
               value: attributes.dateType,
               options: [
                 { label: 'Publication Date (Kindle/eBook)', value: 'publication_date' },
@@ -267,13 +267,13 @@
             }),
             attributes.mode === 'auto' && el(Notice, {
               status: 'info', isDismissible: false
-            }, `Auto picks the latest by ${attributes.dateType === 'audiobook_publication_date' ? 'Audiobook Publication Date' : 'Publication Date'} unless pinned.`)
+            }, `Most Recent Published picks the newest book with a ${attributes.dateType === 'audiobook_publication_date' ? 'Audiobook Publication Date' : 'Publication Date'} on or before today, unless pinned.`)
           ),
 
           el(PanelBody, { title: 'Book & Cover', initialOpen: false },
             attributes.mode === 'manual'
               ? el(BookSearch, { value: attributes.bookId, onPick: id => setAttributes({ bookId: id }) })
-              : el(Notice, { status: 'info', isDismissible: false }, 'Auto mode selects the latest by your chosen date type.'),
+              : el(Notice, { status: 'info', isDismissible: false }, 'Most Recent Published ignores future publication dates and preorders.'),
             el(SelectControl, {
               label: 'Cover Source',
               value: attributes.coverSource,

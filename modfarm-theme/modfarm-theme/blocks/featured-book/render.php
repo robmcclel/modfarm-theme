@@ -199,6 +199,7 @@ if (!function_exists('mfb_pick_latest_by_date')) {
     if ($pinned_id > 0 && get_post_type($pinned_id) === 'book') return (int)$pinned_id;
 
     $date_key = ($key === 'audiobook_publication_date') ? 'audiobook_publication_date' : 'publication_date';
+    $today = current_time('Y-m-d');
 
     $q = new WP_Query([
       'post_type'      => 'book',
@@ -208,7 +209,14 @@ if (!function_exists('mfb_pick_latest_by_date')) {
       'orderby'        => 'meta_value',
       'order'          => 'DESC',
       'meta_type'      => 'DATE',
-      'meta_query'     => [[ 'key' => $date_key, 'compare' => 'EXISTS' ]],
+      'meta_query'     => [
+        [
+          'key'     => $date_key,
+          'value'   => $today,
+          'compare' => '<=',
+          'type'    => 'DATE',
+        ],
+      ],
       'no_found_rows'  => true,
       'ignore_sticky_posts' => true,
     ]);
