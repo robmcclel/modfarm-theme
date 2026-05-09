@@ -50,9 +50,8 @@
     icon: 'calendar-alt',
 
     attributes: {
-      // NEW: List Type (Option A)
-      listType: { type: 'string', default: 'coming-soon' },          // 'coming-soon' | 'latest-releases'
-      latestWindowDays: { type: 'number', default: 30 },             // used when listType=latest-releases AND dateFilterMode=auto
+      listType: { type: 'string', default: 'coming-soon' },          // coming-soon | latest-releases | timeframe
+      latestWindowDays: { type: 'number', default: 30 },             // legacy; retained for saved blocks
 
       'tax-type': { type: 'string', default: '' },
       'series-select': { type: 'object', default: { id: 0 } },
@@ -76,6 +75,8 @@
       'audio-mode': { type: 'string', default: 'auto' },
 
       'button-text': { type: 'string', default: __('See The Book', 'modfarm') },
+      availableButtonText: { type: 'string', default: __('Available Now', 'modfarm') },
+      upcomingButtonText: { type: 'string', default: __('Coming Soon', 'modfarm') },
       'button-link': { type: 'string', default: 'bookpage' },
       'button-target': { type: 'string', default: '_self' },
       'buttonbg-color': { type: 'string', default: '' },
@@ -122,10 +123,8 @@
 
       const taxType = attributes['tax-type'] || '';
       const listType = attributes.listType || 'coming-soon';
-      const dateFilterMode = attributes.dateFilterMode || 'auto';
-
-      const showTimingPanel = (listType === 'coming-soon' && dateFilterMode === 'auto');
-      const showLatestWindowControl = (listType === 'latest-releases' && dateFilterMode === 'auto');
+      const dateFilterMode = attributes.dateFilterMode || 'month';
+      const isTimeframe = listType === 'timeframe';
 
       const taxonomyMap = {
         series: { attr: 'series-select', taxonomy: 'book-series' },
@@ -178,25 +177,18 @@
         setAttributes({ [key]: v });
       };
 
-      // NEW: helper to switch list type with sane default ordering
       const onChangeListType = (v) => {
         const next = v || 'coming-soon';
-
-        // If user hasn't changed ordering much, give them a good default:
-        // Coming Soon => ASC, Latest Releases => DESC
-        const currentOrder = attributes['display-order'] || 'ASC';
-        let nextOrder = currentOrder;
-
-        if (next === 'latest-releases' && currentOrder === 'ASC') nextOrder = 'DESC';
-        if (next === 'coming-soon' && currentOrder === 'DESC') nextOrder = 'ASC';
-
-        setAttributes({ listType: next, 'display-order': nextOrder });
+        const nextAttrs = { listType: next };
+        nextAttrs['display-order'] = next === 'latest-releases' ? 'DESC' : 'ASC';
+        if (next === 'timeframe' && (attributes.dateFilterMode || 'auto') === 'auto') {
+          const now = new Date();
+          nextAttrs.dateFilterMode = 'month';
+          if (!attributes.filterYear) nextAttrs.filterYear = now.getFullYear();
+          if (!attributes.filterMonth) nextAttrs.filterMonth = now.getMonth() + 1;
+        }
+        setAttributes(nextAttrs);
       };
-
-      // Date Filter option labels depend on list type
-      const autoLabel = (listType === 'latest-releases')
-        ? __('Auto (Latest Releases Window)', 'modfarm')
-        : __('Auto (Upcoming + Launch Window)', 'modfarm');
 
       return el(
         Fragment,
@@ -209,13 +201,13 @@
 
           el(PanelBody, { title: __('Book Filters', 'modfarm'), initialOpen: true },
 
-            // NEW: List Type selector (Option A)
             el(SelectControl, {
-              label: __('List Type', 'modfarm'),
+              label: __('Release Selection', 'modfarm'),
               value: listType,
               options: [
+                { label: __('Latest Releases', 'modfarm'), value: 'latest-releases' },
                 { label: __('Coming Soon', 'modfarm'), value: 'coming-soon' },
-                { label: __('Latest Releases', 'modfarm'), value: 'latest-releases' }
+                { label: __('Timeframe', 'modfarm'), value: 'timeframe' }
               ],
               onChange: onChangeListType
             }),
@@ -287,7 +279,6 @@
               label: __('Display Order', 'modfarm'),
               value: attributes['display-order'],
               options: [
-                // label tweaks depending on list type
                 { label: (listType === 'latest-releases') ? __('Most Recent First (Recommended)', 'modfarm') : __('Soonest First (Recommended)', 'modfarm'), value: (listType === 'latest-releases') ? 'DESC' : 'ASC' },
                 { label: (listType === 'latest-releases') ? __('Oldest First', 'modfarm') : __('Latest First', 'modfarm'), value: (listType === 'latest-releases') ? 'ASC' : 'DESC' },
                 { label: 'Random', value: 'rand' }
@@ -322,8 +313,11 @@
               label: __('Show Short Description', 'modfarm'),
               checked: !!attributes.showShortDescription,
               onChange: (v) => setAttributes({ showShortDescription: !!v })
-            }),
-            !!attributes.showPubDate && el(SelectControl, {
+            })
+          ),
+
+          el(PanelBody, { title: __('Publication Timing', 'modfarm'), initialOpen: false },
+            el(SelectControl, {
               label: __('Date Source', 'modfarm'),
               value: attributes.pubDateKey,
               options: [
@@ -331,40 +325,32 @@
                 { label: __('Audiobook Publication Date', 'modfarm'), value: 'audiobook_publication_date' }
               ],
               onChange: (v) => setAttributes({ pubDateKey: v })
-            })
-          ),
+            }),
 
-          // Date Filter panel (works for both list types)
-          el(PanelBody, { title: __('Date Filter', 'modfarm'), initialOpen: false },
-
-            el(SelectControl, {
-              label: __('Filter Mode', 'modfarm'),
-              value: attributes.dateFilterMode || 'auto',
+            isTimeframe && el(SelectControl, {
+              label: __('Timeframe Type', 'modfarm'),
+              value: attributes.dateFilterMode === 'range' ? 'range' : 'month',
               options: [
-                { label: autoLabel, value: 'auto' },
                 { label: __('Specific Month', 'modfarm'), value: 'month' },
                 { label: __('Custom Range', 'modfarm'), value: 'range' }
               ],
               onChange: (v) => setAttributes({ dateFilterMode: v })
             }),
 
-            // Latest Releases window (only when listType=latest-releases and auto mode)
-            showLatestWindowControl && el(RangeControl, {
-              label: __('Latest Window Days', 'modfarm'),
-              help: __('Shows books released within the last N days.', 'modfarm'),
-              value: attributes.latestWindowDays || 30,
-              onChange: (v) => setAttributes({ latestWindowDays: parseInt(v, 10) || 30 }),
-              min: 1, max: 365
-            }),
+            !isTimeframe && el('p', { className: 'components-base-control__help' },
+              listType === 'latest-releases'
+                ? __('Shows books published today and earlier, newest first.', 'modfarm')
+                : __('Shows books publishing tomorrow and later, soonest first.', 'modfarm')
+            ),
 
-            (attributes.dateFilterMode === 'month') && el(RangeControl, {
+            isTimeframe && (attributes.dateFilterMode || 'month') === 'month' && el(RangeControl, {
               label: __('Year', 'modfarm'),
               value: attributes.filterYear || 0,
               onChange: (v) => setAttributes({ filterYear: parseInt(v, 10) || 0 }),
               min: 2020, max: 2035
             }),
 
-            (attributes.dateFilterMode === 'month') && el(SelectControl, {
+            isTimeframe && (attributes.dateFilterMode || 'month') === 'month' && el(SelectControl, {
               label: __('Month', 'modfarm'),
               value: attributes.filterMonth || 0,
               options: [
@@ -385,61 +371,16 @@
               onChange: (v) => setAttributes({ filterMonth: parseInt(v, 10) || 0 })
             }),
 
-            (attributes.dateFilterMode === 'range') && el(TextControl, {
+            isTimeframe && attributes.dateFilterMode === 'range' && el(TextControl, {
               label: __('Start (YYYY-MM-DD)', 'modfarm'),
               value: attributes.filterStart || '',
               onChange: (v) => setAttributes({ filterStart: v })
             }),
 
-            (attributes.dateFilterMode === 'range') && el(TextControl, {
+            isTimeframe && attributes.dateFilterMode === 'range' && el(TextControl, {
               label: __('End (YYYY-MM-DD)', 'modfarm'),
               value: attributes.filterEnd || '',
               onChange: (v) => setAttributes({ filterEnd: v })
-            })
-          ),
-
-          // Publication Timing is only meaningful for Coming Soon + Auto mode
-          showTimingPanel && el(PanelBody, { title: __('Publication Timing', 'modfarm'), initialOpen: false },
-            el(ToggleControl, {
-              label: __('Include Launch Window (recently released)', 'modfarm'),
-              checked: !!attributes.includeLaunchWindow,
-              onChange: (v) => setAttributes({ includeLaunchWindow: !!v })
-            }),
-            el(RangeControl, {
-              label: __('Launch Window Days', 'modfarm'),
-              value: attributes.launchWindowDays || 7,
-              onChange: (v) => setAttributes({ launchWindowDays: parseInt(v, 10) || 7 }),
-              min: 1, max: 30
-            }),
-            el(SelectControl, {
-              label: __('Post-Release Behavior', 'modfarm'),
-              value: attributes.postReleaseMode || 'hide',
-              options: [
-                { label: __('Hide', 'modfarm'), value: 'hide' },
-                { label: __('Fade', 'modfarm'), value: 'fade' },
-                { label: __('Keep', 'modfarm'), value: 'keep' }
-              ],
-              onChange: (v) => setAttributes({ postReleaseMode: v })
-            }),
-            el(ToggleControl, {
-              label: __('Smart CTA Text by Timing', 'modfarm'),
-              checked: !!attributes.smartCta,
-              onChange: (v) => setAttributes({ smartCta: !!v })
-            }),
-            !!attributes.smartCta && el(TextControl, {
-              label: __('Upcoming CTA Text', 'modfarm'),
-              value: attributes.ctaUpcoming || '',
-              onChange: (v) => setAttributes({ ctaUpcoming: v })
-            }),
-            !!attributes.smartCta && el(TextControl, {
-              label: __('Launch Window CTA Text', 'modfarm'),
-              value: attributes.ctaLaunch || '',
-              onChange: (v) => setAttributes({ ctaLaunch: v })
-            }),
-            !!attributes.smartCta && el(TextControl, {
-              label: __('Released CTA Text (optional)', 'modfarm'),
-              value: attributes.ctaReleased || '',
-              onChange: (v) => setAttributes({ ctaReleased: v })
             })
           ),
 
@@ -481,9 +422,14 @@
 
           el(PanelBody, { title: __('Button Style', 'modfarm'), initialOpen: false },
             el(TextControl, {
-              label: __('Button Text (base)', 'modfarm'),
-              value: attributes['button-text'],
-              onChange: (val) => setAttributes({ 'button-text': val })
+              label: __('Available Now Button Text', 'modfarm'),
+              value: attributes.availableButtonText || '',
+              onChange: (val) => setAttributes({ availableButtonText: val })
+            }),
+            el(TextControl, {
+              label: __('Upcoming Button Text', 'modfarm'),
+              value: attributes.upcomingButtonText || '',
+              onChange: (val) => setAttributes({ upcomingButtonText: val })
             }),
             el(SelectControl, {
               label: __('Button Target', 'modfarm'),

@@ -31,6 +31,8 @@
     "audio-mode":      { "type": "string",  "default": "auto" },
 
     "button-text":     { "type": "string",  "default": "See The Book" },
+    "availableButtonText": { "type": "string", "default": "Available Now" },
+    "upcomingButtonText":  { "type": "string", "default": "Coming Soon" },
     "button-link":     { "type": "string",  "default": "bookpage" },
     "button-target":   { "type": "string",  "default": "_self" },
     "buttonbg-color":  { "type": "string",  "default": "" },

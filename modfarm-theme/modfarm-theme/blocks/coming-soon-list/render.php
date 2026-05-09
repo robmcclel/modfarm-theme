@@ -19,6 +19,23 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
   $audio_mode   = $attributes['audio-mode'] ?? 'auto';
 
   $btn_text   = $attributes['button-text']   ?? __('See The Book', 'modfarm');
+  $btn_available_text = trim((string)($attributes['availableButtonText'] ?? ''));
+  $btn_upcoming_text  = trim((string)($attributes['upcomingButtonText'] ?? ''));
+  if ($btn_available_text === '') {
+    $btn_available_text = trim((string)($attributes['ctaReleased'] ?? ''));
+  }
+  if ($btn_available_text === '') {
+    $btn_available_text = trim((string)($attributes['ctaLaunch'] ?? ''));
+  }
+  if ($btn_available_text === '') {
+    $btn_available_text = __('Available Now', 'modfarm');
+  }
+  if ($btn_upcoming_text === '') {
+    $btn_upcoming_text = trim((string)($attributes['ctaUpcoming'] ?? ''));
+  }
+  if ($btn_upcoming_text === '') {
+    $btn_upcoming_text = __('Coming Soon', 'modfarm');
+  }
   $btn_link   = $attributes['button-link']   ?? 'bookpage'; // can be 'bookpage' or meta key (e.g. kindle_url)
   $btn_target = $attributes['button-target'] ?? '_self';
   $btn_bg     = $attributes['buttonbg-color'] ?? '';
@@ -34,22 +51,19 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
   // RESTORED: short description toggle (BMS: short_description)
   $show_short_desc = !empty($attributes['showShortDescription']);
 
-  // ===== Publication timing (auto mode only) =====
+  // ===== Legacy publication timing attributes (retained for saved blocks) =====
   $include_launch = !empty($attributes['includeLaunchWindow']);
   $window_days    = max(1, (int)($attributes['launchWindowDays'] ?? 7));
   $post_mode      = $attributes['postReleaseMode'] ?? 'hide'; // hide|fade|keep
 
-  $smart_cta      = !empty($attributes['smartCta']);
-  $cta_upcoming   = $attributes['ctaUpcoming'] ?? __('Coming Soon', 'modfarm');
-  $cta_launch     = $attributes['ctaLaunch']   ?? __('Out Now', 'modfarm');
-  $cta_released   = $attributes['ctaReleased'] ?? '';
-
-  // ===== Option A: list type =====
   $list_type          = isset($attributes['listType']) ? (string)$attributes['listType'] : 'coming-soon';
+  if (!in_array($list_type, ['latest-releases', 'coming-soon', 'timeframe'], true)) {
+    $list_type = 'coming-soon';
+  }
   $latest_window_days = max(1, (int)($attributes['latestWindowDays'] ?? 30));
 
   // ===== Date Range Filter =====
-  $date_filter_mode = isset($attributes['dateFilterMode']) ? (string)$attributes['dateFilterMode'] : 'auto';
+  $date_filter_mode = isset($attributes['dateFilterMode']) ? (string)$attributes['dateFilterMode'] : 'month';
   $filter_year      = (int)($attributes['filterYear'] ?? 0);
   $filter_month     = (int)($attributes['filterMonth'] ?? 0);
   $filter_start     = isset($attributes['filterStart']) ? (string)$attributes['filterStart'] : '';
@@ -122,7 +136,12 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
     return (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $s);
   };
 
-  if ($date_filter_mode === 'month' && $filter_year > 0 && $filter_month >= 1 && $filter_month <= 12) {
+  if ($list_type === 'timeframe' && $date_filter_mode !== 'range' && ($filter_year <= 0 || $filter_month < 1 || $filter_month > 12)) {
+    $filter_year = function_exists('wp_date') ? (int) wp_date('Y', $now_ts) : (int) date_i18n('Y', $now_ts);
+    $filter_month = function_exists('wp_date') ? (int) wp_date('n', $now_ts) : (int) date_i18n('n', $now_ts);
+  }
+
+  if ($list_type === 'timeframe' && $date_filter_mode !== 'range' && $filter_year > 0 && $filter_month >= 1 && $filter_month <= 12) {
     $start = sprintf('%04d-%02d-01', $filter_year, $filter_month);
     $end_ts = strtotime($start . ' +1 month -1 day');
     $end = date('Y-m-d', $end_ts);
@@ -131,9 +150,10 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
       'key'     => $pub_date_key,
       'value'   => [$start, $end],
       'compare' => 'BETWEEN',
+      'type'    => 'DATE',
     ];
   }
-  elseif ($date_filter_mode === 'range' && $is_ymd($filter_start) && $is_ymd($filter_end)) {
+  elseif ($list_type === 'timeframe' && $date_filter_mode === 'range' && $is_ymd($filter_start) && $is_ymd($filter_end)) {
     $start = $filter_start;
     $end   = $filter_end;
 
@@ -145,39 +165,43 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
       'key'     => $pub_date_key,
       'value'   => [$start, $end],
       'compare' => 'BETWEEN',
+      'type'    => 'DATE',
     ];
   }
   else {
-    // AUTO MODE depends on listType
     if ($list_type === 'latest-releases') {
       $end_dt   = $today($now_ts);
-      $start_ts = $now_ts - ($latest_window_days * DAY_IN_SECONDS);
-      $start_dt = $today($start_ts);
 
       $meta_query[] = [
         'key'     => $pub_date_key,
-        'value'   => [$start_dt, $end_dt],
-        'compare' => 'BETWEEN',
+        'value'   => $end_dt,
+        'compare' => '<=',
+        'type'    => 'DATE',
       ];
 
       // Safety: default order for latest releases should be DESC
       if ($order_setting !== 'DESC' && $order_setting !== 'rand') {
         $order_setting = 'DESC';
       }
-    } else {
-      $min_ts = $include_launch ? ($now_ts - ($window_days * DAY_IN_SECONDS)) : $now_ts;
-      $min_dt = $today($min_ts);
+    } elseif ($list_type === 'coming-soon') {
+      $min_dt = $today($now_ts);
 
       $meta_query[] = [
         'key'     => $pub_date_key,
         'value'   => $min_dt,
         'compare' => '>',
+        'type'    => 'DATE',
       ];
 
       // Safety: default order for coming soon should be ASC
       if ($order_setting !== 'ASC' && $order_setting !== 'rand') {
         $order_setting = 'ASC';
       }
+    } else {
+      $meta_query[] = [
+        'key'     => $pub_date_key,
+        'compare' => 'EXISTS',
+      ];
     }
   }
 
@@ -216,7 +240,7 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
   // ===== Wrapper classes + CSS vars =====
   $wrapper_classes = [
     'mfb-wrapper',
-    ($list_type === 'latest-releases') ? 'is-latest-releases' : 'is-coming-soon',
+    'is-' . sanitize_html_class($list_type),
     'mfb-effect--' . sanitize_html_class($effect),
     'mfb-cover--'  . sanitize_html_class($cover_shape),
     'mfb-button--' . sanitize_html_class($button_shape),
@@ -264,23 +288,12 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
 
       $pub_date_label = $show_pub_date ? $mf_format_date($raw_date) : '';
 
-      // classify timing (used mainly for coming-soon visuals/CTA)
-      $state = 'upcoming';
-      if ($pub_ts && $pub_ts <= $now_ts) {
-        $cutoff = $now_ts - ($window_days * DAY_IN_SECONDS);
-        $state  = ($pub_ts >= $cutoff) ? 'launch' : 'released';
-      }
-
-      // Post-release behavior should only impact coming-soon auto
-      if ($date_filter_mode === 'auto' && $list_type !== 'latest-releases') {
-        if ($state === 'released' && $post_mode === 'hide') continue;
-      }
+      $today_start = strtotime($today($now_ts) . ' 00:00:00');
+      $state = ($pub_ts && $pub_ts <= $today_start) ? 'released' : 'upcoming';
 
       $item_classes = ['mfb-item'];
       if ($state === 'upcoming') $item_classes[] = 'is-upcoming';
-      if ($state === 'launch')   $item_classes[] = 'is-launch';
       if ($state === 'released') $item_classes[] = 'is-released';
-      if ($date_filter_mode === 'auto' && $state === 'released' && $post_mode === 'fade') $item_classes[] = 'is-faded';
 
       // ============================================================
       // Button URL + meta_key (for SmartLinks in ui.php)
@@ -305,13 +318,8 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
       }
       // ============================================================
 
-      // Smart CTA label (time-aware)
-      $final_btn_text = $btn_text;
-      if ($smart_cta) {
-        if ($state === 'upcoming' && $cta_upcoming !== '') $final_btn_text = $cta_upcoming;
-        if ($state === 'launch'   && $cta_launch   !== '') $final_btn_text = $cta_launch;
-        if ($state === 'released' && $cta_released !== '') $final_btn_text = $cta_released;
-      }
+      $final_btn_text = ($state === 'upcoming') ? $btn_upcoming_text : $btn_available_text;
+      if ($final_btn_text === '') $final_btn_text = $btn_text;
 
       // Image URL
       $img_url = '';

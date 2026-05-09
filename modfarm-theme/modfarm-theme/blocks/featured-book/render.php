@@ -238,6 +238,36 @@ if (!function_exists('mfb_pick_latest_by_date')) {
   }
 }
 
+add_action('rest_api_init', function () {
+  register_rest_route('modfarm/v1', '/featured-book-description', [
+    'methods'             => 'GET',
+    'permission_callback' => function () {
+      return current_user_can('edit_posts');
+    },
+    'callback'            => function (WP_REST_Request $request) {
+      $date_type = $request->get_param('dateType') === 'audiobook_publication_date'
+        ? 'audiobook_publication_date'
+        : 'publication_date';
+      $pinned_id = absint($request->get_param('pinnedId'));
+      $book_id = mfb_pick_latest_by_date($date_type, $pinned_id);
+
+      if ($book_id <= 0 || get_post_type($book_id) !== 'book') {
+        return new WP_REST_Response([
+          'id'          => 0,
+          'title'       => '',
+          'description' => '',
+        ], 200);
+      }
+
+      return new WP_REST_Response([
+        'id'          => $book_id,
+        'title'       => get_the_title($book_id) ?: '',
+        'description' => (string) get_post_meta($book_id, 'book_description', true),
+      ], 200);
+    },
+  ]);
+});
+
 /** Cover URL via BMS keys (your names) or featured image; handles ID/array/URL */
 if (!function_exists('mfb_cover_url')) {
   function mfb_cover_url($book_id, $source) {

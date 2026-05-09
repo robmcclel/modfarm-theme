@@ -197,6 +197,26 @@
       const seedBookId =
         (attributes.mode === 'manual' ? attributes.bookId : (attributes.pinnedId || 0));
 
+      function fetchSelectedBookDescription() {
+        if (seedBookId) {
+          return apiFetch({ path: `/wp/v2/book/${seedBookId}?_fields=id,title,meta.book_description` })
+            .then(r => ({
+              id: r?.id || seedBookId,
+              title: r?.title?.rendered || '',
+              description: r?.meta?.book_description || ''
+            }));
+        }
+
+        if (attributes.mode === 'auto') {
+          const dateType = attributes.dateType || 'publication_date';
+          return apiFetch({
+            path: `/modfarm/v1/featured-book-description?dateType=${encodeURIComponent(dateType)}`
+          });
+        }
+
+        return Promise.resolve({ id: 0, title: '', description: '' });
+      }
+
       // Seed headline ONLY when not following book title (existing behavior)
       useEffect(() => {
         const id = attributes.bookId;
@@ -217,20 +237,19 @@
       // When enabling custom desc, seed from BMS description if empty (and optionally refresh on book change)
       useEffect(() => {
         if (!attributes.useCustomDesc) return;
-        if (!seedBookId) return;
 
         const shouldRefresh = !!attributes.refreshCustomDescOnBookChange;
         const isEmpty = ((attributes.descOverride || '').trim() === '');
 
         if (!shouldRefresh && !isEmpty) return;
 
-        apiFetch({ path: `/wp/v2/book/${seedBookId}?_fields=meta.book_description` })
+        fetchSelectedBookDescription()
           .then(r => {
-            const raw = r?.meta?.book_description || '';
+            const raw = r?.description || '';
             if (raw) setAttributes({ descOverride: String(raw) });
           })
           .catch(() => {});
-      }, [attributes.useCustomDesc, attributes.refreshCustomDescOnBookChange, seedBookId]);
+      }, [attributes.useCustomDesc, attributes.refreshCustomDescOnBookChange, seedBookId, attributes.mode, attributes.dateType]);
 
       return el(
         Fragment,
@@ -340,17 +359,16 @@
                 allowedFormats: [ 'core/bold', 'core/italic', 'core/link' ]
               }),
               el('div', { style: { display: 'flex', gap: '8px', marginTop: '10px' } },
-                el(Button, {
-                  variant: 'secondary',
-                  onClick: () => {
-                    if (!seedBookId) return;
-                    apiFetch({ path: `/wp/v2/book/${seedBookId}?_fields=meta.book_description` })
+                  el(Button, {
+                    variant: 'secondary',
+                    onClick: () => {
+                    fetchSelectedBookDescription()
                       .then(r => {
-                        const raw = r?.meta?.book_description || '';
-                        if (raw) setAttributes({ descOverride: String(raw) });
+                        const raw = r?.description || '';
+                        setAttributes({ descOverride: raw ? String(raw) : '' });
                       })
                       .catch(() => {});
-                  }
+                    }
                 }, 'Refresh description from book'),
                 el(Button, {
                   variant: 'secondary',
