@@ -13,7 +13,7 @@ if (!function_exists('modfarm_author_social_platform_map')) {
       'amazon'        => ['label' => 'Amazon',        'color' => '#ff9900', 'glyph' => 'a'],
       'amazon-author' => ['label' => 'Amazon Author', 'color' => '#ff9900', 'glyph' => 'a'],
       'bluesky'       => ['label' => 'Bluesky',       'color' => '#1185fe', 'glyph' => 'b'],
-      'bookbub'       => ['label' => 'BookBub',       'color' => '#f15a24', 'glyph' => 'b'],
+      'bookbub'       => ['label' => 'BookBub',       'color' => '#ed1c24', 'glyph' => 'b', 'asset' => 'bookbub-native.svg', 'mask' => 'bookbub.svg'],
       'discord'       => ['label' => 'Discord',       'color' => '#5865f2', 'glyph' => 'd'],
       'facebook'      => ['label' => 'Facebook',      'color' => '#1877f2', 'glyph' => 'f'],
       'goodreads'     => ['label' => 'Goodreads',     'color' => '#553b08', 'glyph' => 'g'],
@@ -21,7 +21,7 @@ if (!function_exists('modfarm_author_social_platform_map')) {
       'kickstarter'   => ['label' => 'Kickstarter',   'color' => '#05ce78', 'glyph' => 'k'],
       'patreon'       => ['label' => 'Patreon',       'color' => '#ff424d', 'glyph' => 'p'],
       'ream'          => ['label' => 'Ream',          'color' => '#7c3aed', 'glyph' => 'r'],
-      'royalroad'     => ['label' => 'RoyalRoad',     'color' => '#1d4ed8', 'glyph' => 'r'],
+      'royalroad'     => ['label' => 'RoyalRoad',     'color' => '#d4af37', 'glyph' => 'r', 'asset' => 'royalroad.png', 'mask' => 'royalroad.svg'],
       'substack'      => ['label' => 'Substack',      'color' => '#ff6719', 'glyph' => 's'],
       'tiktok'        => ['label' => 'TikTok',        'color' => '#111111', 'glyph' => 't'],
       'twitter'       => ['label' => 'X',             'color' => '#111111', 'glyph' => 'x'],
@@ -30,6 +30,17 @@ if (!function_exists('modfarm_author_social_platform_map')) {
       'x'             => ['label' => 'X',             'color' => '#111111', 'glyph' => 'x'],
       'youtube'       => ['label' => 'YouTube',       'color' => '#ff0000', 'glyph' => 'play'],
     ];
+  }
+}
+
+if (!function_exists('modfarm_author_social_asset_url')) {
+  function modfarm_author_social_asset_url(string $file): string {
+    $file = ltrim($file, '/\\');
+    if ($file === '') {
+      return '';
+    }
+
+    return get_template_directory_uri() . '/assets/social-icons/' . rawurlencode($file);
   }
 }
 
@@ -47,6 +58,29 @@ if (!function_exists('modfarm_author_social_normalize_key')) {
       'web'                => 'website',
     ];
     return $aliases[$slug] ?? $slug;
+  }
+}
+
+if (!function_exists('modfarm_author_social_asset_html')) {
+  function modfarm_author_social_asset_html(array $platform, string $label, string $color_mode): string {
+    $file = $color_mode === 'native'
+      ? (string) ($platform['asset'] ?? '')
+      : (string) ($platform['mask'] ?? '');
+
+    if ($file === '') {
+      return '';
+    }
+
+    $url = modfarm_author_social_asset_url($file);
+    if ($url === '') {
+      return '';
+    }
+
+    if ($color_mode === 'native') {
+      return '<img class="mfas-icon__img" src="' . esc_url($url) . '" alt="" loading="lazy" decoding="async" />';
+    }
+
+    return '<span class="mfas-icon__mask" style="' . esc_attr('--mfas-mask:url(' . esc_url_raw($url) . ')') . '" aria-hidden="true"></span>';
   }
 }
 
@@ -131,7 +165,12 @@ if (!function_exists('modfarm_render_author_social_links')) {
         $native_style = $color_mode === 'native' ? ' style="' . esc_attr('--mfas-platform-color:' . $platform['color']) . '"' : '';
         ?>
         <a class="mfas-icon mfas-icon--<?php echo esc_attr($key); ?>" href="<?php echo esc_url($url); ?>" aria-label="<?php echo esc_attr($label); ?>" title="<?php echo esc_attr($label); ?>"<?php echo $target; ?><?php echo $native_style; ?>>
-          <?php echo modfarm_author_social_icon_svg($key, $icon_label, (string) $platform['glyph']); ?>
+          <?php
+            $asset_html = modfarm_author_social_asset_html($platform, $icon_label, $color_mode);
+            echo $asset_html !== ''
+              ? $asset_html
+              : modfarm_author_social_icon_svg($key, $icon_label, (string) $platform['glyph']);
+          ?>
         </a>
       <?php endforeach; ?>
     </div>
