@@ -64,6 +64,8 @@
       'image-type': { type: 'string', default: 'featured' },
 
       'books-in-row': { type: 'string', default: '25%' },
+      'display-layout': { type: 'string', default: 'grid' },
+      'horizontal-columns': { type: 'number', default: 4 },
       'display-order': { type: 'string', default: 'ASC' },
       'books-per-page': { type: 'number', default: 12 },
       'show-pagination': { type: 'boolean', default: false },
@@ -125,6 +127,8 @@
       const listType = attributes.listType || 'coming-soon';
       const dateFilterMode = attributes.dateFilterMode || 'month';
       const isTimeframe = listType === 'timeframe';
+      const displayLayout = attributes['display-layout'] === 'horizontal' ? 'horizontal' : 'grid';
+      const isHorizontal = displayLayout === 'horizontal';
 
       const taxonomyMap = {
         series: { attr: 'series-select', taxonomy: 'book-series' },
@@ -194,10 +198,38 @@
         Fragment,
         {},
         el('div', blockProps,
-          el(ServerSideRender, { block: 'modfarm/coming-soon-list', attributes })
+          el(ServerSideRender, {
+            block: 'modfarm/coming-soon-list',
+            attributes: Object.assign({}, attributes, {
+              'display-layout': displayLayout,
+              'horizontal-columns': parseInt(attributes['horizontal-columns'], 10) || 4
+            })
+          })
         ),
 
         el(InspectorControls, {},
+
+          el(PanelBody, { title: __('Presentation', 'modfarm'), initialOpen: true },
+            el(SelectControl, {
+              label: __('Layout', 'modfarm'),
+              value: displayLayout,
+              options: [
+                { label: __('Grid', 'modfarm'), value: 'grid' },
+                { label: __('Horizontal Scroll', 'modfarm'), value: 'horizontal' }
+              ],
+              onChange: (val) => setAttributes({ 'display-layout': val || 'grid' })
+            }),
+            isHorizontal && el(SelectControl, {
+              label: __('Visible Columns', 'modfarm'),
+              value: String(attributes['horizontal-columns'] || 4),
+              options: [
+                { label: __('Three', 'modfarm'), value: '3' },
+                { label: __('Four', 'modfarm'), value: '4' },
+                { label: __('Five', 'modfarm'), value: '5' }
+              ],
+              onChange: (val) => setAttributes({ 'horizontal-columns': parseInt(val, 10) || 4 })
+            })
+          ),
 
           el(PanelBody, { title: __('Book Filters', 'modfarm'), initialOpen: true },
 
@@ -264,7 +296,7 @@
           ),
 
           el(PanelBody, { title: __('Display Settings', 'modfarm'), initialOpen: false },
-            el(SelectControl, {
+            !isHorizontal && el(SelectControl, {
               label: __('Books Per Row', 'modfarm'),
               value: attributes['books-in-row'],
               options: [
@@ -286,12 +318,12 @@
               onChange: (val) => setAttributes({ 'display-order': val })
             }),
             el(RangeControl, {
-              label: __('Books Per Page', 'modfarm'),
+              label: isHorizontal ? __('Total Books', 'modfarm') : __('Books Per Page', 'modfarm'),
               value: attributes['books-per-page'],
               onChange: (val) => setAttributes({ 'books-per-page': val }),
               min: 1, max: 100
             }),
-            el(ToggleControl, {
+            !isHorizontal && el(ToggleControl, {
               label: __('Show Pagination', 'modfarm'),
               checked: !!attributes['show-pagination'],
               onChange: (val) => setAttributes({ 'show-pagination': !!val })

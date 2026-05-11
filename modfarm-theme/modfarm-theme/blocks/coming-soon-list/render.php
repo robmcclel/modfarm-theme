@@ -8,7 +8,12 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
   $order_setting   = $attributes['display-order']   ?? 'ASC';
   $books_per_page  = max(1, min(100, (int)($attributes['books-per-page'] ?? 12)));
   $books_per_row   = $attributes['books-in-row']    ?? '25%';
-  $show_pagination = !empty($attributes['show-pagination']);
+  $display_layout  = in_array((string)($attributes['display-layout'] ?? 'grid'), ['grid', 'horizontal'], true)
+    ? (string)($attributes['display-layout'] ?? 'grid')
+    : 'grid';
+  $horizontal_cols = max(3, min(5, (int)($attributes['horizontal-columns'] ?? 4)));
+  $horizontal_width = 'calc(' . round(100 / $horizontal_cols, 6) . '% - ' . round(10 * ($horizontal_cols - 1) / $horizontal_cols, 4) . 'px)';
+  $show_pagination = $display_layout === 'horizontal' ? false : !empty($attributes['show-pagination']);
 
   $image_type      = $attributes['image-type']      ?? 'featured';
 
@@ -246,6 +251,7 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
     'mfb-button--' . sanitize_html_class($button_shape),
     'mfb-sample--' . sanitize_html_class($sample_shape),
     'mfb-cta--'    . sanitize_html_class($cta_join),
+    'mfb-wrapper--' . sanitize_html_class($display_layout),
   ];
 
   $custom_vars = [];
@@ -253,12 +259,22 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
   if (!empty($attributes['samplebtn-fg']))     $custom_vars[] = '--mfb-sample-fg:' . $attributes['samplebtn-fg'];
   if (!empty($attributes['samplebtn-border'])) $custom_vars[] = '--mfb-sample-border:' . $attributes['samplebtn-border'];
 
-  $wrapper_style = '--mfb-cols:' . (int)$cols . ';' . implode(';', $custom_vars) . ';';
+  $wrapper_style = '--mfb-cols:' . (int)$cols . ';--mfb-scroll-cols:' . (int)$horizontal_cols . ';--mfb-scroll-card-width:' . $horizontal_width . ';' . implode(';', $custom_vars) . ';';
 
   ob_start();
 
-  echo '<div class="' . esc_attr(implode(' ', array_filter($wrapper_classes))) . '">';
-  echo '<div class="mfb-grid" style="' . esc_attr($wrapper_style) . '">';
+  static $scroll_count = 0;
+  $scroll_count++;
+  $scroll_id = 'mfb-coming-soon-list-scroll-' . $scroll_count;
+
+  echo '<div class="' . esc_attr(implode(' ', array_filter($wrapper_classes))) . '"' . ($display_layout === 'horizontal' ? ' data-mf-card-scroll-wrap' : '') . '>';
+  if ($display_layout === 'horizontal') {
+    echo '<div class="mfb-scroll-head"><div class="mfb-scroll-controls" aria-label="' . esc_attr__('Book carousel controls', 'modfarm') . '">';
+    echo '<button type="button" class="mfb-scroll-control mfb-scroll-control--prev" data-mf-card-scroll-target="' . esc_attr($scroll_id) . '" data-mf-card-scroll-direction="-1" aria-label="' . esc_attr__('Previous books', 'modfarm') . '"><span aria-hidden="true">&larr;</span></button>';
+    echo '<button type="button" class="mfb-scroll-control mfb-scroll-control--next" data-mf-card-scroll-target="' . esc_attr($scroll_id) . '" data-mf-card-scroll-direction="1" aria-label="' . esc_attr__('Next books', 'modfarm') . '"><span aria-hidden="true">&rarr;</span></button>';
+    echo '</div></div>';
+  }
+  echo '<div id="' . esc_attr($scroll_id) . '" class="mfb-grid' . ($display_layout === 'horizontal' ? ' mfb-grid--horizontal' : '') . '" style="' . esc_attr($wrapper_style) . '"' . ($display_layout === 'horizontal' ? ' data-mf-card-scroll-rail' : '') . '>';
 
   if ($q->have_posts()) {
     while ($q->have_posts()) {
@@ -277,19 +293,23 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
       }
 
       // === Pub date raw + label ===
-      $raw_date = $show_pub_date ? (string)get_post_meta($book_id, $pub_date_key, true) : '';
-      $pub_ts   = $raw_date ? strtotime($raw_date . ' 00:00:00') : 0;
-
-      // Optional fallback for display when audiobook selected but empty
-      if ($show_pub_date && $raw_date === '' && $pub_date_key === 'audiobook_publication_date') {
-        $raw_date = (string)get_post_meta($book_id, 'publication_date', true);
-        $pub_ts   = $raw_date ? strtotime($raw_date . ' 00:00:00') : 0;
+      // Timing must be calculated even when the date itself is hidden.
+      $timing_raw_date = (string)get_post_meta($book_id, $pub_date_key, true);
+      if ($timing_raw_date === '' && $pub_date_key === 'audiobook_publication_date') {
+        $timing_raw_date = (string)get_post_meta($book_id, 'publication_date', true);
       }
 
-      $pub_date_label = $show_pub_date ? $mf_format_date($raw_date) : '';
+      $pub_ts = $timing_raw_date ? strtotime($timing_raw_date . ' 00:00:00') : 0;
+      $pub_date_label = $show_pub_date ? $mf_format_date($timing_raw_date) : '';
 
       $today_start = strtotime($today($now_ts) . ' 00:00:00');
-      $state = ($pub_ts && $pub_ts <= $today_start) ? 'released' : 'upcoming';
+      if ($list_type === 'latest-releases') {
+        $state = 'released';
+      } elseif ($list_type === 'coming-soon') {
+        $state = 'upcoming';
+      } else {
+        $state = ($pub_ts && $pub_ts <= $today_start) ? 'released' : 'upcoming';
+      }
 
       $item_classes = ['mfb-item'];
       if ($state === 'upcoming') $item_classes[] = 'is-upcoming';
