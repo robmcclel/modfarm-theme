@@ -9,7 +9,9 @@
   "usesContext": ["postId", "postType"],
   "attributes": {
     "offerId": { "type": "number", "default": 0 },
+    "displayMode": { "type": "string", "default": "single" },
     "label": { "type": "string", "default": "Buy Now" },
+    "clusterHeading": { "type": "string", "default": "View All Available Formats & Editions" },
     "alignment": { "type": "string", "default": "left" },
     "type": { "type": "string", "default": "inherit" },
     "radiusMode": { "type": "string", "default": "inherit" },

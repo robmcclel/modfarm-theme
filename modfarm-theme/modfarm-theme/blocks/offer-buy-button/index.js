@@ -12,6 +12,11 @@
     { label: __('Secondary (Outline)', 'modfarm'), value: 'secondary' }
   ];
 
+  const displayOptions = [
+    { label: __('Single button', 'modfarm'), value: 'single' },
+    { label: __('Sibling button cluster', 'modfarm'), value: 'sibling_cluster' }
+  ];
+
   registerBlockType('modfarm/offer-buy-button', {
     edit: function (props) {
       const { attributes, setAttributes } = props;
@@ -26,6 +31,14 @@
           el(
             PanelBody,
             { title: __('Button', 'modfarm'), initialOpen: true },
+            el(SelectControl, {
+              label: __('Display', 'modfarm'),
+              value: attributes.displayMode || 'single',
+              options: displayOptions,
+              onChange: function (value) {
+                setAttributes({ displayMode: value || 'single' });
+              }
+            }),
             el(TextControl, {
               label: __('Button label', 'modfarm'),
               value: attributes.label || '',
@@ -33,6 +46,14 @@
                 setAttributes({ label: value });
               }
             }),
+            attributes.displayMode === 'sibling_cluster' &&
+              el(TextControl, {
+                label: __('Cluster heading', 'modfarm'),
+                value: attributes.clusterHeading || '',
+                onChange: function (value) {
+                  setAttributes({ clusterHeading: value });
+                }
+              }),
             el(SelectControl, {
               label: __('Alignment', 'modfarm'),
               value: attributes.alignment || 'left',

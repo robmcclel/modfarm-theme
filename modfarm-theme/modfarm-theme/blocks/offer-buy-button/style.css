@@ -60,3 +60,9 @@
   opacity: .62;
   pointer-events: none;
 }
+
+.mfs-offer-buy-button--empty {
+  border: 1px dashed currentColor;
+  opacity: .7;
+  padding: 12px;
+}
