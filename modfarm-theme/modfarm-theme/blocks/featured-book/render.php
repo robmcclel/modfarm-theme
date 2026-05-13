@@ -7,8 +7,8 @@ if (!function_exists('modfarm_render_featured_book_block')) {
 
     // ---- Mode / selection
     $mode      = isset($a['mode']) ? $a['mode'] : 'manual';
-    $date_type = ($a['dateType'] ?? 'publication_date') === 'audiobook_publication_date'
-      ? 'audiobook_publication_date' : 'publication_date';
+    $date_keys = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
+    $date_type = in_array($a['dateType'] ?? '', $date_keys, true) ? $a['dateType'] : 'publication_date';
     $pinned_id = (int)($a['pinnedId'] ?? 0);
 
     $book_id = ($mode === 'auto')
@@ -198,7 +198,8 @@ if (!function_exists('mfb_pick_latest_by_date')) {
   function mfb_pick_latest_by_date($key, $pinned_id = 0) {
     if ($pinned_id > 0 && get_post_type($pinned_id) === 'book') return (int)$pinned_id;
 
-    $date_key = ($key === 'audiobook_publication_date') ? 'audiobook_publication_date' : 'publication_date';
+    $date_keys = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
+    $date_key = in_array($key, $date_keys, true) ? $key : 'publication_date';
     $today = current_time('Y-m-d');
 
     $q = new WP_Query([
@@ -245,8 +246,9 @@ add_action('rest_api_init', function () {
       return current_user_can('edit_posts');
     },
     'callback'            => function (WP_REST_Request $request) {
-      $date_type = $request->get_param('dateType') === 'audiobook_publication_date'
-        ? 'audiobook_publication_date'
+      $date_keys = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
+      $date_type = in_array($request->get_param('dateType'), $date_keys, true)
+        ? $request->get_param('dateType')
         : 'publication_date';
       $pinned_id = absint($request->get_param('pinnedId'));
       $book_id = mfb_pick_latest_by_date($date_type, $pinned_id);

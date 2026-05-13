@@ -522,6 +522,9 @@ function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, a
 
     if ($hybrid_template) {
         $template_slug = (string) get_page_template_slug($post_id);
+        if (($template_slug === '' || $template_slug === 'default') && $post_type === 'post' && function_exists('modfarm_get_default_post_template_slug')) {
+            $template_slug = modfarm_get_default_post_template_slug();
+        }
         if ($template_slug === 'singular-hybrid-sidebar.php') {
             return 'Hybrid: Right Sidebar';
         }

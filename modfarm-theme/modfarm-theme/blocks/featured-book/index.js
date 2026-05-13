@@ -275,7 +275,8 @@
               label: 'Date Type',
               value: attributes.dateType,
               options: [
-                { label: 'Publication Date (Kindle/eBook)', value: 'publication_date' },
+                { label: 'Publication Date', value: 'publication_date' },
+                { label: 'Hardcover Publication Date', value: 'hardcover_publication_date' },
                 { label: 'Audiobook Publication Date', value: 'audiobook_publication_date' }
               ],
               onChange: val => setAttributes({ dateType: val })
@@ -286,7 +287,7 @@
             }),
             attributes.mode === 'auto' && el(Notice, {
               status: 'info', isDismissible: false
-            }, `Most Recent Published picks the newest book with a ${attributes.dateType === 'audiobook_publication_date' ? 'Audiobook Publication Date' : 'Publication Date'} on or before today, unless pinned.`)
+            }, 'Most Recent Published picks the newest book with the selected date type on or before today, unless pinned.')
           ),
 
           el(PanelBody, { title: 'Book & Cover', initialOpen: false },

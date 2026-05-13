@@ -8,6 +8,7 @@
 
   const fieldOptions = [
     { label: 'Publication Date', key: 'show_publication_date' },
+    { label: 'Hardcover Pub Date', key: 'show_hardcover_publication_date' },
     { label: 'Page Count', key: 'show_pages' },
     { label: 'ISBN', key: 'show_isbn' },
     { label: 'ASIN', key: 'show_asin' },

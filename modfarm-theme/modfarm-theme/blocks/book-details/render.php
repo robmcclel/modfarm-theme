@@ -34,6 +34,7 @@ function modfarm_render_book_details_block( $attributes, $content, $block ) {
 
 	// Add meta fields
 	if ( ! empty( $attributes['show_publication_date'] ) ) $add_meta( 'Publication Date', 'publication_date' );
+	if ( ! empty( $attributes['show_hardcover_publication_date'] ) ) $add_meta( 'Hardcover Pub Date', 'hardcover_publication_date' );
 	if ( ! empty( $attributes['show_pages'] ) ) $add_meta( 'Page Count', 'page_count' );
 	if ( ! empty( $attributes['show_isbn'] ) ) $add_meta( 'ISBN', 'isbn' );
 	if ( ! empty( $attributes['show_asin'] ) ) $add_meta( 'ASIN', 'asin' );

@@ -70,6 +70,7 @@ if (!function_exists('modfarm_render_advanced_book_details_block')) {
         'Isbn 13' => 'ISBN-13',
         'Asin' => 'ASIN',
         'Ebook' => 'eBook',
+        'Hardcover Publication Date' => 'Hardcover Publication Date',
       ];
       return $map[$s] ?? $s;
     };

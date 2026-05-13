@@ -205,6 +205,16 @@
               ],
               onChange: (val) => setAttributes({ 'display-order': val })
             }),
+            attributes['display-order'] !== 'rand' && el(SelectControl, {
+              label: __('Order Date Source', 'modfarm'),
+              value: attributes['order-date-key'] || 'publication_date',
+              options: [
+                { label: __('Publication Date', 'modfarm'), value: 'publication_date' },
+                { label: __('Hardcover Publication Date', 'modfarm'), value: 'hardcover_publication_date' },
+                { label: __('Audiobook Publication Date', 'modfarm'), value: 'audiobook_publication_date' }
+              ],
+              onChange: (val) => setAttributes({ 'order-date-key': val })
+            }),
             el(RangeControl, {
               label: isHorizontal ? __('Total Books', 'modfarm') : __('Books Per Page', 'modfarm'),
               value: attributes['books-per-page'],

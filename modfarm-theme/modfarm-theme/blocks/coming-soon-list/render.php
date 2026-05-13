@@ -51,7 +51,8 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
   // ===== Card Extras (must match ui.php keys used by Handpicked) =====
   $show_author   = !empty($attributes['showAuthor']);
   $show_pub_date = !empty($attributes['showPubDate']);
-  $pub_date_key  = isset($attributes['pubDateKey']) ? (string)$attributes['pubDateKey'] : 'publication_date';
+  $date_keys     = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
+  $pub_date_key  = in_array($attributes['pubDateKey'] ?? '', $date_keys, true) ? (string)$attributes['pubDateKey'] : 'publication_date';
 
   // RESTORED: short description toggle (BMS: short_description)
   $show_short_desc = !empty($attributes['showShortDescription']);

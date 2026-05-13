@@ -504,7 +504,8 @@
                 label: __('Date Source', 'modfarm'),
                 value: pubDateKey,
                 options: [
-                  { label: __('Publication Date (eBook)', 'modfarm'), value: 'publication_date' },
+                  { label: __('Publication Date', 'modfarm'), value: 'publication_date' },
+                  { label: __('Hardcover Publication Date', 'modfarm'), value: 'hardcover_publication_date' },
                   { label: __('Audiobook Publication Date', 'modfarm'), value: 'audiobook_publication_date' }
                 ],
                 onChange: (v) => setAttributes({ pubDateKey: v })

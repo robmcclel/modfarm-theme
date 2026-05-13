@@ -11,6 +11,7 @@
   },
   "attributes": {
     "show_publication_date": { "type": "boolean", "default": false },
+    "show_hardcover_publication_date": { "type": "boolean", "default": false },
     "show_pages": { "type": "boolean", "default": false },
     "show_isbn": { "type": "boolean", "default": false },
     "show_asin": { "type": "boolean", "default": false },

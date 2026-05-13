@@ -33,6 +33,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         'books-in-row'    => '25%',
         'display-layout'  => 'grid',
         'display-order'   => 'DESC',
+        'order-date-key'   => 'publication_date',
         'books-per-page'  => 12,
         'show-pagination' => false,
 
@@ -286,6 +287,8 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     // --------------------------------------------------
     $paged         = max( 1, get_query_var( 'paged' ) ?: get_query_var( 'page' ) ?: 1 );
     $order_setting = $a['display-order'];
+    $date_keys     = array( 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' );
+    $order_date_key = in_array( $a['order-date-key'], $date_keys, true ) ? $a['order-date-key'] : 'publication_date';
     $orderby       = ( $order_setting === 'rand' ) ? 'rand' : 'meta_value';
     $order         = ( $order_setting === 'ASC' )  ? 'ASC'  : 'DESC';
 
@@ -306,7 +309,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         $args['orderby'] = 'rand';
     } else {
         $args['orderby']   = 'meta_value';
-        $args['meta_key']  = 'publication_date';
+        $args['meta_key']  = $order_date_key;
         $args['meta_type'] = 'DATE';
         $args['order']     = $order;
     }

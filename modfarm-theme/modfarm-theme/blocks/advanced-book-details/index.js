@@ -14,7 +14,7 @@
   // Fallback known BMS keys (keep short & useful; you can expand later)
   const KNOWN_BMS_KEYS = [
     "isbn13","isbn10","hard_isbn10","hard_isbn13","asin","asin_kindle","asin_paperback","asin_audiobook",
-    "page_count","audiobook_narrator","publisher","translator","editor","publication_date",
+    "page_count","audiobook_narrator","publisher","translator","editor","publication_date","hardcover_publication_date",
     "audiobook_publication_date","audiobook_duration","language","series_position","price_ebook","price_ebook_list","price_paper", "price_paper_list","price_audio","price_audio_list","price_hard","price_hard_list"
   ];
 

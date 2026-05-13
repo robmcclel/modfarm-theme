@@ -98,7 +98,8 @@ function modfarm_render_handpicked_books_block( $attributes ) {
   // Card extras
   $show_author   = !empty($attributes['showAuthor']);
   $show_pub_date = !empty($attributes['showPubDate']);
-  $pub_date_key  = isset($attributes['pubDateKey']) ? (string)$attributes['pubDateKey'] : 'publication_date';
+  $date_keys     = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
+  $pub_date_key  = in_array($attributes['pubDateKey'] ?? '', $date_keys, true) ? (string)$attributes['pubDateKey'] : 'publication_date';
 
   // New: short_description toggle
   $show_short_desc = !empty($attributes['showShortDescription']);

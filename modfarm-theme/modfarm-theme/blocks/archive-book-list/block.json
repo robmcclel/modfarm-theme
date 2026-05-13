@@ -15,6 +15,7 @@
     "display-layout":  { "type": "string",  "default": "grid" },
     "horizontal-columns": { "type": "number", "default": 4 },
     "display-order":   { "type": "string",  "default": "DESC" },
+    "order-date-key":   { "type": "string",  "default": "publication_date" },
     "books-per-page":  { "type": "number",  "default": 12 },
     "show-pagination": { "type": "boolean", "default": false },
 

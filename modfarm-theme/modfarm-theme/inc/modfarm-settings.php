@@ -373,6 +373,20 @@ function modfarm_register_settings() {
 
     // === Layout (existing) ===
     add_settings_field('content_width', 'Content Width (e.g., 1200px or 90%)', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_layout', ['id' => 'content_width']);
+    add_settings_field(
+        'default_post_template',
+        'Default Post Template',
+        'modfarm_select_field',
+        'modfarm_theme_settings',
+        'modfarm_section_layout',
+        [
+            'id' => 'default_post_template',
+            'options' => [
+                'singular-hybrid.php' => 'Hybrid',
+                'singular-hybrid-sidebar.php' => 'Hybrid with Right Sidebar',
+            ],
+        ]
+    );
 
     // === Template pattern selectors (existing) ===
     // BOOK Layout
@@ -457,7 +471,7 @@ function modfarm_select_field($args) {
     $settings = get_option('modfarm_theme_settings');
     $value = $settings[$id] ?? '';
 
-    echo '<select name="modfarm_theme_settings[' . esc_attr($id) . ']">';
+    echo '<select id="mf-' . esc_attr(str_replace('_', '-', $id)) . '" name="modfarm_theme_settings[' . esc_attr($id) . ']">';
     foreach ($options as $key => $label) {
         echo '<option value="' . esc_attr($key) . '" ' . selected($value, $key, false) . '>' . esc_html($label) . '</option>';
     }
@@ -2021,6 +2035,7 @@ function modfarm_sanitize_settings($settings) {
         'footer_submenu_text_color',
         'footer_nav_transparent',
         'content_width',
+        'default_post_template',
         'book_header_pattern',
         'book_body_pattern',
         'book_footer_pattern',
@@ -2098,6 +2113,15 @@ function modfarm_sanitize_settings($settings) {
 
             default:
                 $clean[$key] = sanitize_text_field($val);
+        }
+
+        if ($key === 'default_post_template') {
+            $allowed_templates = function_exists('modfarm_get_hybrid_singular_template_slugs')
+                ? modfarm_get_hybrid_singular_template_slugs()
+                : ['singular-hybrid.php', 'singular-hybrid-sidebar.php'];
+            if (!in_array($clean[$key], $allowed_templates, true)) {
+                $clean[$key] = 'singular-hybrid.php';
+            }
         }
 
         // Normalize placeholder/default values so runtime fallback logic can apply.
@@ -2199,10 +2223,10 @@ function modfarm_render_settings_page() {
                                         <h3 class="mf-group-title">Layout</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
-                                            <tr>
-                                                <th scope="row">
-                                                    <label for="mf-content-width">Content Width</label>
-                                                </th>
+                                             <tr>
+                                                 <th scope="row">
+                                                     <label for="mf-content-width">Content Width</label>
+                                                 </th>
                                                 <td>
                                                     <?php
                                                     modfarm_text_field([
@@ -2213,10 +2237,29 @@ function modfarm_render_settings_page() {
                                                         Example: <code>1200px</code> or <code>90%</code>.
                                                         This controls the maximum width for most content areas.
                                                     </p>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
+                                                 </td>
+                                             </tr>
+                                             <tr>
+                                                 <th scope="row">
+                                                     <label for="mf-default-post-template">Default Post Template</label>
+                                                 </th>
+                                                 <td>
+                                                     <?php
+                                                     modfarm_select_field([
+                                                         'id' => 'default_post_template',
+                                                         'options' => [
+                                                             'singular-hybrid.php' => 'Hybrid',
+                                                             'singular-hybrid-sidebar.php' => 'Hybrid with Right Sidebar',
+                                                         ],
+                                                     ]);
+                                                     ?>
+                                                     <p class="description">
+                                                         Standard posts use Hybrid by default. Choose the sidebar chassis when posts should render with the Post Sidebar widget area.
+                                                     </p>
+                                                 </td>
+                                             </tr>
+                                             </tbody>
+                                         </table>
                                     </div>
                                 </div>
 

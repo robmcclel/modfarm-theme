@@ -407,6 +407,18 @@ add_action('after_setup_theme', function () {
     add_theme_support('site-icon'); // WordPress Site Icon (favicon)
 });
 
+add_action('widgets_init', function () {
+    register_sidebar([
+        'name'          => __('Post Sidebar', 'modfarm-author'),
+        'id'            => 'post-sidebar',
+        'description'   => __('Appears beside posts using the Hybrid right-sidebar template.', 'modfarm-author'),
+        'before_widget' => '<section id="%1$s" class="widget %2$s">',
+        'after_widget'  => '</section>',
+        'before_title'  => '<h2 class="widget-title">',
+        'after_title'   => '</h2>',
+    ]);
+});
+
 
 
 add_action('wp_enqueue_scripts', function() {
@@ -778,15 +790,87 @@ function modfarm_ppb_local_chrome_override_meta_keys(): array {
  * Check whether a post uses one of the Hybrid singular templates.
  */
 function modfarm_ppb_is_hybrid_template_for_post(int $post_id, string $post_type = ''): bool {
-    unset($post_type);
-
     if ($post_id <= 0) {
         return false;
     }
 
+    if ($post_type === '') {
+        $post_type = (string) get_post_type($post_id);
+    }
+
     $template_slug = (string) get_page_template_slug($post_id);
-    return in_array($template_slug, ['singular-hybrid.php', 'singular-hybrid-sidebar.php'], true);
+    if (in_array($template_slug, modfarm_get_hybrid_singular_template_slugs(), true)) {
+        return true;
+    }
+
+    return $post_type === 'post' && ($template_slug === '' || $template_slug === 'default');
 }
+
+/**
+ * Template files that act as Hybrid singular chassis options.
+ */
+function modfarm_get_hybrid_singular_template_slugs(): array {
+    return [
+        'singular-hybrid.php',
+        'singular-hybrid-sidebar.php',
+    ];
+}
+
+/**
+ * Resolve the sitewide default chassis for standard posts.
+ */
+function modfarm_get_default_post_template_slug(?array $options = null): string {
+    $options = is_array($options) ? $options : get_option('modfarm_theme_settings', []);
+    $slug    = isset($options['default_post_template']) ? sanitize_file_name((string) $options['default_post_template']) : '';
+
+    if (!in_array($slug, modfarm_get_hybrid_singular_template_slugs(), true)) {
+        $slug = 'singular-hybrid.php';
+    }
+
+    return locate_template($slug) ? $slug : 'singular-hybrid.php';
+}
+
+/**
+ * Back-compat helper used by PPB assembly and external ModFarm tooling.
+ */
+if (!function_exists('modfarm_is_hybrid_post')) {
+    function modfarm_is_hybrid_post(int $post_id): bool {
+        $post_type = $post_id > 0 ? (string) get_post_type($post_id) : '';
+        return modfarm_ppb_is_hybrid_template_for_post($post_id, $post_type);
+    }
+}
+
+add_filter('template_include', function ($template) {
+    if (!is_singular('post')) {
+        return $template;
+    }
+
+    $post_id = (int) get_queried_object_id();
+    if ($post_id <= 0) {
+        return $template;
+    }
+
+    $template_slug = (string) get_page_template_slug($post_id);
+    if ($template_slug !== '' && $template_slug !== 'default' && !in_array($template_slug, modfarm_get_hybrid_singular_template_slugs(), true)) {
+        return $template;
+    }
+
+    $resolved_slug = in_array($template_slug, modfarm_get_hybrid_singular_template_slugs(), true)
+        ? $template_slug
+        : modfarm_get_default_post_template_slug();
+
+    $resolved_template = locate_template($resolved_slug);
+    return $resolved_template ?: $template;
+}, 60);
+
+add_filter('template_include', function ($template) {
+    $basename = is_string($template) ? basename($template) : '';
+    if (in_array($basename, modfarm_get_hybrid_singular_template_slugs(), true)) {
+        $GLOBALS['mf_runtime_using_hybrid'] = true;
+    }
+
+    return $template;
+}, 1000);
 
 /**
  * Resolve a saved local Hybrid override to a valid pattern slug.
@@ -1057,6 +1141,7 @@ function modfarm_assemble_post_layout_on_insert($post_id, $post, $update) {
     if (!empty($_REQUEST['mf_import']) && $_REQUEST['mf_import'] === '1') return;
 
     // If Hybrid is in effect (or PPB body is disallowed), DO NOT assemble
+    if (function_exists('modfarm_ppb_is_hybrid_template_for_post') && modfarm_ppb_is_hybrid_template_for_post($post_id, (string) $post->post_type)) return;
     if (function_exists('modfarm_is_hybrid_post') && modfarm_is_hybrid_post($post_id)) return;
     if (false === apply_filters('modfarm_ppb_allow_body_for_post', true, $post_id)) return;
 
@@ -1225,6 +1310,11 @@ add_action('after_switch_theme', function () {
     $defaults = modfarm_ppb_canonical_defaults();
 
     $changed = false;
+
+    if (empty($opts['default_post_template']) || !in_array((string) $opts['default_post_template'], modfarm_get_hybrid_singular_template_slugs(), true)) {
+        $opts['default_post_template'] = 'singular-hybrid.php';
+        $changed = true;
+    }
 
     foreach ($defaults as $key => $fallback) {
         $current = modfarm_ppb_normalize_slug($opts[$key] ?? null);
