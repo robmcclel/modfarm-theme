@@ -17,6 +17,32 @@ function modfarm_author_social_meta_key(): string {
     return 'author_socials';
 }
 
+function modfarm_normalize_amazon_author_id($value): string {
+    $author_id = strtoupper(preg_replace('/[^A-Z0-9]/i', '', (string) $value));
+
+    return preg_match('/^[A-Z0-9]{10,14}$/', $author_id) ? $author_id : '';
+}
+
+function modfarm_extract_amazon_author_id($value): string {
+    $value = trim((string) $value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('~/stores/author/([A-Z0-9]{10,14})~i', $value, $matches)) {
+        return modfarm_normalize_amazon_author_id($matches[1]);
+    }
+
+    return modfarm_normalize_amazon_author_id($value);
+}
+
+function modfarm_amazon_author_url_from_id(string $author_id): string {
+    $author_id = modfarm_normalize_amazon_author_id($author_id);
+
+    return $author_id !== '' ? 'https://www.amazon.com/stores/author/' . rawurlencode($author_id) . '/about' : '';
+}
+
 function modfarm_author_social_platform_suggestions(): array {
     return [
         ['label' => 'Amazon Author', 'key' => 'amazon-author', 'type' => 'profile'],
@@ -119,6 +145,26 @@ add_action('init', function () {
     ];
 
     foreach (modfarm_author_taxonomies() as $taxonomy) {
+        register_term_meta($taxonomy, 'amazon_author_id', [
+            'single'            => true,
+            'type'              => 'string',
+            'show_in_rest'      => true,
+            'sanitize_callback' => 'modfarm_normalize_amazon_author_id',
+            'auth_callback'     => static function (): bool {
+                return current_user_can('manage_categories');
+            },
+        ]);
+
+        register_term_meta($taxonomy, 'amazon_author_url', [
+            'single'            => true,
+            'type'              => 'string',
+            'show_in_rest'      => true,
+            'sanitize_callback' => 'esc_url_raw',
+            'auth_callback'     => static function (): bool {
+                return current_user_can('manage_categories');
+            },
+        ]);
+
         register_term_meta($taxonomy, modfarm_author_social_meta_key(), [
             'single'            => true,
             'type'              => 'array',
@@ -193,6 +239,16 @@ foreach (['book-author', 'book-authors'] as $taxonomy) {
         wp_nonce_field('modfarm_save_author_meta', 'modfarm_author_meta_nonce');
         ?>
         <div class="form-field">
+            <label for="amazon_author_id"><?php esc_html_e('Amazon Author ID', 'modfarm-author'); ?></label>
+            <input type="text" name="amazon_author_id" id="amazon_author_id" class="regular-text" placeholder="B00R7T569C" />
+            <p class="description"><?php esc_html_e('Used by Fetch Author ID Import and Amazon Author profile links.', 'modfarm-author'); ?></p>
+        </div>
+        <div class="form-field">
+            <label for="amazon_author_url"><?php esc_html_e('Amazon Author URL', 'modfarm-author'); ?></label>
+            <input type="url" name="amazon_author_url" id="amazon_author_url" class="regular-text" placeholder="https://www.amazon.com/stores/author/B00R7T569C/about" />
+            <p class="description"><?php esc_html_e('Optional. If left blank, ModFarm builds the About URL from the Author ID.', 'modfarm-author'); ?></p>
+        </div>
+        <div class="form-field">
             <label for="author_short"><?php esc_html_e('Short Author Description', 'modfarm-author'); ?></label>
             <textarea name="author_short" id="author_short" class="widefat"></textarea>
             <p class="description"><?php esc_html_e('Displayed in author lists. Keep it brief.', 'modfarm-author'); ?></p>
@@ -205,13 +261,29 @@ foreach (['book-author', 'book-authors'] as $taxonomy) {
     });
 
     add_action("{$taxonomy}_edit_form_fields", function ($term) {
+        $amazon_author_id = get_term_meta($term->term_id, 'amazon_author_id', true);
+        $amazon_author_url = get_term_meta($term->term_id, 'amazon_author_url', true);
         $short = get_term_meta($term->term_id, 'author_short', true);
         $socials = modfarm_get_author_socials((int) $term->term_id);
         ?>
         <tr class="form-field">
-            <th scope="row"><label for="author_short"><?php esc_html_e('Short Author Description', 'modfarm-author'); ?></label></th>
+            <th scope="row"><label for="amazon_author_id"><?php esc_html_e('Amazon Author ID', 'modfarm-author'); ?></label></th>
             <td>
                 <?php wp_nonce_field('modfarm_save_author_meta', 'modfarm_author_meta_nonce'); ?>
+                <input type="text" name="amazon_author_id" id="amazon_author_id" class="regular-text" value="<?php echo esc_attr($amazon_author_id); ?>" placeholder="B00R7T569C" />
+                <p class="description"><?php esc_html_e('Used by Fetch Author ID Import and Amazon Author profile links.', 'modfarm-author'); ?></p>
+            </td>
+        </tr>
+        <tr class="form-field">
+            <th scope="row"><label for="amazon_author_url"><?php esc_html_e('Amazon Author URL', 'modfarm-author'); ?></label></th>
+            <td>
+                <input type="url" name="amazon_author_url" id="amazon_author_url" class="regular-text" value="<?php echo esc_url($amazon_author_url); ?>" placeholder="https://www.amazon.com/stores/author/B00R7T569C/about" />
+                <p class="description"><?php esc_html_e('Optional. If left blank, ModFarm builds the About URL from the Author ID.', 'modfarm-author'); ?></p>
+            </td>
+        </tr>
+        <tr class="form-field">
+            <th scope="row"><label for="author_short"><?php esc_html_e('Short Author Description', 'modfarm-author'); ?></label></th>
+            <td>
                 <textarea name="author_short" id="author_short" class="widefat"><?php echo esc_textarea($short); ?></textarea>
                 <p class="description"><?php esc_html_e('Displayed in author lists. Keep it brief.', 'modfarm-author'); ?></p>
             </td>
@@ -239,6 +311,24 @@ function modfarm_save_author_term_meta($term_id): void {
     if (isset($_POST['author_short'])) {
         update_term_meta($term_id, 'author_short', sanitize_text_field(wp_unslash($_POST['author_short'])));
     }
+
+    $amazon_author_id = isset($_POST['amazon_author_id'])
+        ? modfarm_extract_amazon_author_id(wp_unslash($_POST['amazon_author_id']))
+        : '';
+    $amazon_author_url = isset($_POST['amazon_author_url'])
+        ? esc_url_raw(wp_unslash($_POST['amazon_author_url']))
+        : '';
+
+    if ($amazon_author_id === '' && $amazon_author_url !== '') {
+        $amazon_author_id = modfarm_extract_amazon_author_id($amazon_author_url);
+    }
+
+    if ($amazon_author_url === '' && $amazon_author_id !== '') {
+        $amazon_author_url = modfarm_amazon_author_url_from_id($amazon_author_id);
+    }
+
+    update_term_meta($term_id, 'amazon_author_id', $amazon_author_id);
+    update_term_meta($term_id, 'amazon_author_url', $amazon_author_url);
 
     $socials = isset($_POST['author_socials'])
         ? modfarm_sanitize_author_socials(wp_unslash($_POST['author_socials']))
