@@ -255,10 +255,11 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     // 5. ARCHIVE CONTEXT → TAX QUERY
     // --------------------------------------------------
     $tax_query       = array();
+    $context_tax_query = array();
     $is_books_archive = is_post_type_archive( 'book' ) || ( is_post_type_archive() && get_query_var( 'post_type' ) === 'book' );
 
     if ( $qo instanceof WP_Term ) {
-        $tax_query[] = array(
+        $context_tax_query[] = array(
             'taxonomy' => $qo->taxonomy,
             'field'    => 'term_id',
             'terms'    => (int) $qo->term_id,
@@ -273,6 +274,8 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     $format_term = ( isset( $a['book-format']['id'] ) && $a['book-format']['id'] )
         ? (int) $a['book-format']['id']
         : null;
+
+    $tax_query = $context_tax_query;
 
     if ( $format_term ) {
         $tax_query[] = array(
@@ -315,6 +318,12 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     }
 
     $query = new WP_Query( $args );
+
+    if ( $format_term && ! $query->have_posts() ) {
+        $fallback_args = $args;
+        $fallback_args['tax_query'] = $context_tax_query;
+        $query = new WP_Query( $fallback_args );
+    }
 
     // --------------------------------------------------
     // 7. WRAPPER CLASSES + GRID STYLE
