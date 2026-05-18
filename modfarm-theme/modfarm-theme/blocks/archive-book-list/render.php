@@ -101,9 +101,35 @@ function modfarm_render_archive_book_list_block( $attributes ) {
             '3d'        => 'cover_image_3d',
             'audio'     => 'cover_image_audio',
             'composite' => 'cover_image_composite',
+            'cover_ebook' => 'cover_ebook',
+            'cover_paperback' => 'cover_paperback',
+            'cover_hardcover' => 'cover_hardcover',
+            'cover_image_audio' => 'cover_image_audio',
+            'cover_image_flat' => 'cover_image_flat',
+            'cover_image_3d' => 'cover_image_3d',
+            'cover_ebook_3d' => 'cover_ebook_3d',
+            'cover_paperback_3d' => 'cover_paperback_3d',
+            'cover_hardcover_3d' => 'cover_hardcover_3d',
+            'cover_image_audio_3d' => 'cover_image_audio_3d',
+            'cover_image_composite' => 'cover_image_composite',
         );
         if ( ( empty( $a['image-type'] ) || $a['image-type'] === 'featured' ) && ! empty( $image_map[ $variant ] ) ) {
             $a['image-type'] = $image_map[ $variant ];
+        }
+
+        $term_books_in_row = mfs_get_archive_term_meta( $qo->term_id, 'archive_books_in_row', '' );
+        if ( in_array( $term_books_in_row, array( '50%', '33.333%', '25%', '20%', '16.666%' ), true ) ) {
+            $a['books-in-row'] = $term_books_in_row;
+        }
+
+        $term_display_order = mfs_get_archive_term_meta( $qo->term_id, 'archive_display_order', '' );
+        if ( in_array( $term_display_order, array( 'ASC', 'DESC', 'rand' ), true ) ) {
+            $a['display-order'] = $term_display_order;
+        }
+
+        $term_order_date_key = mfs_get_archive_term_meta( $qo->term_id, 'archive_order_date_key', '' );
+        if ( in_array( $term_order_date_key, array( 'publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ), true ) ) {
+            $a['order-date-key'] = $term_order_date_key;
         }
 
         // Archive-level visibility flags (null = "no preference")
@@ -275,6 +301,17 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         ? (int) $a['book-format']['id']
         : null;
 
+    if ( $qo instanceof WP_Term && $qo->taxonomy !== 'book-format' ) {
+        $term_format = absint( mfs_get_archive_term_meta( $qo->term_id, 'archive_format_filter', 0 ) );
+        if ( $term_format ) {
+            $format_term = $term_format;
+        }
+    }
+
+    if ( $format_term && ! term_exists( $format_term, 'book-format' ) ) {
+        $format_term = null;
+    }
+
     $tax_query = $context_tax_query;
 
     if ( $format_term ) {
@@ -290,7 +327,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     // --------------------------------------------------
     $paged         = max( 1, get_query_var( 'paged' ) ?: get_query_var( 'page' ) ?: 1 );
     $order_setting = $a['display-order'];
-    $date_keys     = array( 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' );
+    $date_keys     = array( 'publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date' );
     $order_date_key = in_array( $a['order-date-key'], $date_keys, true ) ? $a['order-date-key'] : 'publication_date';
     $orderby       = ( $order_setting === 'rand' ) ? 'rand' : 'meta_value';
     $order         = ( $order_setting === 'ASC' )  ? 'ASC'  : 'DESC';
@@ -462,7 +499,11 @@ function modfarm_render_archive_book_list_block( $attributes ) {
             $aspect = '2 / 3';
             switch ( $image_type ) {
                 case 'cover_image_audio':    $aspect = '1 / 1';  break;
+                case 'cover_image_audio_3d': $aspect = '1 / 1';  break;
                 case 'cover_image_3d':       $aspect = '4 / 3';  break;
+                case 'cover_ebook_3d':
+                case 'cover_paperback_3d':
+                case 'cover_hardcover_3d':   $aspect = '4 / 3';  break;
                 case 'cover_image_composite':
                 case 'hero_image':           $aspect = '16 / 9'; break;
             }

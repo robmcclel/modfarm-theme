@@ -6,11 +6,15 @@
  * Stores settings as term meta and exposes helper functions for rendering.
  *
  * Fields per term:
- * - archive_image_variant: string enum (featured|flat|3d|audio|composite)
+ * - archive_image_variant: string enum/meta key for archive card image
  * - archive_show_button:   int(1|0)
  * - archive_show_sample:   int(1|0)
  * - archive_show_title:    int(1|0)
  * - archive_show_series:   int(1|0)
+ * - archive_format_filter: int (book-format term ID; 0 = no additional filter)
+ * - archive_books_in_row:  string percent width used by archive-list
+ * - archive_display_order: string enum (ASC|DESC|rand)
+ * - archive_order_date_key:string enum date meta key used by archive-list
  * - archive_hero_image:    int (attachment ID)
  * - archive_default_image: int (attachment ID)
  * - archive_display_hero:  int(1|0)  (show hero image on archive page)
@@ -66,20 +70,31 @@ add_action('init', function () {
         'default'      => 0,
         'sanitize_callback' => 'absint',
     ];
-    $string_schema = [
+    $image_variant_schema = [
         'type'         => 'string',
         'single'       => true,
         'show_in_rest' => true,
         'default'      => 'featured',
         'sanitize_callback' => 'sanitize_text_field',
     ];
+    $string_schema = [
+        'type'         => 'string',
+        'single'       => true,
+        'show_in_rest' => true,
+        'default'      => '',
+        'sanitize_callback' => 'sanitize_text_field',
+    ];
 
     foreach ($taxes as $tx) {
-        register_term_meta($tx, 'archive_image_variant', $string_schema);
+        register_term_meta($tx, 'archive_image_variant', $image_variant_schema);
         register_term_meta($tx, 'archive_show_button',   $bool_schema);
         register_term_meta($tx, 'archive_show_sample',   $bool_schema);
         register_term_meta($tx, 'archive_show_title',    $bool_schema);
         register_term_meta($tx, 'archive_show_series',   $bool_schema);
+        register_term_meta($tx, 'archive_format_filter', $int_schema);
+        register_term_meta($tx, 'archive_books_in_row',  $string_schema);
+        register_term_meta($tx, 'archive_display_order', $string_schema);
+        register_term_meta($tx, 'archive_order_date_key', $string_schema);
 
         register_term_meta($tx, 'archive_hero_image',    $int_schema);
         register_term_meta($tx, 'archive_default_image', $int_schema);
@@ -167,6 +182,10 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
     $show_sample = (int) $get('archive_show_sample', 0);
     $show_title  = (int) $get('archive_show_title', 1);
     $show_series = (int) $get('archive_show_series', 0);
+    $format_filter = absint($get('archive_format_filter', 0));
+    $books_in_row = $get('archive_books_in_row', '25%');
+    $display_order = $get('archive_display_order', 'DESC');
+    $order_date_key = $get('archive_order_date_key', 'publication_date');
 
     $hero_id     = absint($get('archive_hero_image', 0));
     $default_id  = absint($get('archive_default_image', 0));
@@ -185,11 +204,44 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
 
     $variants = [
         'featured'  => 'Featured (Featured Image)',
-        'flat'      => 'Flat',
-        '3d'        => '3D',
-        'audio'     => 'Audiobook',
-        'composite' => 'Composite',
+        'flat'      => 'Flat Cover Image (legacy)',
+        '3d'        => '3D Mockup Cover (legacy)',
+        'audio'     => 'Audiobook Cover (legacy)',
+        'composite' => 'Composite Marketing Image (legacy)',
+        'cover_ebook' => 'eBook Cover',
+        'cover_paperback' => 'Paperback Cover',
+        'cover_hardcover' => 'Hardcover Cover',
+        'cover_image_audio' => 'Audiobook Cover',
+        'cover_image_flat' => 'Flat Cover Image',
+        'cover_image_3d' => '3D Mockup Cover',
+        'cover_ebook_3d' => '3D eBook Cover',
+        'cover_paperback_3d' => '3D Paperback Cover',
+        'cover_hardcover_3d' => '3D Hardcover Cover',
+        'cover_image_audio_3d' => '3D Audiobook Cover',
+        'cover_image_composite' => 'Composite Marketing Image',
     ];
+    $row_options = [
+        '50%' => '2 per row',
+        '33.333%' => '3 per row',
+        '25%' => '4 per row',
+        '20%' => '5 per row',
+        '16.666%' => '6 per row',
+    ];
+    $order_options = [
+        'ASC' => 'Oldest first',
+        'DESC' => 'Most recent first',
+        'rand' => 'Random',
+    ];
+    $date_key_options = [
+        'publication_date' => 'Primary Publication Date',
+        'paperback_publication_date' => 'Paperback Publication Date',
+        'hardcover_publication_date' => 'Hardcover Publication Date',
+        'audiobook_publication_date' => 'Audiobook Publication Date',
+    ];
+    $format_terms = get_terms([
+        'taxonomy'   => 'book-format',
+        'hide_empty' => false,
+    ]);
     ?>
     <table class="form-table mfs-term-table" role="presentation">
         <tr class="form-field">
@@ -207,24 +259,82 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
         </tr>
 
         <tr class="form-field">
-            <!-- Show Elements -->
-            <tr class="form-field">
-              <th scope="row">Show Elements</th>
-              <td>
+            <th scope="row"><label for="archive_books_in_row">Books Per Row</label></th>
+            <td>
+                <select name="archive_books_in_row" id="archive_books_in_row">
+                    <?php foreach ($row_options as $val => $label): ?>
+                        <option value="<?php echo esc_attr($val); ?>" <?php selected($books_in_row, $val); ?>>
+                            <?php echo esc_html($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description mfs-term-note">Controls the archive grid density for this term.</p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="archive_display_order">Book Order</label></th>
+            <td>
+                <select name="archive_display_order" id="archive_display_order">
+                    <?php foreach ($order_options as $val => $label): ?>
+                        <option value="<?php echo esc_attr($val); ?>" <?php selected($display_order, $val); ?>>
+                            <?php echo esc_html($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description mfs-term-note">Choose whether archive books start with earliest, newest, or random entries.</p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="archive_order_date_key">Order Date Basis</label></th>
+            <td>
+                <select name="archive_order_date_key" id="archive_order_date_key">
+                    <?php foreach ($date_key_options as $val => $label): ?>
+                        <option value="<?php echo esc_attr($val); ?>" <?php selected($order_date_key, $val); ?>>
+                            <?php echo esc_html($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description mfs-term-note">For example, paperback archives can sort by paperback publication date.</p>
+            </td>
+        </tr>
+
+        <?php if ($taxonomy !== 'book-format' && $taxonomy !== 'book-formats') : ?>
+        <tr class="form-field">
+            <th scope="row"><label for="archive_format_filter">Archive Format Filter</label></th>
+            <td>
+                <select name="archive_format_filter" id="archive_format_filter">
+                    <option value="0"><?php esc_html_e('No additional format filter', 'modfarm'); ?></option>
+                    <?php if (!is_wp_error($format_terms)) : ?>
+                        <?php foreach ($format_terms as $format_term) : ?>
+                            <option value="<?php echo esc_attr((int) $format_term->term_id); ?>" <?php selected($format_filter, (int) $format_term->term_id); ?>>
+                                <?php echo esc_html($format_term->name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+                <p class="description mfs-term-note">Optionally limit this archive listing to one format. Leave unset to show all formats assigned to this term.</p>
+            </td>
+        </tr>
+        <?php endif; ?>
+
+        <tr class="form-field">
+            <th scope="row">Show Elements</th>
+            <td>
                 <input type="hidden" name="archive_show_button" value="0">
                 <label><input type="checkbox" name="archive_show_button" value="1" <?php checked($show_button, 1); ?>> Button</label>&nbsp;&nbsp;
-            
+
                 <input type="hidden" name="archive_show_sample" value="0">
                 <label><input type="checkbox" name="archive_show_sample" value="1" <?php checked($show_sample, 1); ?>> Sample</label>&nbsp;&nbsp;
-            
+
                 <input type="hidden" name="archive_show_title" value="0">
                 <label><input type="checkbox" name="archive_show_title"  value="1" <?php checked($show_title, 1); ?>> Title</label>&nbsp;&nbsp;
-            
+
                 <input type="hidden" name="archive_show_series" value="0">
                 <label><input type="checkbox" name="archive_show_series" value="1" <?php checked($show_series, 1); ?>> Series</label>
-                <p class="description mfs-term-note">Toggle visibility of these UI elements on this archive’s listing.</p>
-              </td>
-            </tr>
+                <p class="description mfs-term-note">Toggle visibility of these UI elements on this archive's listing.</p>
+            </td>
         </tr>
         <tr class="form-field">
             <th scope="row">Hero Image</th>
@@ -279,11 +389,44 @@ function mfs_render_book_archive_add_fields($taxonomy) {
 
     $variants = [
         'featured'  => 'Featured (Featured Image)',
-        'flat'      => 'Flat',
-        '3d'        => '3D',
-        'audio'     => 'Audiobook',
-        'composite' => 'Composite',
+        'flat'      => 'Flat Cover Image (legacy)',
+        '3d'        => '3D Mockup Cover (legacy)',
+        'audio'     => 'Audiobook Cover (legacy)',
+        'composite' => 'Composite Marketing Image (legacy)',
+        'cover_ebook' => 'eBook Cover',
+        'cover_paperback' => 'Paperback Cover',
+        'cover_hardcover' => 'Hardcover Cover',
+        'cover_image_audio' => 'Audiobook Cover',
+        'cover_image_flat' => 'Flat Cover Image',
+        'cover_image_3d' => '3D Mockup Cover',
+        'cover_ebook_3d' => '3D eBook Cover',
+        'cover_paperback_3d' => '3D Paperback Cover',
+        'cover_hardcover_3d' => '3D Hardcover Cover',
+        'cover_image_audio_3d' => '3D Audiobook Cover',
+        'cover_image_composite' => 'Composite Marketing Image',
     ];
+    $row_options = [
+        '50%' => '2 per row',
+        '33.333%' => '3 per row',
+        '25%' => '4 per row',
+        '20%' => '5 per row',
+        '16.666%' => '6 per row',
+    ];
+    $order_options = [
+        'ASC' => 'Oldest first',
+        'DESC' => 'Most recent first',
+        'rand' => 'Random',
+    ];
+    $date_key_options = [
+        'publication_date' => 'Primary Publication Date',
+        'paperback_publication_date' => 'Paperback Publication Date',
+        'hardcover_publication_date' => 'Hardcover Publication Date',
+        'audiobook_publication_date' => 'Audiobook Publication Date',
+    ];
+    $format_terms = get_terms([
+        'taxonomy'   => 'book-format',
+        'hide_empty' => false,
+    ]);
     ?>
     <div class="form-field term-group">
         <label for="archive_image_variant">Image Variant</label>
@@ -294,6 +437,52 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         </select>
         <p class="description">Controls which image style this archive prefers.</p>
     </div>
+    <div class="form-field term-group">
+        <label for="archive_books_in_row">Books Per Row</label>
+        <select name="archive_books_in_row" id="archive_books_in_row">
+            <?php foreach ($row_options as $val => $label): ?>
+                <option value="<?php echo esc_attr($val); ?>" <?php selected($val, '25%'); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="form-field term-group">
+        <label for="archive_display_order">Book Order</label>
+        <select name="archive_display_order" id="archive_display_order">
+            <?php foreach ($order_options as $val => $label): ?>
+                <option value="<?php echo esc_attr($val); ?>" <?php selected($val, 'DESC'); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="form-field term-group">
+        <label for="archive_order_date_key">Order Date Basis</label>
+        <select name="archive_order_date_key" id="archive_order_date_key">
+            <?php foreach ($date_key_options as $val => $label): ?>
+                <option value="<?php echo esc_attr($val); ?>" <?php selected($val, 'publication_date'); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <?php if ($taxonomy !== 'book-format' && $taxonomy !== 'book-formats') : ?>
+    <div class="form-field term-group">
+        <label for="archive_format_filter">Archive Format Filter</label>
+        <select name="archive_format_filter" id="archive_format_filter">
+            <option value="0"><?php esc_html_e('No additional format filter', 'modfarm'); ?></option>
+            <?php if (!is_wp_error($format_terms)) : ?>
+                <?php foreach ($format_terms as $format_term) : ?>
+                    <option value="<?php echo esc_attr((int) $format_term->term_id); ?>">
+                        <?php echo esc_html($format_term->name); ?>
+                    </option>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </select>
+        <p class="description">Optionally limit this archive listing to one format.</p>
+    </div>
+    <?php endif; ?>
     <div class="form-field term-group">
         <label>Show Elements</label>
         <label><input type="checkbox" name="archive_show_button" value="1" checked> Button</label><br>
@@ -340,15 +529,39 @@ function mfs_save_book_archive_term_fields($term_id, $tt_id = 0) {
 
     // Sanitize checkbox to 1/0
     $cb = function($k){ return isset($_POST[$k]) && $_POST[$k] ? 1 : 0; };
-    $tx = function($k, $def=''){ return isset($_POST[$k]) ? sanitize_text_field(wp_unslash($_POST[$k])) : $def; };
     $id = function($k){ return isset($_POST[$k]) ? absint($_POST[$k]) : 0; };
+    $one_of = function($k, array $allowed, $def) {
+        $val = isset($_POST[$k]) ? sanitize_text_field(wp_unslash($_POST[$k])) : $def;
+        return in_array($val, $allowed, true) ? $val : $def;
+    };
 
-    update_term_meta($term_id, 'archive_image_variant', $tx('archive_image_variant','featured'));
+    update_term_meta($term_id, 'archive_image_variant', $one_of('archive_image_variant', [
+        'featured',
+        'flat',
+        '3d',
+        'audio',
+        'composite',
+        'cover_ebook',
+        'cover_paperback',
+        'cover_hardcover',
+        'cover_image_audio',
+        'cover_image_flat',
+        'cover_image_3d',
+        'cover_ebook_3d',
+        'cover_paperback_3d',
+        'cover_hardcover_3d',
+        'cover_image_audio_3d',
+        'cover_image_composite',
+    ], 'featured'));
 
     update_term_meta($term_id, 'archive_show_button',   $cb('archive_show_button'));
     update_term_meta($term_id, 'archive_show_sample',   $cb('archive_show_sample'));
     update_term_meta($term_id, 'archive_show_title',    $cb('archive_show_title'));
     update_term_meta($term_id, 'archive_show_series',   $cb('archive_show_series'));
+    update_term_meta($term_id, 'archive_format_filter', $id('archive_format_filter'));
+    update_term_meta($term_id, 'archive_books_in_row', $one_of('archive_books_in_row', ['50%', '33.333%', '25%', '20%', '16.666%'], '25%'));
+    update_term_meta($term_id, 'archive_display_order', $one_of('archive_display_order', ['ASC', 'DESC', 'rand'], 'DESC'));
+    update_term_meta($term_id, 'archive_order_date_key', $one_of('archive_order_date_key', ['publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date'], 'publication_date'));
 
     update_term_meta($term_id, 'archive_hero_image',    $id('archive_hero_image'));
     update_term_meta($term_id, 'archive_default_image', $id('archive_default_image'));
