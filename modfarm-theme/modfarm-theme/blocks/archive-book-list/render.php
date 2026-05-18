@@ -133,17 +133,21 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         }
 
         // Archive-level visibility flags (null = "no preference")
+        $term_bool = function( $value ) {
+            return filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+        };
+
         $t = mfs_get_archive_term_meta( $qo->term_id, 'archive_show_title',  '' );
-        if ( $t !== '' ) $archive_show_title  = (bool) $t;
+        if ( $t !== '' ) $archive_show_title  = $term_bool( $t );
 
         $t = mfs_get_archive_term_meta( $qo->term_id, 'archive_show_series', '' );
-        if ( $t !== '' ) $archive_show_series = (bool) $t;
+        if ( $t !== '' ) $archive_show_series = $term_bool( $t );
 
         $t = mfs_get_archive_term_meta( $qo->term_id, 'archive_show_button', '' );
-        if ( $t !== '' ) $archive_show_button = (bool) $t;
+        if ( $t !== '' ) $archive_show_button = $term_bool( $t );
 
         $t = mfs_get_archive_term_meta( $qo->term_id, 'archive_show_sample', '' );
-        if ( $t !== '' ) $archive_show_sample = (bool) $t;
+        if ( $t !== '' ) $archive_show_sample = $term_bool( $t );
     }
 
     // --------------------------------------------------
