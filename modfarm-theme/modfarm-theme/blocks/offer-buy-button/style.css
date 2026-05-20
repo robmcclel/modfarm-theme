@@ -119,6 +119,20 @@
   margin: 0 0 12px;
 }
 
+.modfarm-format-group__discount {
+  margin: 0 0 12px;
+}
+
+.modfarm-format-group__discount-input {
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: var(--mfb-bp-btn-radius, 0px);
+  box-sizing: border-box;
+  font: inherit;
+  min-height: 40px;
+  max-width: 180px;
+  padding: 8px 10px;
+}
+
 .modfarm-format-group__options {
   display: flex;
   flex-wrap: wrap;
