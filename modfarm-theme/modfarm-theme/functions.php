@@ -1196,6 +1196,28 @@ function modfarm_ppb_get_default_zoned_content_markup(string $post_type, ?array 
     ]);
 }
 
+add_filter('default_content', function($content, $post) {
+    if (!is_admin() || !($post instanceof WP_Post)) {
+        return $content;
+    }
+
+    if (($GLOBALS['pagenow'] ?? '') !== 'post-new.php') {
+        return $content;
+    }
+
+    if (trim((string) $content) !== '') {
+        return $content;
+    }
+
+    $post_type = (string) $post->post_type;
+    if (!in_array($post_type, ['page', 'book', 'offer', 'mf_offer'], true)) {
+        return $content;
+    }
+
+    $markup = modfarm_ppb_get_default_zoned_content_markup($post_type);
+    return $markup !== '' ? $markup : $content;
+}, 10, 2);
+
 
 add_action('wp_insert_post', 'modfarm_assemble_post_layout_on_insert', 10, 3);
 

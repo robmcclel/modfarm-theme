@@ -54,7 +54,15 @@
 /* Prevent content column overflow quirks in CSS grid */
 .mf-taxdesc__content { min-width: 0; }
 
-.mf-taxdesc__description p { margin: 0 0 .8rem 0; }
+.mf-taxdesc__description {
+  line-height: 1.65;
+}
+
+.mf-taxdesc__description p { margin: 0 0 .9rem 0; }
+
+.mf-taxdesc__description p:last-child {
+  margin-bottom: 0;
+}
 
 .mf-taxdesc__genre-profile {
   display: flex;

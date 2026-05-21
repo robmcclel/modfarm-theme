@@ -19,7 +19,7 @@
 /* Default (Auto): horizontal on wide, stacks on narrow */
 .mfc-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   gap: 2rem;
   /*color: var(--mfc-text);*/
@@ -79,6 +79,76 @@
   max-width: 65ch;
 }
 
+.mfc-card__desc p {
+  margin: 0 0 0.8rem;
+}
+
+.mfc-card__desc p:last-child {
+  margin-bottom: 0;
+}
+
+.mfc-card__socials {
+  margin-top: 1rem;
+}
+
+.mfc-card__socials .mfas-socials {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mfas-gap, 10px);
+  line-height: 1;
+}
+
+.mfc-card__socials .mfas-icon {
+  display: inline-flex;
+  width: var(--mfas-icon-size, 28px);
+  height: var(--mfas-icon-size, 28px);
+  align-items: center;
+  justify-content: center;
+  color: var(--mfas-color, currentColor);
+  text-decoration: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.mfc-card__socials .mfas-socials--native .mfas-icon {
+  color: var(--mfas-platform-color, currentColor);
+}
+
+.mfc-card__socials .mfas-icon:hover,
+.mfc-card__socials .mfas-icon:focus-visible {
+  opacity: 0.82;
+  transform: translateY(-1px);
+}
+
+.mfc-card__socials .mfas-icon:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.mfc-card__socials .mfas-icon__svg,
+.mfc-card__socials .mfas-icon__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mfc-card__socials .mfas-icon__svg {
+  fill: currentColor;
+}
+
+.mfc-card__socials .mfas-icon__svg--instagram {
+  fill: none;
+}
+
+.mfc-card__socials .mfas-icon__svg--instagram circle:last-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.mfc-card__socials .mfas-icon__img {
+  object-fit: contain;
+}
+
 /* --- Responsive: AUTO stacks vertically under 720px --- */
 @media (max-width: 720px) {
   .mfc-card {
@@ -119,7 +189,7 @@
 /* Force horizontal: always side-by-side, even on small screens */
 .mfc-layout-horizontal .mfc-card {
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   text-align: left;
   gap: 2rem;
 }

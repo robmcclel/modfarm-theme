@@ -129,6 +129,7 @@ add_action('admin_enqueue_scripts', function ($hook) {
     if (!in_array($screen->taxonomy, mfs_book_archive_taxonomies(), true)) return;
 
     wp_enqueue_media();
+    wp_enqueue_editor();
 
     // Tiny inline JS for media selector buttons
     wp_add_inline_script(
@@ -166,6 +167,60 @@ add_action('admin_enqueue_scripts', function ($hook) {
          .mfs-term-note{color:#555; font-size:12px;}"
     );
 });
+
+/**
+ * Upgrade the native taxonomy description textarea to a compact rich text editor.
+ */
+add_action('admin_footer-edit-tags.php', 'mfs_rich_taxonomy_description_editor');
+add_action('admin_footer-term.php', 'mfs_rich_taxonomy_description_editor');
+
+function mfs_rich_taxonomy_description_editor() {
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || empty($screen->taxonomy) || !in_array($screen->taxonomy, mfs_book_archive_taxonomies(), true)) {
+        return;
+    }
+    ?>
+    <script>
+    (function () {
+        var initialized = false;
+
+        function initRichDescription() {
+            if (initialized || !window.wp || !wp.editor || !document.getElementById('description')) {
+                return;
+            }
+
+            initialized = true;
+            wp.editor.initialize('description', {
+                mediaButtons: false,
+                tinymce: {
+                    wpautop: true,
+                    menubar: false,
+                    toolbar1: 'formatselect,bold,italic,bullist,numlist,blockquote,link,unlink,undo,redo',
+                    toolbar2: '',
+                    block_formats: 'Paragraph=p;Heading 3=h3;Heading 4=h4'
+                },
+                quicktags: true
+            });
+
+            var form = document.getElementById('edittag') || document.getElementById('addtag');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    if (window.tinyMCE) {
+                        tinyMCE.triggerSave();
+                    }
+                });
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initRichDescription);
+        } else {
+            initRichDescription();
+        }
+    })();
+    </script>
+    <?php
+}
 
 /**
  * Render fields on EDIT form (table layout).

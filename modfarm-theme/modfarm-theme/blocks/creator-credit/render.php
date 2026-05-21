@@ -1,19 +1,8 @@
 <?php
+require_once get_template_directory() . '/blocks/shared/author-social-links.php';
+
 if (!function_exists('modfarm_render_creator_credit_block')) {
   function modfarm_render_creator_credit_block($attributes, $content = '', $block = null) {
-    // --- Post context --------------------------------------------------------
-    $post_id = 0;
-    if (is_object($block) && isset($block->context['postId'])) {
-      $post_id = intval($block->context['postId']);
-    }
-    if (!$post_id && get_the_ID()) $post_id = intval(get_the_ID());
-    if (!$post_id) {
-      if (current_user_can('edit_posts')) {
-        return '<div class="mfc-team mfc--admin-note"><em>Creator Credit:</em> No post context available.</div>';
-      }
-      return '';
-    }
-
     // --- Attributes ----------------------------------------------------------
     $heading     = trim((string)($attributes['heading'] ?? ''));
     $tax         = trim((string)($attributes['effectiveTax'] ?? $attributes['taxonomy'] ?? 'book-author'));
@@ -28,8 +17,17 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
 
     $link_name   = !empty($attributes['linkToArchive']);
     $show_desc   = !empty($attributes['showDescription']);
+    $show_social = !empty($attributes['showSocialLinks']);
     $hide_empty  = !empty($attributes['hideIfEmpty']);
-    $term_id     = intval($attributes['termId'] ?? 0); // 👈 this is key
+    $term_id     = intval($attributes['termId'] ?? 0);
+
+    $social_icon_size = max(12, min(128, intval($attributes['socialIconSize'] ?? 28)));
+    $social_gap = max(0, min(64, intval($attributes['socialGap'] ?? 10)));
+    $social_color_mode = in_array(($attributes['socialColorMode'] ?? 'native'), ['native', 'monotone'], true)
+      ? $attributes['socialColorMode']
+      : 'native';
+    $social_monotone_color = trim((string)($attributes['socialMonotoneColor'] ?? ''));
+    $social_open_new_tab = !array_key_exists('socialOpenInNewTab', $attributes) || !empty($attributes['socialOpenInNewTab']);
 
     $accentColor = trim((string)($attributes['accentColor'] ?? ''));
     $textColor   = trim((string)($attributes['textColor'] ?? ''));
@@ -43,27 +41,44 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
       return '';
     }
 
-    // --- Get attached terms --------------------------------------------------
-    $terms = wp_get_post_terms($post_id, $tax);
-    if (is_wp_error($terms) || empty($terms)) {
-      if (current_user_can('edit_posts') && !$hide_empty) {
-        return '<div class="mfc-team mfc--admin-note"><em>Creator Credit:</em> No terms attached for <code>' .
-               esc_html($tax) . '</code>.</div>';
-      }
-      return '';
-    }
-
-    // --- Pick the selected term ---------------------------------------------
+    // --- Pick the selected term, or fall back to current post context --------
     $term = null;
     if ($term_id) {
-      foreach ($terms as $t) {
-        if ((int)$t->term_id === $term_id) {
-          $term = $t;
-          break;
-        }
+      $candidate = get_term($term_id, $tax);
+      if ($candidate instanceof WP_Term && !is_wp_error($candidate)) {
+        $term = $candidate;
+      } elseif (current_user_can('edit_posts') && !$hide_empty) {
+        return '<div class="mfc-team mfc--admin-note"><em>Creator Credit:</em> Selected term not found for <code>' .
+               esc_html($tax) . '</code>.</div>';
       }
     }
-    if (!$term) $term = $terms[0]; // fallback to first
+
+    if (!$term) {
+      $post_id = 0;
+      if (is_object($block) && isset($block->context['postId'])) {
+        $post_id = intval($block->context['postId']);
+      }
+      if (!$post_id && get_the_ID()) {
+        $post_id = intval(get_the_ID());
+      }
+      if (!$post_id) {
+        if (current_user_can('edit_posts') && !$hide_empty) {
+          return '<div class="mfc-team mfc--admin-note"><em>Creator Credit:</em> Select a creator term, or use this block where a post context is available.</div>';
+        }
+        return '';
+      }
+
+      $terms = wp_get_post_terms($post_id, $tax);
+      if (is_wp_error($terms) || empty($terms)) {
+        if (current_user_can('edit_posts') && !$hide_empty) {
+          return '<div class="mfc-team mfc--admin-note"><em>Creator Credit:</em> No terms attached for <code>' .
+                 esc_html($tax) . '</code>.</div>';
+        }
+        return '';
+      }
+
+      $term = $terms[0];
+    }
 
     // --- Role label ----------------------------------------------------------
     $tax_obj    = get_taxonomy($tax);
@@ -150,11 +165,30 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
           </h3>
           <div class="mfc-card__role"><?php echo esc_html($role_label); ?></div>
           <?php if ($show_desc):
-            $desc = term_description($term, $tax);
+            $desc = term_description((int) $term->term_id, $tax);
             if (!empty($desc)): ?>
               <div class="mfc-card__desc"><?php echo wp_kses_post($desc); ?></div>
             <?php endif; ?>
           <?php endif; ?>
+          <?php
+            $author_taxonomies = function_exists('modfarm_author_taxonomies')
+              ? modfarm_author_taxonomies()
+              : ['book-author', 'book-authors'];
+            if ($show_social && in_array($tax, $author_taxonomies, true)) {
+              $socials = modfarm_render_author_social_links($term, [
+                'align' => 'left',
+                'iconSize' => $social_icon_size,
+                'gap' => $social_gap,
+                'colorMode' => $social_color_mode,
+                'monotoneColor' => $social_monotone_color,
+                'openInNewTab' => $social_open_new_tab,
+                'hideIfEmpty' => true,
+              ]);
+              if ($socials !== '') {
+                echo '<div class="mfc-card__socials">' . $socials . '</div>';
+              }
+            }
+          ?>
         </div>
       </article>
     </section>

@@ -4,7 +4,7 @@
   "title": "Creator Credit",
   "category": "modfarm-theme",
   "icon": "groups",
-  "description": "Show a single taxonomy term (Author, Artist, etc.) from the current Book. Auto layout, theme-aware colors, adjustable image size.",
+  "description": "Show a single creator taxonomy term from the current Book or from a manually selected term.",
   "keywords": ["creator", "credit", "taxonomy", "people"],
   "supports": { "html": false, "align": false },
   "attributes": {
@@ -18,6 +18,12 @@
 
     "linkToArchive": { "type": "boolean", "default": true },
     "showDescription": { "type": "boolean", "default": true },
+    "showSocialLinks": { "type": "boolean", "default": false },
+    "socialIconSize": { "type": "number", "default": 28 },
+    "socialGap": { "type": "number", "default": 10 },
+    "socialColorMode": { "type": "string", "default": "native" },
+    "socialMonotoneColor": { "type": "string", "default": "" },
+    "socialOpenInNewTab": { "type": "boolean", "default": true },
     "hideIfEmpty":   { "type": "boolean", "default": false },
 
     "accentColor":   { "type": "string",  "default": "" },

@@ -61,6 +61,7 @@
       /* Attached terms for this post  */
       /* ----------------------------- */
       const [attachedTerms, setAttachedTerms] = useState([]);
+      const [allTerms, setAllTerms] = useState(null);
       useEffect(() => {
         if (!attributes.taxonomy || attributes.taxonomy === '__custom__') {
           setAttachedTerms([]);
@@ -85,8 +86,23 @@
           : (attributes.taxonomy || '').trim();
       }, [attributes.taxonomy, attributes.customTax]);
 
+      useEffect(() => {
+        if (!effectiveTax) {
+          setAllTerms([]);
+          return;
+        }
+
+        setAllTerms(null);
+        wp.apiFetch({
+          path: `/wp/v2/${effectiveTax}?per_page=100&orderby=name&order=asc&_fields=id,name`,
+        })
+          .then(terms => setAllTerms(Array.isArray(terms) ? terms : []))
+          .catch(() => setAllTerms([]));
+      }, [effectiveTax]);
+
       const clearAccent = () => setAttributes({ accentColor: '' });
       const clearText = () => setAttributes({ textColor: '' });
+      const clearSocialColor = () => setAttributes({ socialMonotoneColor: '' });
 
       /* ----------------------------- */
       /* Render                        */
@@ -129,16 +145,25 @@
               onChange: v => setAttributes({ customTax: v })
             }),
 
-            /* Term dropdown (if multiple terms attached) */
-            attachedTerms.length > 1 && el(SelectControl, {
-              label: __('Select term to display', 'modfarm'),
-              value: attributes.termId || 0,
-              options: [
-                { label: __('(Show first attached term)', 'modfarm'), value: 0 },
-                ...attachedTerms.map(t => ({ label: t.name, value: t.id }))
-              ],
-              onChange: v => setAttributes({ termId: parseInt(v, 10) })
-            }),
+            allTerms === null
+              ? el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+                  el(Spinner, {}),
+                  el('span', {}, __('Loading terms...', 'modfarm'))
+                )
+              : el(SelectControl, {
+                  label: __('Creator term', 'modfarm'),
+                  help: __('Use Auto on book pages; choose a term for about pages, home pages, or posts.', 'modfarm'),
+                  value: parseInt(attributes.termId, 10) || 0,
+                  options: [
+                    { label: __('Auto: first term attached to current post', 'modfarm'), value: 0 },
+                    ...(allTerms || []).map(t => ({ label: t.name, value: t.id }))
+                  ],
+                  onChange: v => setAttributes({ termId: parseInt(v, 10) })
+                }),
+
+            attachedTerms.length > 1 && parseInt(attributes.termId, 10) === 0 && el(Notice, { status: 'info', isDismissible: false },
+              __('Auto mode will show the first attached term. Pick a creator term above for a specific person.', 'modfarm')
+            ),
 
             !effectiveTax && el(Notice, { status: 'warning', isDismissible: false },
               __('Choose a taxonomy or enter a custom slug.', 'modfarm')
@@ -181,6 +206,50 @@
               label: __('Show description (full bio)', 'modfarm'),
               checked: !!attributes.showDescription,
               onChange: v => setAttributes({ showDescription: !!v })
+            }),
+            el(ToggleControl, {
+              label: __('Show author social links', 'modfarm'),
+              checked: !!attributes.showSocialLinks,
+              onChange: v => setAttributes({ showSocialLinks: !!v })
+            })
+          ),
+
+          attributes.showSocialLinks && el(PanelBody, { title: __('Social Links', 'modfarm'), initialOpen: false },
+            el(RangeControl, {
+              label: __('Icon size (px)', 'modfarm'),
+              value: parseInt(attributes.socialIconSize, 10) || 28,
+              min: 16, max: 96, step: 2,
+              onChange: v => setAttributes({ socialIconSize: parseInt(v, 10) || 28 })
+            }),
+            el(RangeControl, {
+              label: __('Icon gap (px)', 'modfarm'),
+              value: parseInt(attributes.socialGap, 10) || 10,
+              min: 0, max: 48, step: 1,
+              onChange: v => setAttributes({ socialGap: parseInt(v, 10) || 0 })
+            }),
+            el(SelectControl, {
+              label: __('Color mode', 'modfarm'),
+              value: attributes.socialColorMode || 'native',
+              options: [
+                { label: __('Native colors', 'modfarm'), value: 'native' },
+                { label: __('Monotone', 'modfarm'), value: 'monotone' }
+              ],
+              onChange: v => setAttributes({ socialColorMode: v })
+            }),
+            (attributes.socialColorMode || 'native') === 'monotone' && el('div', { style: { marginTop: '14px' } },
+              el('label', { style: { display: 'block', marginBottom: '6px' } }, __('Icon color', 'modfarm')),
+              el(ColorPalette, {
+                colors: THEME_COLORS,
+                value: attributes.socialMonotoneColor || undefined,
+                onChange: v => setAttributes({ socialMonotoneColor: v || '' })
+              }),
+              el(Button, { isSecondary: true, onClick: clearSocialColor, style: { marginTop: '6px' } },
+                __('Use inherited color', 'modfarm'))
+            ),
+            el(ToggleControl, {
+              label: __('Open links in new tab', 'modfarm'),
+              checked: attributes.socialOpenInNewTab !== false,
+              onChange: v => setAttributes({ socialOpenInNewTab: !!v })
             })
           ),
 
