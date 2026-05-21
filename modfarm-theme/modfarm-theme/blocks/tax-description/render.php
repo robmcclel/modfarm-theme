@@ -1,4 +1,6 @@
 <?php
+require_once get_template_directory() . '/blocks/shared/author-social-links.php';
+
 if (!function_exists('modfarm_render_tax_description_block')) {
   function modfarm_render_tax_description_block($attributes = [], $content = '', $block = null) {
 
@@ -24,6 +26,12 @@ if (!function_exists('modfarm_render_tax_description_block')) {
       'linkToArchive'   => false,
       'showDescription' => true,
       'showSeriesGenreProfile' => true,
+      'showSocialLinks' => false,
+      'socialIconSize' => 28,
+      'socialGap' => 10,
+      'socialColorMode' => 'native',
+      'socialMonotoneColor' => '',
+      'socialOpenInNewTab' => true,
       'hideIfEmpty'     => false,
       'accentColor'     => '',
       'textColor'       => '',
@@ -32,6 +40,11 @@ if (!function_exists('modfarm_render_tax_description_block')) {
     $layout      = in_array($a['layout'], ['auto','vertical','horizontal'], true) ? $a['layout'] : 'auto';
     $image_shape = in_array($a['imageShape'], ['circle','square','rounded'], true) ? $a['imageShape'] : 'circle';
     $img_size    = max(80, min(600, (int)$a['imgSize']));
+    $social_icon_size = max(12, min(128, (int)$a['socialIconSize']));
+    $social_gap = max(0, min(64, (int)$a['socialGap']));
+    $social_color_mode = in_array($a['socialColorMode'], ['native','monotone'], true) ? $a['socialColorMode'] : 'native';
+    $social_monotone_color = trim((string) $a['socialMonotoneColor']);
+    $social_open_new_tab = !empty($a['socialOpenInNewTab']);
 
     // --- CSS vars (scoped to this block) ---
     $style_vars = ['--mf-taxdesc-img-size:' . $img_size . 'px'];
@@ -111,6 +124,21 @@ if (!function_exists('modfarm_render_tax_description_block')) {
 
     $img_html = $resolve_img($term);
     $desc     = $a['showDescription'] ? term_description($term_id, $taxonomy) : '';
+    $socials_html = '';
+    $author_taxonomies = function_exists('modfarm_author_taxonomies')
+      ? modfarm_author_taxonomies()
+      : ['book-author', 'book-authors'];
+    if (!empty($a['showSocialLinks']) && in_array($taxonomy, $author_taxonomies, true)) {
+      $socials_html = modfarm_render_author_social_links($term, [
+        'align' => 'left',
+        'iconSize' => $social_icon_size,
+        'gap' => $social_gap,
+        'colorMode' => $social_color_mode,
+        'monotoneColor' => $social_monotone_color,
+        'openInNewTab' => $social_open_new_tab,
+        'hideIfEmpty' => true,
+      ]);
+    }
     $genre_profile = [];
     if (
       'book-series' === $taxonomy
@@ -124,7 +152,8 @@ if (!function_exists('modfarm_render_tax_description_block')) {
     if ($a['hideIfEmpty']) {
       $has_img  = !empty($img_html);
       $has_desc = !empty(trim(wp_strip_all_tags($desc)));
-      if (!$has_img && !$has_desc) return '';
+      $has_socials = !empty($socials_html);
+      if (!$has_img && !$has_desc && !$has_socials) return '';
     }
 
     // --- Layout classes ---
@@ -168,6 +197,10 @@ if (!function_exists('modfarm_render_tax_description_block')) {
           <div class="mf-taxdesc__content">
             <?php if (!empty($desc)): ?>
               <div class="mf-taxdesc__description"><?php echo wp_kses_post($desc); ?></div>
+            <?php endif; ?>
+
+            <?php if (!empty($socials_html)): ?>
+              <div class="mf-taxdesc__socials"><?php echo $socials_html; ?></div>
             <?php endif; ?>
 
             <?php if (!empty($genre_profile) && !empty($genre_profile['primary_genre'])): ?>

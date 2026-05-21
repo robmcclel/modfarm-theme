@@ -12,6 +12,12 @@
     "imageShape":      { "type": "string",  "default": "circle" },
     "imgSize":         { "type": "number",  "default": 240 },
     "showSeriesGenreProfile": { "type": "boolean", "default": true },
+    "showSocialLinks": { "type": "boolean", "default": false },
+    "socialIconSize": { "type": "number", "default": 28 },
+    "socialGap": { "type": "number", "default": 10 },
+    "socialColorMode": { "type": "string", "default": "native" },
+    "socialMonotoneColor": { "type": "string", "default": "" },
+    "socialOpenInNewTab": { "type": "boolean", "default": true },
     "textColor":       { "type": "string",  "default": "" }
   },
   "editorScript": "modfarm-tax-description-editor",

@@ -64,6 +64,68 @@
   margin-bottom: 0;
 }
 
+.mf-taxdesc__socials {
+  margin-top: 1rem;
+}
+
+.mf-taxdesc__socials .mfas-socials {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mfas-gap, 10px);
+  line-height: 1;
+}
+
+.mf-taxdesc__socials .mfas-icon {
+  display: inline-flex;
+  width: var(--mfas-icon-size, 28px);
+  height: var(--mfas-icon-size, 28px);
+  align-items: center;
+  justify-content: center;
+  color: var(--mfas-color, currentColor);
+  text-decoration: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.mf-taxdesc__socials .mfas-socials--native .mfas-icon {
+  color: var(--mfas-platform-color, currentColor);
+}
+
+.mf-taxdesc__socials .mfas-icon:hover,
+.mf-taxdesc__socials .mfas-icon:focus-visible {
+  opacity: 0.82;
+  transform: translateY(-1px);
+}
+
+.mf-taxdesc__socials .mfas-icon:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.mf-taxdesc__socials .mfas-icon__svg,
+.mf-taxdesc__socials .mfas-icon__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mf-taxdesc__socials .mfas-icon__svg {
+  fill: currentColor;
+}
+
+.mf-taxdesc__socials .mfas-icon__svg--instagram {
+  fill: none;
+}
+
+.mf-taxdesc__socials .mfas-icon__svg--instagram circle:last-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.mf-taxdesc__socials .mfas-icon__img {
+  object-fit: contain;
+}
+
 .mf-taxdesc__genre-profile {
   display: flex;
   flex-wrap: wrap;
