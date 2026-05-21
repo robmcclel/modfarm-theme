@@ -141,7 +141,6 @@
 }
 
 .mf-taxdesc__genre-primary,
-.mf-taxdesc__genre-confidence,
 .mf-taxdesc__genre-hybrid {
   display: inline-flex;
   align-items: center;
@@ -155,7 +154,6 @@
   font-weight: 700;
 }
 
-.mf-taxdesc__genre-confidence,
 .mf-taxdesc__genre-hybrid {
   color: #50575e;
 }

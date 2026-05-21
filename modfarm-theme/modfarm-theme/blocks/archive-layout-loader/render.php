@@ -19,13 +19,26 @@ function modfarm_render_archive_layout_loader_block($attributes) {
         : ($options['archive_footer_pattern'] ?? null);
 
     if (is_tax()) {
-        $taxonomy = get_queried_object()->taxonomy;
-        $tax_key = 'archive_body_pattern_' . $taxonomy;
-        if (!empty($options[$tax_key])) {
+        $queried = get_queried_object();
+        $taxonomy = ($queried && !empty($queried->taxonomy)) ? (string) $queried->taxonomy : '';
+        $tax_setting_suffixes = [
+            'book-author' => 'book_authors',
+            'book-authors' => 'book_authors',
+        ];
+        $tax_setting_suffix = $tax_setting_suffixes[$taxonomy] ?? str_replace('-', '_', $taxonomy);
+        $tax_key = $taxonomy ? 'archive_body_pattern_' . $tax_setting_suffix : '';
+        if ($tax_key !== '' && !empty($options[$tax_key])) {
             $body = function_exists('modfarm_ppb_resolve_pattern_slug')
                 ? modfarm_ppb_resolve_pattern_slug($tax_key, $options[$tax_key], $options)
                 : $options[$tax_key];
             error_log("[ModFarm] ✅ Taxonomy-specific override found for $taxonomy");
+        } elseif ($taxonomy !== '') {
+            $generic_key = 'archive_body_pattern__' . $taxonomy;
+            if (!empty($options[$generic_key])) {
+                $body = function_exists('modfarm_ppb_resolve_pattern_slug')
+                    ? modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $options[$generic_key], $options)
+                    : $options[$generic_key];
+            }
         }
     }
 

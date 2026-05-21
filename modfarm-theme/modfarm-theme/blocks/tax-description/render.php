@@ -207,9 +207,6 @@ if (!function_exists('modfarm_render_tax_description_block')) {
               <div class="mf-taxdesc__genre-profile">
                 <span class="mf-taxdesc__genre-label"><?php esc_html_e('Series genre', 'modfarm'); ?></span>
                 <span class="mf-taxdesc__genre-primary"><?php echo esc_html((string)$genre_profile['primary_genre']); ?></span>
-                <?php if (isset($genre_profile['confidence'])): ?>
-                  <span class="mf-taxdesc__genre-confidence"><?php echo esc_html(number_format_i18n((float)$genre_profile['confidence'] * 100, 0)); ?>%</span>
-                <?php endif; ?>
                 <?php if (!empty($genre_profile['is_hybrid'])): ?>
                   <span class="mf-taxdesc__genre-hybrid"><?php esc_html_e('Hybrid', 'modfarm'); ?></span>
                 <?php endif; ?>

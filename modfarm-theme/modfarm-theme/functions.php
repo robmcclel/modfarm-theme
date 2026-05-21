@@ -1080,9 +1080,10 @@ function modfarm_get_archive_patterns() {
     $default_footer = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
 
     $taxonomy_overrides = [
-        'book_series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
-        'book_genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
-        'book_authors' => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
+        'book-series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
+        'book-genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
+        'book-author'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
+        'book-authors' => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
     ];
 
     /**
@@ -1097,6 +1098,7 @@ function modfarm_get_archive_patterns() {
             $resolved = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $v, $opts);
             if ($resolved !== '') {
                 $taxonomy_overrides[$tax] = $resolved;
+                $taxonomy_overrides[str_replace('_', '-', $tax)] = $resolved;
             }
         }
     }
@@ -1286,9 +1288,10 @@ function modfarm_render_archive_page() {
 
     // Known taxonomy overrides (current UI fields)
     $known_overrides = [
-        'book_series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
-        'book_genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
-        'book_authors' => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
+        'book-series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
+        'book-genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
+        'book-author'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
+        'book-authors' => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
     ];
 
     // Generic override support: archive_body_pattern__{taxonomy}
@@ -1300,6 +1303,7 @@ function modfarm_render_archive_page() {
             $resolved = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $v, $opts);
             if ($resolved !== '') {
                 $generic_overrides[$tax] = $resolved;
+                $generic_overrides[str_replace('_', '-', $tax)] = $resolved;
             }
         }
     }
