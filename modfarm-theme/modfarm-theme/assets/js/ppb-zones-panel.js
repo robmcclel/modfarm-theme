@@ -3,7 +3,7 @@
 
   const { registerPlugin } = wp.plugins;
   const { PluginDocumentSettingPanel } = wp.editPost || {};
-  const { createElement: el, Fragment, useState } = wp.element;
+  const { createElement: el, Fragment, useEffect, useRef, useState } = wp.element;
   const { PanelRow, Notice, Button, SelectControl } = wp.components;
   const { select, dispatch } = wp.data;
   const { parse, serialize } = wp.blocks;
@@ -11,6 +11,117 @@
   if (!registerPlugin || !PluginDocumentSettingPanel || !select || !dispatch || !parse || !serialize) return;
 
   const initialData = config.summary || {};
+  const initialization = config.initialization || {};
+
+  function initializeEmptyEditorZones() {
+    if (!initialization.enabled || !initialization.markup) {
+      return;
+    }
+
+    let attempts = 0;
+    let initialized = false;
+    let unsubscribe = null;
+    let timer = null;
+
+    function cleanup() {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+        unsubscribe = null;
+      }
+
+      if (timer) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+    }
+
+    function scheduleRetry() {
+      if (initialized || attempts > 80 || timer) {
+        return;
+      }
+
+      timer = window.setTimeout(function () {
+        timer = null;
+        tryInitialize();
+      }, 75);
+    }
+
+    function isEmptyStarterBlock(block) {
+      if (!block || typeof block !== 'object') {
+        return false;
+      }
+
+      const hasInnerBlocks = Array.isArray(block.innerBlocks) && block.innerBlocks.length > 0;
+      if (hasInnerBlocks) {
+        return false;
+      }
+
+      if (block.name === 'core/paragraph') {
+        const content = block.attributes && typeof block.attributes.content === 'string'
+          ? block.attributes.content
+          : '';
+        return content.trim() === '';
+      }
+
+      return false;
+    }
+
+    function isEmptyEditorBlockList(blocks) {
+      if (!Array.isArray(blocks)) {
+        return false;
+      }
+
+      if (blocks.length === 0) {
+        return true;
+      }
+
+      return blocks.length === 1 && isEmptyStarterBlock(blocks[0]);
+    }
+
+    const tryInitialize = function () {
+      if (initialized) {
+        cleanup();
+        return;
+      }
+
+      attempts += 1;
+      const blockEditor = select('core/block-editor');
+      const blocks = blockEditor && typeof blockEditor.getBlocks === 'function' ? blockEditor.getBlocks() : null;
+      const editor = select('core/editor');
+      const isSaving = editor && typeof editor.isSavingPost === 'function' ? editor.isSavingPost() : false;
+
+      const editorReadyForBlankInit = Array.isArray(blocks) && (blocks.length > 0 || attempts > 10);
+
+      if (editorReadyForBlankInit && isEmptyEditorBlockList(blocks) && !isSaving) {
+        const defaultBlocks = parse(initialization.markup);
+        if (defaultBlocks.length) {
+          dispatch('core/block-editor').resetBlocks(defaultBlocks);
+          if (editor && typeof dispatch('core/editor').editPost === 'function') {
+            dispatch('core/editor').editPost({ content: initialization.markup });
+          }
+          initialized = true;
+          cleanup();
+        }
+        return;
+      }
+
+      if (Array.isArray(blocks) && blocks.length > 0 && !isEmptyEditorBlockList(blocks)) {
+        initialized = true;
+        cleanup();
+        return;
+      }
+
+      if (attempts > 80) {
+        cleanup();
+        return;
+      }
+
+      scheduleRetry();
+    };
+
+    unsubscribe = wp.data.subscribe(tryInitialize);
+    tryInitialize();
+  }
 
   function zoneLabel(slot) {
     return `${slot.charAt(0).toUpperCase()}${slot.slice(1)} Zone`;
@@ -410,6 +521,7 @@
   function Panel() {
     const [data, setData] = useState(initialData);
     const [convertOpen, setConvertOpen] = useState(false);
+    const didInitialize = useRef(false);
     const [selections, setSelections] = useState({
       header: { open: false, value: '' },
       body: { open: false, value: '' },
@@ -428,14 +540,24 @@
     };
     const convertAction = (data.actions && data.actions.convert) || {};
 
+    useEffect(function () {
+      if (didInitialize.current) {
+        return;
+      }
+
+      didInitialize.current = true;
+      initializeEmptyEditorZones();
+    }, []);
+
     function runSafeConvert() {
       const blockTree = editors.selectBlocks().getBlocks();
       const currentMarkup = Array.isArray(blockTree) && blockTree.length ? serialize(blockTree) : '';
       const headerMarkup = buildZoneMarkup(
         'header',
-        '',
+        (convertAction.header && convertAction.header.content) || '',
         {
           origin: 'legacy-migrated',
+          pattern: (convertAction.header && convertAction.header.pattern) || '',
           locked: false,
           version: 1
         }
@@ -451,9 +573,10 @@
       );
       const footerMarkup = buildZoneMarkup(
         'footer',
-        '',
+        (convertAction.footer && convertAction.footer.content) || '',
         {
           origin: 'legacy-migrated',
+          pattern: (convertAction.footer && convertAction.footer.pattern) || '',
           locked: false,
           version: 1
         }
@@ -469,11 +592,11 @@
         zones: {
           header: {
             present: true,
-            pattern: '',
+            pattern: (convertAction.header && convertAction.header.pattern) || '',
             locked: false,
             contains_content_slot: false,
             local_override_active: false,
-            default_pattern: ''
+            default_pattern: (convertAction.header && convertAction.header.pattern) || ''
           },
           body: {
             present: true,
@@ -485,11 +608,11 @@
           },
           footer: {
             present: true,
-            pattern: '',
+            pattern: (convertAction.footer && convertAction.footer.pattern) || '',
             locked: false,
             contains_content_slot: false,
             local_override_active: false,
-            default_pattern: ''
+            default_pattern: (convertAction.footer && convertAction.footer.pattern) || ''
           },
           data: {
             present: false,

@@ -102,6 +102,11 @@ add_action('enqueue_block_editor_assets', function () {
         $post_id = absint($_GET['post']);
     } elseif (!empty($_POST['post_ID'])) {
         $post_id = absint($_POST['post_ID']);
+    } else {
+        global $post;
+        if ($post instanceof WP_Post) {
+            $post_id = (int) $post->ID;
+        }
     }
 
     $panel_config = [
@@ -126,10 +131,15 @@ add_action('enqueue_block_editor_assets', function () {
         $panel_config = modfarm_get_local_ppb_manager_config_for_post($post_id, (string) $screen->post_type);
     }
 
+    $initialization_enabled = (($GLOBALS['pagenow'] ?? '') === 'post-new.php') && in_array((string) $screen->post_type, ['page', 'book', 'offer', 'mf_offer'], true);
+    $initialization_markup = function_exists('modfarm_ppb_get_default_zoned_content_markup')
+        ? modfarm_ppb_get_default_zoned_content_markup((string) $screen->post_type)
+        : '';
+
     wp_register_script(
         'modfarm-ppb-zones-panel',
         get_template_directory_uri() . '/assets/js/ppb-zones-panel.js',
-        ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data', 'wp-blocks'],
+        ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data', 'wp-blocks', 'wp-dom-ready'],
         filemtime(get_template_directory() . '/assets/js/ppb-zones-panel.js'),
         true
     );
@@ -148,6 +158,12 @@ add_action('enqueue_block_editor_assets', function () {
         'window.ModFarmPPBZonesPanel = ' . wp_json_encode([
             'enabled' => true,
             'summary' => $panel_config,
+            'initialization' => [
+                'enabled' => $initialization_enabled,
+                'postId' => $post_id,
+                'postType' => (string) $screen->post_type,
+                'markup' => $initialization_markup,
+            ],
         ]) . ';',
         'before'
     );
@@ -1129,12 +1145,65 @@ function modfarm_ppb_build_zone_markup(string $slot, string $content, array $met
     return "<!-- wp:modfarm/zone {$json} -->\n{$inner}\n<!-- /wp:modfarm/zone -->";
 }
 
+function modfarm_ppb_get_default_zoned_content_markup(string $post_type, ?array $options = null): string {
+    $post_type = sanitize_key($post_type);
+    $options = is_array($options) ? $options : get_option('modfarm_theme_settings', []);
+
+    $header_field = modfarm_ppb_get_field_id_for_post_zone($post_type, 'header');
+    $body_field   = modfarm_ppb_get_field_id_for_post_zone($post_type, 'body');
+    $footer_field = modfarm_ppb_get_field_id_for_post_zone($post_type, 'footer');
+
+    if ($header_field === '' || $body_field === '' || $footer_field === '') {
+        return '';
+    }
+
+    $header_slug = modfarm_ppb_resolve_pattern_slug($header_field, $options[$header_field] ?? null, $options);
+    $body_slug   = modfarm_ppb_resolve_pattern_slug($body_field, $options[$body_field] ?? null, $options);
+    $footer_slug = modfarm_ppb_resolve_pattern_slug($footer_field, $options[$footer_field] ?? null, $options);
+
+    $get = static function($slug) {
+        if (!$slug) return '';
+
+        if (function_exists('modfarm_ppb_get_pattern_content_by_slug')) {
+            return modfarm_ppb_get_pattern_content_by_slug((string) $slug);
+        }
+
+        if (!class_exists('WP_Block_Patterns_Registry')) return '';
+
+        $registry = WP_Block_Patterns_Registry::get_instance();
+        $p = $registry->get_registered($slug);
+        return (is_array($p) && !empty($p['content'])) ? (string) $p['content'] : '';
+    };
+
+    $header = $get($header_slug);
+    $body   = $get($body_slug);
+    $footer = $get($footer_slug);
+
+    if ($body === '') {
+        return '';
+    }
+
+    return implode("\n\n", [
+        modfarm_ppb_build_zone_markup('header', $header, [
+            'pattern' => $header_slug,
+        ]),
+        modfarm_ppb_build_zone_markup('body', $body, [
+            'pattern' => $body_slug,
+        ]),
+        modfarm_ppb_build_zone_markup('footer', $footer, [
+            'pattern' => $footer_slug,
+        ]),
+    ]);
+}
+
 
 add_action('wp_insert_post', 'modfarm_assemble_post_layout_on_insert', 10, 3);
 
 function modfarm_assemble_post_layout_on_insert($post_id, $post, $update) {
-    // Never touch updates, revisions, or autosaves
-    if ($update || wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) return;
+    // Never touch revisions or autosaves. Block-editor creates can arrive as an
+    // auto-draft insert followed by the real first save as an update, so empty
+    // updates still need a chance to receive the default PPB zones.
+    if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) return;
 
     // ✅ Never assemble during imports
     if (defined('WP_IMPORTING') && WP_IMPORTING) return;
@@ -1149,64 +1218,8 @@ function modfarm_assemble_post_layout_on_insert($post_id, $post, $update) {
     $existing = trim((string) get_post_field('post_content', $post_id));
     if ($existing !== '') return;
 
-    $type     = $post->post_type;
-    $options  = get_option('modfarm_theme_settings', []);
-    $registry = WP_Block_Patterns_Registry::get_instance();
-
-    switch ($type) {
-        case 'page':
-            $header_slug = modfarm_ppb_resolve_pattern_slug('page_header_pattern', $options['page_header_pattern'] ?? null, $options);
-            $body_slug   = modfarm_ppb_resolve_pattern_slug('page_body_pattern', $options['page_body_pattern'] ?? null, $options);
-            $footer_slug = modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $options['page_footer_pattern'] ?? null, $options);
-            break;
-
-        case 'post':
-            $header_slug = modfarm_ppb_resolve_pattern_slug('post_header_pattern', $options['post_header_pattern'] ?? null, $options);
-            $body_slug   = modfarm_ppb_resolve_pattern_slug('post_body_pattern', $options['post_body_pattern'] ?? null, $options);
-            $footer_slug = modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $options['post_footer_pattern'] ?? null, $options);
-            break;
-
-        case 'book':
-        case 'modfarm_book':
-            $header_slug = modfarm_ppb_resolve_pattern_slug('book_header_pattern', $options['book_header_pattern'] ?? null, $options);
-            $body_slug   = modfarm_ppb_resolve_pattern_slug('book_body_pattern', $options['book_body_pattern'] ?? null, $options);
-            $footer_slug = modfarm_ppb_resolve_pattern_slug('book_footer_pattern', $options['book_footer_pattern'] ?? null, $options);
-            break;
-
-        case 'offer':
-        case 'mf_offer':
-            $header_slug = modfarm_ppb_resolve_pattern_slug('offer_header_pattern', $options['offer_header_pattern'] ?? null, $options);
-            $body_slug   = modfarm_ppb_resolve_pattern_slug('offer_body_pattern', $options['offer_body_pattern'] ?? null, $options);
-            $footer_slug = modfarm_ppb_resolve_pattern_slug('offer_footer_pattern', $options['offer_footer_pattern'] ?? null, $options);
-            break;
-
-        default:
-            return;
-    }
-
-    $get = static function($slug) use ($registry) {
-        if (!$slug) return '';
-        $p = $registry->get_registered($slug);
-        return (is_array($p) && !empty($p['content'])) ? (string) $p['content'] : '';
-    };
-
-    $header = $get($header_slug);
-    $body   = $get($body_slug);
-    $footer = $get($footer_slug);
-
-    if ($body === '') return;
-
-    $assembled = implode("\n\n", [
-        modfarm_ppb_build_zone_markup('header', $header, [
-            'pattern' => $header_slug,
-        ]),
-        modfarm_ppb_build_zone_markup('body', $body, [
-            'pattern' => $body_slug,
-        ]),
-        modfarm_ppb_build_zone_markup('footer', $footer, [
-            'pattern' => $footer_slug,
-        ]),
-    ]);
+    $assembled = modfarm_ppb_get_default_zoned_content_markup((string) $post->post_type);
+    if ($assembled === '') return;
 
     remove_action('wp_insert_post', 'modfarm_assemble_post_layout_on_insert', 10);
     wp_update_post([
