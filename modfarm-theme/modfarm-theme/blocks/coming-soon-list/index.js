@@ -17,6 +17,16 @@
   const { useSelect } = wp.data;
   const ServerSideRender = wp.serverSideRender;
 
+  const BOOK_BUTTON_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.BUTTON_OPTIONS) || [
+    { label: 'See The Book (Permalink)', value: 'permalink' }
+  ];
+  const BOOK_COVER_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.COVER_OPTIONS) || [
+    { label: 'eBook Cover (BMS)', value: 'cover_ebook' },
+    { label: 'Featured Image (Book Page)', value: 'featured_image' }
+  ];
+  const normalizeLinkOption = (value) => ({ bookpage: 'permalink', kindle: 'kindle_url', amazon: 'kindle_url', paperback: 'amazon_paper', hardcover: 'amazon_hard', audible: 'audible_url', bn: 'nook' }[value] || value || 'permalink');
+  const normalizeCoverOption = (value) => ({ featured: 'featured_image', hero_image: 'featured_image', cover_image_flat: 'cover_ebook' }[value] || value || 'cover_ebook');
+
   const EFFECT_OPTIONS = [
     { label: __('Flat', 'modfarm'), value: 'flat' },
     { label: __('Shadow – Small', 'modfarm'), value: 'shadow-sm' },
@@ -265,33 +275,15 @@
             }),
             el(SelectControl, {
               label: __('Image Type', 'modfarm'),
-              value: attributes['image-type'],
-              options: [
-                { label: 'Featured Image (Default)', value: 'featured' },
-                { label: 'eBook Cover', value: 'cover_ebook' },
-                { label: 'Audiobook Cover (Square)', value: 'cover_image_audio' },
-                { label: 'Paperback Cover', value: 'cover_paperback' },
-                { label: 'Hardcover Cover', value: 'cover_hardcover' },
-                { label: 'Hero Image', value: 'hero_image' },
-                { label: 'Flat Cover Image', value: 'cover_image_flat' },
-                { label: '3D Mockup Cover', value: 'cover_image_3d' },
-                { label: 'Composite Marketing Image', value: 'cover_image_composite' }
-              ],
-              onChange: (val) => setAttributes({ 'image-type': val })
+              value: normalizeCoverOption(attributes['image-type']),
+              options: BOOK_COVER_OPTIONS,
+              onChange: (val) => setAttributes({ 'image-type': normalizeCoverOption(val) })
             }),
             el(SelectControl, {
               label: __('Button / Cover Link Destination', 'modfarm'),
-              value: attributes['button-link'],
-              options: [
-                { label: 'Book Page (Default)', value: 'bookpage' },
-                { label: 'Kindle', value: 'kindle_url' },
-                { label: 'Amazon Paperback', value: 'amazon_paper' },
-                { label: 'Amazon Hardcover', value: 'amazon_hard' },
-                { label: 'Amazon Audiobook', value: 'amazon_audio' },
-                { label: 'Audible', value: 'audible_url' },
-                { label: 'Buy Direct (General)', value: 'buydirect' }
-              ],
-              onChange: (val) => setAttributes({ 'button-link': val })
+              value: normalizeLinkOption(attributes['button-link']),
+              options: BOOK_BUTTON_OPTIONS,
+              onChange: (val) => setAttributes({ 'button-link': normalizeLinkOption(val) })
             })
           ),
 

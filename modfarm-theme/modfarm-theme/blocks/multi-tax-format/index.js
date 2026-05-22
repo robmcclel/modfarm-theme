@@ -19,6 +19,16 @@
   const { useSelect } = wp.data;
   const ServerSideRender = wp.serverSideRender;
 
+  const BOOK_BUTTON_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.BUTTON_OPTIONS) || [
+    { label: 'See The Book (Permalink)', value: 'permalink' }
+  ];
+  const BOOK_COVER_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.COVER_OPTIONS) || [
+    { label: 'eBook Cover (BMS)', value: 'cover_ebook' },
+    { label: 'Featured Image (Book Page)', value: 'featured_image' }
+  ];
+  const normalizeLinkOption = (value) => ({ bookpage: 'permalink', kindle: 'kindle_url', amazon: 'kindle_url', paperback: 'amazon_paper', hardcover: 'amazon_hard', audible: 'audible_url', bn: 'nook' }[value] || value || 'permalink');
+  const normalizeCoverOption = (value) => ({ featured: 'featured_image', hero_image: 'featured_image', cover_image_flat: 'cover_ebook' }[value] || value || 'cover_ebook');
+
   // Canonical option lists
   const EFFECT_OPTIONS = [
     { label: __('Flat', 'modfarm'),        value: 'flat' },
@@ -245,68 +255,15 @@
             }),
             el(SelectControl, {
               label: __('Image Type', 'modfarm'),
-              value: attributes['image-type'],
-              options: [
-                { label: 'Featured Image (Default)',    value: 'featured' },
-                { label: 'eBook Cover',                 value: 'cover_ebook' },
-                { label: 'Audiobook Cover (Square)',    value: 'cover_image_audio' },
-                { label: 'Paperback Cover',             value: 'cover_paperback' },
-                { label: 'Hardcover Cover',             value: 'cover_hardcover' },
-                { label: 'Hero Image',                  value: 'hero_image' },
-                { label: 'Flat Cover Image',            value: 'cover_image_flat' },
-                { label: '3D Mockup Cover',             value: 'cover_image_3d' },
-                { label: 'Composite Marketing Image',   value: 'cover_image_composite' }
-              ],
-              onChange: (val) => setAttributes({ 'image-type': val })
+              value: normalizeCoverOption(attributes['image-type']),
+              options: BOOK_COVER_OPTIONS,
+              onChange: (val) => setAttributes({ 'image-type': normalizeCoverOption(val) })
             }),
             el(SelectControl, {
               label: __('Button / Cover Link Destination', 'modfarm'),
-              value: attributes['button-link'],
-              options: [
-                { label: 'Book Page (Default)', value: 'bookpage' },
-                { label: 'Kindle', value: 'kindle_url' },
-                { label: 'Amazon Paperback', value: 'amazon_paper' },
-                { label: 'Amazon Hardcover', value: 'amazon_hard' },
-                { label: 'Amazon Audiobook', value: 'amazon_audio' },
-                { label: 'Audible', value: 'audible_url' },
-                { label: 'Nook', value: 'nook' },
-                { label: 'B&N Paperback', value: 'barnes_paper' },
-                { label: 'B&N Hardcover', value: 'barnes_hard' },
-                { label: 'B&N Audiobook', value: 'barnes_audio' },
-                { label: 'Apple Books', value: 'ibooks' },
-                { label: 'iTunes', value: 'itunes' },
-                { label: 'Kobo', value: 'kobo' },
-                { label: 'Kobo Audiobook', value: 'kobo_audio' },
-                { label: 'Google Play eBook', value: 'googleplay' },
-                { label: 'Google Play Audiobook', value: 'googleplay_audio' },
-                { label: 'Bookshop eBook', value: 'bookshop_ebook' },
-                { label: 'Bookshop Paperback', value: 'bookshop_paper' },
-                { label: 'Bookshop Hardcover', value: 'bookshop_hard' },
-                { label: 'BAM Paperback', value: 'bam_paper' },
-                { label: 'BAM Hardcover', value: 'bam_hard' },
-                { label: 'Indigo', value: 'indigo' },
-                { label: 'Waterstones', value: 'waterstones' },
-                { label: 'The Broken Binding', value: 'brokenbinding' },
-                { label: 'Libro.fm', value: 'librofm' },
-                { label: 'Downpour', value: 'downpour' },
-                { label: 'Target', value: 'target' },
-                { label: 'Walmart', value: 'walmart' },
-                { label: 'Audiobooks.com', value: 'audiobooks_com' },
-                { label: 'Spotify (Audiobooks)', value: 'spotify' },
-                { label: 'Buy Direct (General)', value: 'buydirect' },
-                { label: 'Buy Direct – eBook', value: 'ebook_buy_url' },
-                { label: 'Buy Direct – Audiobook', value: 'audio_buy_url' },
-                { label: 'Buy Direct – Signed Copy', value: 'signed_buy_url' },
-                { label: 'Buy Direct – Paperback', value: 'paper_buy_url' },
-                { label: 'Buy Direct – Hardcover', value: 'hard_buy_url' },
-                { label: 'Custom Link 1', value: 'custom1' },
-                { label: 'Custom Link 2', value: 'custom2' },
-                { label: 'Custom Link 3', value: 'custom3' },
-                { label: 'Custom Link 4', value: 'custom4' },
-                { label: 'Custom Link 5', value: 'custom5' },
-                { label: 'Custom Link 6', value: 'custom6' }
-              ],
-              onChange: (val) => setAttributes({ 'button-link': val })
+              value: normalizeLinkOption(attributes['button-link']),
+              options: BOOK_BUTTON_OPTIONS,
+              onChange: (val) => setAttributes({ 'button-link': normalizeLinkOption(val) })
             })
           ),
 

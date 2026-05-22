@@ -5,6 +5,17 @@
  */
 
 add_action('init', function () {
+    $book_options_script = get_template_directory() . '/assets/js/book-options.js';
+    if (file_exists($book_options_script)) {
+        wp_register_script(
+            'modfarm-book-options',
+            get_template_directory_uri() . '/assets/js/book-options.js',
+            [],
+            filemtime($book_options_script),
+            true
+        );
+    }
+
     $blocks = [
         // Book Page blocks
         'book-cover-art'             => 'modfarm_render_book_cover_art_block',
@@ -71,10 +82,15 @@ add_action('init', function () {
 
         // Register editor script if index.js exists
         if (file_exists($editor_script)) {
+            $script_deps = [ 'wp-blocks', 'wp-element', 'wp-components', 'wp-i18n', 'wp-block-editor', 'wp-data', 'wp-api-fetch', 'wp-server-side-render' ];
+            if (wp_script_is('modfarm-book-options', 'registered')) {
+                $script_deps[] = 'modfarm-book-options';
+            }
+
             wp_register_script(
                 $script_handle,
                 get_template_directory_uri() . "/blocks/{$slug}/index.js",
-                [ 'wp-blocks', 'wp-element', 'wp-components', 'wp-i18n', 'wp-block-editor', 'wp-data', 'wp-api-fetch', 'wp-server-side-render' ],
+                $script_deps,
                 filemtime($editor_script),
                 true
             );

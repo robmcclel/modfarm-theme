@@ -29,7 +29,7 @@
   const ServerSideRender = wp.serverSideRender;
   const apiFetch = wp.apiFetch;
 
-  const BUTTON_OPTIONS = [
+  const BUTTON_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.BUTTON_OPTIONS) || [
     { label: '— None —', value: '__none__' },
     { label: 'See The Book (Permalink)', value: 'permalink' },
     { label: 'Series Permalink (Series page)', value: 'series_permalink' },
@@ -85,7 +85,7 @@
 
   ];
 
-  const COVER_OPTIONS = [
+  const COVER_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.COVER_OPTIONS) || [
     { label: 'eBook Cover (BMS)', value: 'cover_ebook' },
     { label: 'Audiobook Cover (BMS)', value: 'cover_image_audio' },
     { label: 'Paperback Cover', value: 'cover_paperback' },

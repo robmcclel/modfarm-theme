@@ -1,5 +1,6 @@
 <?php
 defined('ABSPATH') || exit;
+require_once get_template_directory() . '/blocks/shared/book-options.php';
 
 if (!function_exists('mfbb_buttons')) {
   function mfbb_buttons($book_id, $buttons, $opt = []) {
@@ -41,25 +42,9 @@ if (!function_exists('mfbb_buttons')) {
       if ($variant === 'outline') $variant = 'secondary';
       $is_primary = ($variant === 'primary');
 
-      $url = '';
-      if ($src === 'permalink') {
-        $url = $permalink;
-        if ($label === '') $label = 'See The Book';
-      } elseif ($src === 'series_permalink') {
-        $url = $series_url;
-        if ($label === '') $label = 'See The Full Series';
-      } else {
-        $url = (string)get_post_meta($book_id, $src, true);
-
-        if (!$url && $src === 'kindle_url') {
-          $url = (string)get_post_meta($book_id, 'amazon_paper', true);
-          if (!$url) $url = (string)get_post_meta($book_id, 'amazon_hard', true);
-          if (!$url) $url = $permalink;
-        }
-
-        if ($label === '') {
-          $label = ucwords(str_replace(['_', 'url'], [' ', ''], $src));
-        }
+      $url = modfarm_book_link_url((int) $book_id, $src, (string) $permalink);
+      if ($label === '') {
+        $label = modfarm_book_link_default_label($src);
       }
 
       if (!$url) { $i++; continue; }
@@ -69,7 +54,7 @@ if (!function_exists('mfbb_buttons')) {
       $href = $destination;
       $smart_wrapped = 0;
       $smartlink_eligible_url = !function_exists('mfc_smartlinks_url_is_eligible') || mfc_smartlinks_url_is_eligible($destination);
-      if ($destination !== '' && $src !== 'permalink' && $src !== 'series_permalink' && $smartlink_eligible_url && function_exists('mfc_smartlinks_wrap_url')) {
+      if ($destination !== '' && !modfarm_book_link_is_internal($src) && $smartlink_eligible_url && function_exists('mfc_smartlinks_wrap_url')) {
         $maybe = mfc_smartlinks_wrap_url($destination, $src);
         if (is_string($maybe) && $maybe !== '' && $maybe !== $destination) {
           $href = $maybe;
@@ -114,12 +99,12 @@ if (!function_exists('mfbb_buttons')) {
         'data-mf-destination' => $destination,
         'data-mf-cta'         => $is_primary ? 'primary' : 'secondary',
         'data-mf-source'      => $src,
-        'data-mf-link-type'   => ($src === 'permalink' || $src === 'series_permalink') ? 'permalink' : ($smart_wrapped ? 'genius_quickbuild' : 'direct'),
+        'data-mf-link-type'   => modfarm_book_link_is_internal($src) ? 'permalink' : ($smart_wrapped ? 'genius_quickbuild' : 'direct'),
       ];
 
       if (!empty($style_bits)) $attrs['style'] = implode(';', $style_bits) . ';';
 
-      if ($src !== 'permalink' && $src !== 'series_permalink') {
+      if (!modfarm_book_link_is_internal($src)) {
         $attrs['target'] = '_blank';
         $attrs['rel'] = 'noopener';
       }
@@ -293,27 +278,12 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
     $cover_url = '';
     $cover_source = sanitize_key($a['coverSource'] ?? 'cover_ebook');
     
-    if ($cover_source === 'featured_image') {
-      $thumb_id = get_post_thumbnail_id($book_id);
-      if ($thumb_id) {
-        $cover_url = wp_get_attachment_image_url((int)$thumb_id, 'large') ?: '';
-      }
-    } else {
-      // meta may be URL, attachment ID, or array
-      $cover_url = $val_to_url(get_post_meta($book_id, $cover_source, true));
-    }
+    $cover_url = modfarm_book_cover_url((int) $book_id, $cover_source);
     
     $cover_url = esc_url_raw($cover_url);
 
     // Series permalink (first series term)
-    $series_url = '';
-    foreach (['series', 'book-series'] as $tax) {
-      $terms = get_the_terms($book_id, $tax);
-      if (is_array($terms) && !empty($terms) && !empty($terms[0]->term_id)) {
-        $link = get_term_link($terms[0]);
-        if (!is_wp_error($link)) { $series_url = (string)$link; break; }
-      }
-    }
+    $series_url = modfarm_book_series_permalink((int) $book_id);
 
     // Buttons
     $buttons = [];

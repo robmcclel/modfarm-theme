@@ -4,6 +4,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+require_once get_template_directory() . '/blocks/shared/book-options.php';
 
 // Simple helpers for archive meta/images
 if ( ! function_exists( 'mfs_get_archive_term_meta' ) ) {
@@ -444,24 +445,27 @@ function modfarm_render_archive_book_list_block( $attributes ) {
             $permalink = get_permalink( $book_id );
 
             // Primary button link
-            $button_url = $permalink;
-            $button_is_internal_bookpage = true;
+            $btn_meta_key = modfarm_book_option_normalize_link_source( (string) $btn_link );
+            $button_url   = $show_primary_btn ? modfarm_book_link_url( (int) $book_id, $btn_meta_key, (string) $permalink ) : '';
 
-            if ( $show_primary_btn && $btn_link !== 'bookpage' ) {
-                $candidate = get_post_meta( $book_id, $btn_link, true );
-                if ( ! empty( $candidate ) ) {
-                    $button_url = (string) $candidate;
-                    $button_is_internal_bookpage = false;
-                }
+            if ( $show_primary_btn && $button_url === '' && $btn_meta_key !== '__none__' ) {
+                $btn_meta_key = 'permalink';
+                $button_url   = $permalink;
+            }
+
+            $button_is_internal_bookpage = modfarm_book_link_is_internal( $btn_meta_key );
+            $resolved_target = $btn_target;
+            if ( ! $button_is_internal_bookpage && ( $resolved_target === '' || $resolved_target === '_self' ) ) {
+                $resolved_target = '_blank';
             }
 
             // ✅ SmartLinks: only apply to outbound (non-bookpage) URLs
-            if ( ! $button_is_internal_bookpage && $use_smartlinks && function_exists( 'modfarm_smartlink_url' ) ) {
+            if ( $button_url !== '' && ! $button_is_internal_bookpage && $use_smartlinks && function_exists( 'modfarm_smartlink_url' ) ) {
                 $button_url = modfarm_smartlink_url( $button_url, array(
                     'context'  => 'book_list',
                     'book_id'  => $book_id,
                     'origin'   => 'archive-list',
-                    'meta_key' => $btn_link,
+                    'meta_key' => $btn_meta_key,
                 ) );
             }
 
@@ -473,44 +477,9 @@ function modfarm_render_archive_book_list_block( $attributes ) {
             }
 
             // Image + fallbacks
-            $img_url = '';
-            if ( $image_type === 'featured' || $image_type === '' ) {
-                $img_url = get_the_post_thumbnail_url( $book_id, 'full' ) ?: '';
-            } else {
-                $meta_val = get_post_meta( $book_id, $image_type, true );
-                if ( $meta_val ) {
-                    $img_url = is_numeric( $meta_val )
-                        ? wp_get_attachment_image_url( (int) $meta_val, 'full' )
-                        : esc_url( $meta_val );
-                }
-            }
-            if ( ! $img_url ) {
-                $fallback = get_the_post_thumbnail_url( $book_id, 'full' );
-                if ( $fallback ) {
-                    $img_url = $fallback;
-                }
-            }
-            if ( ! $img_url ) {
-                $fallback_id = get_post_meta( $book_id, 'cover_ebook', true );
-                if ( $fallback_id ) {
-                    $img_url = is_numeric( $fallback_id )
-                        ? wp_get_attachment_image_url( (int) $fallback_id, 'full' )
-                        : esc_url( $fallback_id );
-                }
-            }
-
-            // Aspect based on image-type
-            $aspect = '2 / 3';
-            switch ( $image_type ) {
-                case 'cover_image_audio':    $aspect = '1 / 1';  break;
-                case 'cover_image_audio_3d': $aspect = '1 / 1';  break;
-                case 'cover_image_3d':       $aspect = '4 / 3';  break;
-                case 'cover_ebook_3d':
-                case 'cover_paperback_3d':
-                case 'cover_hardcover_3d':   $aspect = '4 / 3';  break;
-                case 'cover_image_composite':
-                case 'hero_image':           $aspect = '16 / 9'; break;
-            }
+            $image_source = modfarm_book_option_normalize_cover_source( (string) $image_type );
+            $img_url      = modfarm_book_cover_url( (int) $book_id, $image_source );
+            $aspect       = modfarm_book_cover_aspect( $image_source );
 
             // Series
             $series_terms = get_the_terms( $book_id, 'book-series' );
@@ -565,10 +534,10 @@ function modfarm_render_archive_book_list_block( $attributes ) {
 
                 'sample_button_text' => $sample_btn_text,
 
-                'button' => $show_primary_btn ? array(
+                'button' => ( $show_primary_btn && $button_url !== '' ) ? array(
                     'text'       => $btn_text,
                     'url'        => $button_url,
-                    'target'     => $btn_target,
+                    'target'     => $resolved_target,
                     'bg'         => $card_btn_bg,
                     'fg'         => $card_btn_fg,
                     'tracker'    => $tracker,
@@ -577,6 +546,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
                     // ✅ Same upgrades as other blocks
                     'smartlinks' => ( ! $button_is_internal_bookpage && $use_smartlinks ),
                     'dest_host'  => $dest_host,
+                    'meta_key'   => $btn_meta_key,
                 ) : array(
                     'text'   => '',
                     'url'    => '',

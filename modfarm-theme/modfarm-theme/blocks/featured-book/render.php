@@ -1,5 +1,6 @@
 <?php
 defined('ABSPATH') || exit;
+require_once get_template_directory() . '/blocks/shared/book-options.php';
 
 if (!function_exists('modfarm_render_featured_book_block')) {
   function modfarm_render_featured_book_block($attrs = [], $content = '', $block = null) {
@@ -273,72 +274,7 @@ add_action('rest_api_init', function () {
 /** Cover URL via BMS keys (your names) or featured image; handles ID/array/URL */
 if (!function_exists('mfb_cover_url')) {
   function mfb_cover_url($book_id, $source) {
-    $source = (string)$source;
-
-    if ($source === 'featured_image') {
-      $thumb_id = get_post_thumbnail_id($book_id);
-      if ($thumb_id) {
-        $img = wp_get_attachment_image_src($thumb_id, 'full');
-        if (!empty($img[0])) return $img[0];
-      }
-      return '';
-    }
-
-    $valid = [
-      'cover_image_flat',
-      'cover_image_audio',
-      'cover_image_3d',
-      'cover_image_composite',
-      'cover_ebook',
-      'cover_paperback',
-      'cover_hardcover',
-      'hero_image',
-    ];
-    $key = in_array($source, $valid, true) ? $source : 'cover_ebook';
-
-    $val_to_url = function($val) {
-      if (is_numeric($val)) return wp_get_attachment_image_url((int)$val, 'full') ?: '';
-      if (is_array($val)) {
-        if (!empty($val['ID']) && is_numeric($val['ID'])) return wp_get_attachment_image_url((int)$val['ID'], 'full') ?: '';
-        if (!empty($val['url'])) return (string)$val['url'];
-        if (!empty($val['sizes']) && is_array($val['sizes'])) {
-          foreach (['full','large','medium_large','medium'] as $sz) {
-            if (!empty($val['sizes'][$sz])) return (string)$val['sizes'][$sz];
-          }
-        }
-        return '';
-      }
-      if (is_string($val)) {
-        $v = trim($val);
-        if ($v === '') return '';
-        if (is_numeric($v)) return wp_get_attachment_image_url((int)$v, 'full') ?: '';
-        return $v;
-      }
-      return '';
-    };
-
-    $url = $val_to_url(get_post_meta($book_id, $key, true));
-
-    if (!$url) {
-      foreach (['cover_ebook','cover_image_flat','cover_image_composite','cover_image_audio','cover_image_3d','cover_paperback','cover_hardcover','hero_image'] as $try) {
-        $url = $val_to_url(get_post_meta($book_id, $try, true));
-        if ($url) break;
-      }
-    }
-
-    if (!$url) {
-      $thumb_id = get_post_thumbnail_id($book_id);
-      if ($thumb_id) {
-        $img = wp_get_attachment_image_src($thumb_id, 'full');
-        if (!empty($img[0])) $url = $img[0];
-      }
-    }
-
-    if ($url && strpos($url, 'm.media-amazon.com') !== false) {
-      $url = preg_replace('~\._[A-Z0-9_,-]+(?:_)?\.~', '.', $url);
-      $url = preg_replace('~\._[A-Z0-9_,-]+$~', '', $url);
-    }
-    return $url ?: '';
+    return modfarm_book_cover_url((int) $book_id, (string) $source);
   }
 }
 
@@ -393,19 +329,8 @@ if (!function_exists('mfb_buttons')) {
       if ($variant === 'outline') $variant = 'secondary';
       $is_primary = ($variant === 'primary');
 
-      $url = '';
-      if ($src === 'permalink') {
-        $url = $permalink;
-        if ($label === '') $label = 'See The Book';
-      } else {
-        $url = (string)get_post_meta($book_id, $src, true);
-        if (!$url && $src === 'kindle_url') {
-          $url = (string)get_post_meta($book_id, 'amazon_paper', true);
-          if (!$url) $url = (string)get_post_meta($book_id, 'amazon_hard', true);
-          if (!$url) $url = $permalink;
-        }
-        if ($label === '') $label = ucwords(str_replace(['_', 'url'], [' ', ''], $src));
-      }
+      $url = modfarm_book_link_url((int) $book_id, $src, (string) $permalink);
+      if ($label === '') $label = modfarm_book_link_default_label($src);
       if (!$url) { $i++; continue; }
 
       // ---- SmartLinks hook (Genius Quick Build Proxy; safe if Core is absent)
@@ -413,7 +338,7 @@ if (!function_exists('mfb_buttons')) {
       $href = $destination;
       $smart_wrapped = 0;
       $smartlink_eligible_url = !function_exists('mfc_smartlinks_url_is_eligible') || mfc_smartlinks_url_is_eligible($destination);
-      if ($destination !== '' && $src !== 'permalink' && $smartlink_eligible_url && function_exists('mfc_smartlinks_wrap_url')) {
+      if ($destination !== '' && !modfarm_book_link_is_internal($src) && $smartlink_eligible_url && function_exists('mfc_smartlinks_wrap_url')) {
         $maybe = mfc_smartlinks_wrap_url($destination, $src);
         if (is_string($maybe) && $maybe !== '' && $maybe !== $destination) {
           $href = $maybe;
@@ -462,14 +387,14 @@ if (!function_exists('mfb_buttons')) {
         'data-mf-destination' => $destination,
         'data-mf-cta'         => $is_primary ? 'primary' : 'secondary',
         'data-mf-source'      => $src,
-        'data-mf-link-type'   => $src === 'permalink' ? 'permalink' : ($smart_wrapped ? 'genius_quickbuild' : 'direct'),
+        'data-mf-link-type'   => modfarm_book_link_is_internal($src) ? 'permalink' : ($smart_wrapped ? 'genius_quickbuild' : 'direct'),
       ];
 
       if (!empty($style_bits)) {
         $attrs['style'] = implode(';', $style_bits) . ';';
       }
 
-      if ($src !== 'permalink') { $attrs['target'] = '_blank'; $attrs['rel'] = 'noopener'; }
+      if (!modfarm_book_link_is_internal($src)) { $attrs['target'] = '_blank'; $attrs['rel'] = 'noopener'; }
 
       // Keep your legacy tracking intact
       if ($tracking) {

@@ -11,6 +11,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
+require_once get_template_directory() . '/blocks/shared/book-options.php';
 
 if ( ! function_exists( 'modfarm_render_multi_tax_format_block' ) ) :
 function modfarm_render_multi_tax_format_block( $attributes ) {
@@ -264,61 +265,25 @@ function modfarm_render_multi_tax_format_block( $attributes ) {
 
             // ============================================================
             // Primary button URL + meta_key (for SmartLinks in ui.php)
-            $btn_meta_key = 'permalink';
-            $button_url   = $permalink;
+            $btn_meta_key = modfarm_book_option_normalize_link_source( (string) $btn_link );
+            $button_url   = $show_primary_btn ? modfarm_book_link_url( (int) $book_id, $btn_meta_key, (string) $permalink ) : '';
 
-            if ( $show_primary_btn && $btn_link && $btn_link !== 'bookpage' ) {
-                $btn_meta_key = (string) $btn_link;
-                $custom = (string) get_post_meta( $book_id, $btn_meta_key, true );
-                if ( $custom !== '' ) {
-                    $button_url = $custom;
-                } else {
-                    $btn_meta_key = 'permalink';
-                    $button_url   = $permalink;
-                }
+            if ( $show_primary_btn && $button_url === '' && $btn_meta_key !== '__none__' ) {
+                $btn_meta_key = 'permalink';
+                $button_url   = $permalink;
             }
 
             // Prefer _blank for external unless explicitly overridden
             $resolved_target = $btn_target;
-            if ( $btn_meta_key !== 'permalink' && ( $resolved_target === '' || $resolved_target === '_self' ) ) {
+            if ( ! modfarm_book_link_is_internal( $btn_meta_key ) && ( $resolved_target === '' || $resolved_target === '_self' ) ) {
                 $resolved_target = '_blank';
             }
             // ============================================================
 
             // Image
-            $img_url = '';
-            if ( $image_type === 'featured' ) {
-                $img_url = get_the_post_thumbnail_url( $book_id, 'full' ) ?: '';
-            } else {
-                $img_id = get_post_meta( $book_id, $image_type, true );
-                if ( $img_id ) {
-                    $img_url = is_numeric( $img_id )
-                        ? wp_get_attachment_image_url( $img_id, 'full' )
-                        : (string) $img_id;
-                }
-            }
-
-            if ( ! $img_url ) {
-                $img_url = get_the_post_thumbnail_url( $book_id, 'full' ) ?: '';
-            }
-
-            if ( ! $img_url ) {
-                $fallback_id = get_post_meta( $book_id, 'cover_ebook', true );
-                if ( $fallback_id ) {
-                    $img_url = is_numeric( $fallback_id )
-                        ? wp_get_attachment_image_url( $fallback_id, 'full' )
-                        : (string) $fallback_id;
-                }
-            }
-
-            // Aspect ratio
-            $aspect = '2 / 3';
-            switch ( $image_type ) {
-                case 'cover_image_audio':      $aspect = '1 / 1'; break;
-                case 'cover_image_3d':         $aspect = '4 / 3'; break;
-                case 'cover_image_composite':
-                case 'hero_image':             $aspect = '16 / 9'; break;
-            }
+            $image_source = modfarm_book_option_normalize_cover_source( (string) $image_type );
+            $img_url      = modfarm_book_cover_url( (int) $book_id, $image_source );
+            $aspect       = modfarm_book_cover_aspect( $image_source );
 
             // Series
             $series_terms = get_the_terms( $book_id, 'book-series' );
@@ -378,7 +343,7 @@ function modfarm_render_multi_tax_format_block( $attributes ) {
                 'sample_button_text' => $sample_btn_text,
 
                 // ---- Buttons ----
-                'button' => $show_primary_btn ? [
+                'button' => ( $show_primary_btn && $button_url !== '' ) ? [
                     'text'     => $btn_text,
                     'url'      => $button_url,
                     'target'   => $resolved_target,
