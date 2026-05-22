@@ -179,18 +179,26 @@ function mfs_rich_taxonomy_description_editor() {
     if (!$screen || empty($screen->taxonomy) || !in_array($screen->taxonomy, mfs_book_archive_taxonomies(), true)) {
         return;
     }
+
+    $description_id = $screen->base === 'edit-tags' ? 'tag-description' : 'description';
     ?>
     <script>
     (function () {
         var initialized = false;
+        var descriptionId = <?php echo wp_json_encode($description_id); ?>;
 
         function initRichDescription() {
-            if (initialized || !window.wp || !wp.editor || !document.getElementById('description')) {
+            var textarea = document.getElementById(descriptionId);
+            if (initialized || !window.wp || !wp.editor || !textarea) {
+                return;
+            }
+
+            if (textarea.offsetParent === null && textarea.type !== 'hidden') {
                 return;
             }
 
             initialized = true;
-            wp.editor.initialize('description', {
+            wp.editor.initialize(descriptionId, {
                 mediaButtons: false,
                 tinymce: {
                     wpautop: true,
