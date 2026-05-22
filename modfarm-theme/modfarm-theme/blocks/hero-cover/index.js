@@ -64,7 +64,7 @@
       if (!ServerSideRender && mode === 'manual' && a.manualUrl) {
         fallbackBgStyle.backgroundImage = 'url(' + a.manualUrl + ')';
         fallbackBgStyle.backgroundSize = 'cover';
-        fallbackBgStyle.backgroundPosition = '50% 50%';
+        fallbackBgStyle.backgroundPosition = '50% 0%';
       }
 
       // Editor-only overlay preview so changes show immediately

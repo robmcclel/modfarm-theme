@@ -95,7 +95,7 @@ function modfarm_render_hero_cover_block( $attributes, $content = '', $block = n
     $style  = 'min-height:' . $min_height . 'px;';
     $style .= 'background-image:url(' . esc_url( $image_url ) . ');';
     $style .= 'background-size:cover;';
-    $style .= 'background-position:50% 50%;';
+    $style .= 'background-position:50% 0%;';
 
     // If you want alignfull support via the editor toolbar, keep wrapper attrs and let WP add alignfull class.
     $wrapper = get_block_wrapper_attributes([
