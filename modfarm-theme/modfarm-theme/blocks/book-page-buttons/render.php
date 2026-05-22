@@ -1,4 +1,7 @@
 <?php
+defined( 'ABSPATH' ) || exit;
+require_once get_template_directory() . '/blocks/shared/book-options.php';
+
 /**
  * Server-side render for Book Page Buttons block
  * - Alignment support
@@ -54,6 +57,12 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 
 				$meta_key = isset($button['meta_key']) ? (string)$button['meta_key'] : '';
 				$url      = $meta_key ? (string)get_post_meta( $post_id, $meta_key, true ) : '';
+				$is_taxonomy_series_link = false;
+
+				if ( $url === '' && $meta_key === 'serieslink' ) {
+					$url = modfarm_book_series_permalink( (int) $post_id );
+					$is_taxonomy_series_link = ( $url !== '' );
+				}
 
 				if ( $url === '' ) {
 					continue;
@@ -109,7 +118,7 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 				$href          = $destination;
 				$smart_wrapped = 0;
 
-				if ( function_exists('mfc_smartlinks_wrap_url') ) {
+				if ( ! $is_taxonomy_series_link && function_exists('mfc_smartlinks_wrap_url') ) {
 					$maybe = mfc_smartlinks_wrap_url( $destination, $meta_key );
 					if ( is_string($maybe) && $maybe !== '' && $maybe !== $destination ) {
 						$href = $maybe;
