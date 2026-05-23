@@ -526,6 +526,14 @@ function modfarm_ppb_pattern_category_map(): array {
         'archive_body_pattern_book_series'  => 'modfarm-archive-body',
         'archive_body_pattern_book_genre'   => 'modfarm-archive-body',
         'archive_body_pattern_book_authors' => 'modfarm-archive-body',
+
+        // Collection layouts use per-type pseudo field IDs.
+        'mfc_collection_single_header'  => 'modfarm-collection-header',
+        'mfc_collection_single_body'    => 'modfarm-collection-body',
+        'mfc_collection_single_footer'  => 'modfarm-collection-footer',
+        'mfc_collection_archive_header' => 'modfarm-collection-archive-header',
+        'mfc_collection_archive_body'   => 'modfarm-collection-archive-body',
+        'mfc_collection_archive_footer' => 'modfarm-collection-archive-footer',
     ];
 }
 
@@ -657,6 +665,81 @@ function modfarm_ppb_normalize_admin_pattern_value($value): string {
     return $value;
 }
 
+function modfarm_get_collection_type_defs_for_settings(): array {
+    $defs = get_option('mfc_content_defs', []);
+    if (!is_array($defs)) {
+        return [];
+    }
+
+    $types = isset($defs['types']) && is_array($defs['types']) ? $defs['types'] : [];
+    $clean = [];
+
+    foreach ($types as $slug => $def) {
+        $slug = sanitize_key((string) $slug);
+        if ($slug === '' || !is_array($def)) {
+            continue;
+        }
+
+        $clean[$slug] = $def;
+    }
+
+    return $clean;
+}
+
+function modfarm_get_collection_type_label_for_settings(string $slug, array $def): string {
+    $labels = isset($def['labels']) && is_array($def['labels']) ? $def['labels'] : [];
+    $plural = isset($labels['plural']) ? sanitize_text_field((string) $labels['plural']) : '';
+    $singular = isset($labels['singular']) ? sanitize_text_field((string) $labels['singular']) : '';
+
+    return $plural !== '' ? $plural : ($singular !== '' ? $singular : $slug);
+}
+
+function modfarm_get_collection_ppb_value_for_settings(string $type, string $context, string $slot): string {
+    $types = modfarm_get_collection_type_defs_for_settings();
+    $value = $types[$type]['ppb'][$context][$slot] ?? '';
+
+    return is_string($value) ? modfarm_ppb_normalize_admin_pattern_value($value) : 'default';
+}
+
+function modfarm_collection_pattern_field_id(string $context, string $slot): string {
+    return 'mfc_collection_' . sanitize_key($context) . '_' . sanitize_key($slot);
+}
+
+function modfarm_collection_pattern_dropdown(string $type, string $context, string $slot): void {
+    $type = sanitize_key($type);
+    $context = sanitize_key($context);
+    $slot = sanitize_key($slot);
+
+    if ($type === '' || !in_array($context, ['single', 'archive'], true) || !in_array($slot, ['header', 'body', 'footer'], true)) {
+        return;
+    }
+
+    $field_id = modfarm_collection_pattern_field_id($context, $slot);
+    $map = modfarm_ppb_pattern_category_map();
+    $category = $map[$field_id] ?? '';
+    $patterns = $category !== '' ? modfarm_get_registered_patterns_by_category($category, true) : [];
+    $selected_value = modfarm_get_collection_ppb_value_for_settings($type, $context, $slot);
+
+    printf(
+        '<select name="mfc_collection_ppb[%1$s][%2$s][%3$s]" data-mf-ppb-field-id="%4$s">',
+        esc_attr($type),
+        esc_attr($context),
+        esc_attr($slot),
+        esc_attr($field_id . '__' . $type)
+    );
+    echo '<option value="default"' . selected($selected_value, 'default', false) . '>' . esc_html__('Use default / none', 'modfarm') . '</option>';
+
+    foreach ($patterns as $slug => $title) {
+        echo '<option value="' . esc_attr($slug) . '" ' . selected($selected_value, $slug, false) . '>' . esc_html($title) . '</option>';
+    }
+
+    echo '</select>';
+
+    if ($category !== '') {
+        echo '<p class="description">Showing patterns in: <code>' . esc_html($category) . '</code></p>';
+    }
+}
+
 /**
  * Build supported content-type options for Apply All preview.
  */
@@ -773,6 +856,30 @@ function modfarm_get_ppb_visualizer_content_types(): array {
         ],
     ];
 
+    foreach (modfarm_get_collection_type_defs_for_settings() as $slug => $def) {
+        $label = modfarm_get_collection_type_label_for_settings($slug, $def);
+
+        $types['mfc_collection_single__' . $slug] = [
+            'label' => sprintf(__('%s Single', 'modfarm'), $label),
+            'sample_label' => sprintf(__('Sample %s', 'modfarm'), $label),
+            'fields' => [
+                'header' => 'mfc_collection_single_header__' . $slug,
+                'body' => 'mfc_collection_single_body__' . $slug,
+                'footer' => 'mfc_collection_single_footer__' . $slug,
+            ],
+        ];
+
+        $types['mfc_collection_archive__' . $slug] = [
+            'label' => sprintf(__('%s Archive', 'modfarm'), $label),
+            'sample_label' => sprintf(__('%s Archive Context', 'modfarm'), $label),
+            'fields' => [
+                'header' => 'mfc_collection_archive_header__' . $slug,
+                'body' => 'mfc_collection_archive_body__' . $slug,
+                'footer' => 'mfc_collection_archive_footer__' . $slug,
+            ],
+        ];
+    }
+
     return $types;
 }
 
@@ -783,13 +890,25 @@ function modfarm_get_ppb_visualizer_samples(): array {
     $samples = [];
 
     foreach (modfarm_get_ppb_visualizer_content_types() as $post_type => $config) {
-        if ($post_type === 'archive' || !post_type_exists($post_type)) {
+        if (str_starts_with($post_type, 'mfc_collection_archive__')) {
+            $samples[$post_type] = [];
+            continue;
+        }
+
+        if (str_starts_with($post_type, 'mfc_collection_single__')) {
+            $collection_type = substr($post_type, strlen('mfc_collection_single__'));
+            $query_post_type = sanitize_key($collection_type);
+        } else {
+            $query_post_type = $post_type;
+        }
+
+        if ($post_type === 'archive' || !post_type_exists($query_post_type)) {
             $samples[$post_type] = [];
             continue;
         }
 
         $posts = get_posts([
-            'post_type' => $post_type,
+            'post_type' => $query_post_type,
             'post_status' => ['publish', 'draft', 'private'],
             'posts_per_page' => 12,
             'orderby' => 'date',
@@ -893,6 +1012,16 @@ function modfarm_ppb_visualizer_resolve_slug(string $field_id, string $submitted
         return function_exists('modfarm_ppb_normalize_slug') ? modfarm_ppb_normalize_slug($submitted) : $submitted;
     }
 
+    if (str_starts_with($field_id, 'mfc_collection_')) {
+        if (preg_match('/^mfc_collection_(single|archive)_(header|body|footer)__(.+)$/', $field_id, $matches) && function_exists('modfarm_get_collection_patterns')) {
+            $patterns = modfarm_get_collection_patterns(sanitize_key($matches[3]), sanitize_key($matches[1]));
+            $slot = sanitize_key($matches[2]);
+            return isset($patterns[$slot]) ? (string) $patterns[$slot] : '';
+        }
+
+        return '';
+    }
+
     return function_exists('modfarm_ppb_resolve_pattern_slug')
         ? modfarm_ppb_resolve_pattern_slug($field_id, $options[$field_id] ?? null, $options)
         : '';
@@ -986,9 +1115,12 @@ function modfarm_build_ppb_visualizer_document(array $args): string {
 
     $sample_id = absint($args['sample_id'] ?? 0);
     $sample_is_active = false;
-    if ($sample_id > 0 && $content_type !== 'archive') {
+    if ($sample_id > 0 && $content_type !== 'archive' && !str_starts_with($content_type, 'mfc_collection_archive__')) {
         $sample_post = get_post($sample_id);
-        if ($sample_post && $sample_post->post_type === $content_type) {
+        $expected_post_type = str_starts_with($content_type, 'mfc_collection_single__')
+            ? sanitize_key(substr($content_type, strlen('mfc_collection_single__')))
+            : $content_type;
+        if ($sample_post && $sample_post->post_type === $expected_post_type) {
             $GLOBALS['post'] = $sample_post;
             setup_postdata($sample_post);
             $sample_is_active = true;
@@ -2001,6 +2133,8 @@ add_action('wp_ajax_modfarm_ppb_apply_all_process_run', 'modfarm_ajax_ppb_apply_
  * Sanitization: keep as-is, just aware of all keys.
  */
 function modfarm_sanitize_settings($settings) {
+    modfarm_save_collection_ppb_settings_from_request();
+
     $allowed_keys = [
         'primary_color',
         'header_text_color',
@@ -2139,6 +2273,59 @@ function modfarm_sanitize_settings($settings) {
     }
 
     return $clean;
+}
+
+function modfarm_save_collection_ppb_settings_from_request(): void {
+    if (!current_user_can('edit_theme_options')) {
+        return;
+    }
+
+    if (!isset($_POST['mfc_collection_ppb']) || !is_array($_POST['mfc_collection_ppb'])) {
+        return;
+    }
+
+    $defs = get_option('mfc_content_defs', []);
+    if (!is_array($defs)) {
+        $defs = [];
+    }
+
+    $defs['types'] = isset($defs['types']) && is_array($defs['types']) ? $defs['types'] : [];
+    $raw = wp_unslash($_POST['mfc_collection_ppb']);
+
+    foreach ($raw as $type => $contexts) {
+        $type = sanitize_key((string) $type);
+        if ($type === '' || empty($defs['types'][$type]) || !is_array($defs['types'][$type]) || !is_array($contexts)) {
+            continue;
+        }
+
+        if (!isset($defs['types'][$type]['ppb']) || !is_array($defs['types'][$type]['ppb'])) {
+            $defs['types'][$type]['ppb'] = [];
+        }
+
+        foreach (['single', 'archive'] as $context) {
+            if (!isset($defs['types'][$type]['ppb'][$context]) || !is_array($defs['types'][$type]['ppb'][$context])) {
+                $defs['types'][$type]['ppb'][$context] = [];
+            }
+
+            foreach (['header', 'body', 'footer'] as $slot) {
+                $value = '';
+                if (isset($contexts[$context]) && is_array($contexts[$context]) && isset($contexts[$context][$slot])) {
+                    $value = sanitize_text_field((string) $contexts[$context][$slot]);
+                }
+
+                $normalized = strtolower(trim($value));
+                if ($normalized === '' || $normalized === 'none' || $normalized === 'default') {
+                    $value = '';
+                } elseif (function_exists('modfarm_ppb_normalize_slug')) {
+                    $value = modfarm_ppb_normalize_slug($value);
+                }
+
+                $defs['types'][$type]['ppb'][$context][$slot] = $value;
+            }
+        }
+    }
+
+    update_option('mfc_content_defs', $defs, false);
 }
 
 
@@ -2885,6 +3072,70 @@ function modfarm_render_settings_page() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <?php $mf_collection_types = modfarm_get_collection_type_defs_for_settings(); ?>
+                                    <?php if (empty($mf_collection_types)) : ?>
+                                        <div class="mf-settings-group">
+                                            <h3 class="mf-group-title">Collection Layouts</h3>
+                                            <p class="description">
+                                                Configure PPB layouts for custom Collection Types such as documentation, webcomics, reviews, podcasts, and other structured content.
+                                            </p>
+                                            <p>No Collection Types exist yet. Create one in ModFarm Collections, then return here to assign its Single and Archive layouts.</p>
+                                        </div>
+                                    <?php else : ?>
+                                        <?php foreach ($mf_collection_types as $mf_collection_slug => $mf_collection_def) : ?>
+                                            <?php $mf_collection_label = modfarm_get_collection_type_label_for_settings($mf_collection_slug, $mf_collection_def); ?>
+                                            <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="mfc_collection_single__<?php echo esc_attr($mf_collection_slug); ?>">
+                                                <h3 class="mf-group-title">Collection Layouts</h3>
+                                                <p class="description">
+                                                    Configure PPB layouts for custom Collection Types such as documentation, webcomics, reviews, podcasts, and other structured content.
+                                                </p>
+                                                <h4><?php echo esc_html($mf_collection_label); ?> <code><?php echo esc_html($mf_collection_slug); ?></code></h4>
+                                                <h4>Single Layout</h4>
+                                                <table class="form-table mf-form-table">
+                                                    <tbody>
+                                                    <tr>
+                                                        <th scope="row"><label>Header Pattern</label></th>
+                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'single', 'header'); ?></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th scope="row"><label>Body Pattern</label></th>
+                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'single', 'body'); ?></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th scope="row"><label>Footer Pattern</label></th>
+                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'single', 'footer'); ?></td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="mfc_collection_archive__<?php echo esc_attr($mf_collection_slug); ?>">
+                                                <h3 class="mf-group-title">Collection Layouts</h3>
+                                                <p class="description">
+                                                    Configure PPB layouts for custom Collection Types such as documentation, webcomics, reviews, podcasts, and other structured content.
+                                                </p>
+                                                <h4><?php echo esc_html($mf_collection_label); ?> <code><?php echo esc_html($mf_collection_slug); ?></code></h4>
+                                                <h4>Archive Layout</h4>
+                                                <table class="form-table mf-form-table">
+                                                    <tbody>
+                                                    <tr>
+                                                        <th scope="row"><label>Header Pattern</label></th>
+                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'archive', 'header'); ?></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th scope="row"><label>Body Pattern</label></th>
+                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'archive', 'body'); ?></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th scope="row"><label>Footer Pattern</label></th>
+                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'archive', 'footer'); ?></td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
 
                                     <div class="mf-settings-group">
                                         <h3 class="mf-group-title">PPB Control</h3>

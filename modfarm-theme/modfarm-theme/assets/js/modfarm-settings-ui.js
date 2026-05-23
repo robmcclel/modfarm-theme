@@ -299,7 +299,8 @@
     let requestId = 0;
 
     function fieldSelect(fieldId) {
-      return document.querySelector(`select[name="modfarm_theme_settings[${fieldId}]"]`);
+      return document.querySelector(`select[name="modfarm_theme_settings[${fieldId}]"]`) ||
+        document.querySelector(`select[data-mf-ppb-field-id="${fieldId}"]`);
     }
 
     function activeFields() {

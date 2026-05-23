@@ -505,6 +505,7 @@ require_once get_template_directory() . '/inc/archive-settings.php';
 require_once get_template_directory() . '/inc/query-books.php';
 require_once get_template_directory() . '/inc/render-helpers.php';
 require_once get_template_directory() . '/inc/ppb-zone-detector.php';
+require_once get_template_directory() . '/inc/collections-ppb.php';
 
 
 add_action('wp_enqueue_scripts', function () {
@@ -574,6 +575,16 @@ add_action('init', function () {
     register_block_pattern_category('modfarm-archive-header', [ 'label' => 'ModFarm Archive Headers' ]);
     register_block_pattern_category('modfarm-archive-body',   [ 'label' => 'ModFarm Archive Layouts' ]);
     register_block_pattern_category('modfarm-archive-footer', [ 'label' => 'ModFarm Archive Footers' ]);
+
+    // Collection zones
+    register_block_pattern_category('modfarm-collection-header', [ 'label' => 'ModFarm Collection Headers' ]);
+    register_block_pattern_category('modfarm-collection-body',   [ 'label' => 'ModFarm Collection Layouts' ]);
+    register_block_pattern_category('modfarm-collection-footer', [ 'label' => 'ModFarm Collection Footers' ]);
+
+    // Collection archive zones
+    register_block_pattern_category('modfarm-collection-archive-header', [ 'label' => 'ModFarm Collection Archive Headers' ]);
+    register_block_pattern_category('modfarm-collection-archive-body',   [ 'label' => 'ModFarm Collection Archive Layouts' ]);
+    register_block_pattern_category('modfarm-collection-archive-footer', [ 'label' => 'ModFarm Collection Archive Footers' ]);
 
     // ===== Element libraries =====
     register_block_pattern_category('modfarm-book-elements',    [ 'label' => 'ModFarm Book Elements' ]);
@@ -1151,6 +1162,12 @@ function modfarm_ppb_get_default_zoned_content_markup(string $post_type, ?array 
     $post_type = sanitize_key($post_type);
     $options = is_array($options) ? $options : get_option('modfarm_theme_settings', []);
 
+    if (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type)) {
+        return function_exists('modfarm_ppb_get_collection_zoned_content_markup')
+            ? modfarm_ppb_get_collection_zoned_content_markup($post_type, 'single')
+            : '';
+    }
+
     $header_field = modfarm_ppb_get_field_id_for_post_zone($post_type, 'header');
     $body_field   = modfarm_ppb_get_field_id_for_post_zone($post_type, 'body');
     $footer_field = modfarm_ppb_get_field_id_for_post_zone($post_type, 'footer');
@@ -1212,7 +1229,8 @@ add_filter('default_content', function($content, $post) {
     }
 
     $post_type = (string) $post->post_type;
-    if (!in_array($post_type, ['page', 'book', 'offer', 'mf_offer'], true)) {
+    $is_collection = function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type);
+    if (!$is_collection && !in_array($post_type, ['page', 'book', 'offer', 'mf_offer'], true)) {
         return $content;
     }
 
