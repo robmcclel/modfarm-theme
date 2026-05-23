@@ -79,6 +79,32 @@ if (!function_exists('modfarm_get_collection_archive_media')) {
     }
 }
 
+if (!function_exists('modfarm_render_collection_archive_description')) {
+    function modfarm_render_collection_archive_description($post_type): string {
+        $description = trim((string) modfarm_get_collection_archive_meta($post_type, 'description', ''));
+        if ($description === '') {
+            return '';
+        }
+
+        return '<div class="modfarm-collection-archive-description" style="max-width:900px;margin:32px auto;padding:0 20px;">' . wp_kses_post(wpautop($description)) . '</div>';
+    }
+}
+
+if (!function_exists('modfarm_get_collection_type_label')) {
+    function modfarm_get_collection_type_label($post_type, $fallback = ''): string {
+        $post_type = sanitize_key((string) $post_type);
+        $types = modfarm_get_collection_type_defs();
+        $labels = isset($types[$post_type]['labels']) && is_array($types[$post_type]['labels']) ? $types[$post_type]['labels'] : [];
+
+        $label = isset($labels['plural']) ? trim((string) $labels['plural']) : '';
+        if ($label === '') {
+            $label = isset($labels['singular']) ? trim((string) $labels['singular']) : '';
+        }
+
+        return $label !== '' ? $label : (string) $fallback;
+    }
+}
+
 if (!function_exists('modfarm_get_ppb_supported_post_types')) {
     function modfarm_get_ppb_supported_post_types(): array {
         $types = ['page', 'book', 'post', 'offer', 'mf_offer'];
@@ -255,8 +281,14 @@ if (!function_exists('modfarm_render_collection_archive_page')) {
             : (string) ($opts['archive_footer_pattern'] ?? '');
         $patterns = modfarm_get_collection_patterns($post_type, 'archive');
 
-        echo do_blocks(modfarm_get_pattern_content_by_slug($header_slug));
-        echo do_blocks(modfarm_get_pattern_content_by_slug($patterns['body']));
+        $header_content = modfarm_get_pattern_content_by_slug($header_slug);
+        $body_content = modfarm_get_pattern_content_by_slug($patterns['body']);
+
+        echo do_blocks($header_content);
+        if (strpos($header_content, 'modfarm/archive-description') === false && strpos($body_content, 'modfarm/archive-description') === false) {
+            echo modfarm_render_collection_archive_description($post_type);
+        }
+        echo do_blocks($body_content);
         echo do_blocks(modfarm_get_pattern_content_by_slug($footer_slug));
 
         return true;
@@ -319,3 +351,30 @@ add_filter('get_the_archive_description', function ($description) {
     $custom_description = (string) modfarm_get_collection_archive_meta($post_type, 'description', '');
     return trim($custom_description) !== '' ? wp_kses_post($custom_description) : $description;
 });
+
+add_action('admin_bar_menu', function ($wp_admin_bar) {
+    if (
+        !is_admin_bar_showing()
+        || is_admin()
+        || !current_user_can('manage_options')
+        || !is_object($wp_admin_bar)
+        || !method_exists($wp_admin_bar, 'add_node')
+    ) {
+        return;
+    }
+
+    $post_type = modfarm_get_current_collection_archive_post_type();
+    if ($post_type === '') {
+        return;
+    }
+
+    $label = modfarm_get_collection_type_label($post_type, $post_type);
+    $wp_admin_bar->add_node([
+        'id' => 'modfarm-edit-collection-archive',
+        'title' => sprintf('Edit %s', $label),
+        'href' => admin_url('admin.php?page=mfc-content-types&archive=' . rawurlencode($post_type)),
+        'meta' => [
+            'class' => 'modfarm-edit-collection-archive',
+        ],
+    ]);
+}, 80);

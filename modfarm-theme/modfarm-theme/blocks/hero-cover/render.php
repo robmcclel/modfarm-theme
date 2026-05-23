@@ -49,17 +49,17 @@ function modfarm_render_hero_cover_block( $attributes, $content = '', $block = n
             && ($collection_post_type = modfarm_get_current_collection_archive_post_type())
         ) {
             if (function_exists('modfarm_get_collection_archive_media') && function_exists('modfarm_get_collection_archive_meta')) {
-                if (modfarm_get_collection_archive_meta($collection_post_type, 'display_hero', 0)) {
-                    $image_url = modfarm_get_collection_archive_media($collection_post_type, 'hero', 'full');
-                }
+                $image_url = modfarm_get_collection_archive_media($collection_post_type, 'hero', 'full');
 
-                if (!$image_url && modfarm_get_collection_archive_meta($collection_post_type, 'display_default', 0)) {
+                if (!$image_url) {
                     $image_url = modfarm_get_collection_archive_media($collection_post_type, 'default', 'full');
                 }
             }
 
             if ( ! $image_url ) {
-                return '<div class="modfarm-hero-cover missing-hero">No collection archive image found.</div>';
+                $align = esc_attr( $content_align );
+                $max_w = esc_attr( $content_max_w );
+                return '<section class="modfarm-hero-cover modfarm-hero-cover--no-image align-' . $align . '"><div class="modfarm-hero-cover__content" style="max-width:' . $max_w . ';text-align:' . $align . ';">' . ( $content ? $content : '' ) . '</div></section>';
             }
 
         // Taxonomy archives
