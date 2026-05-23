@@ -669,12 +669,12 @@ function modfarm_ppb_canonical_defaults(): array {
         'archive_header_pattern'            => 'modfarm/archive-header-basic',
         'archive_body_pattern'              => 'modfarm/basic-archive-layout',
         'archive_footer_pattern'            => 'modfarm/footer-simple',
-        'archive_body_pattern_post_index'   => 'modfarm/basic-archive-layout',
-        'archive_body_pattern_category'     => 'modfarm/basic-archive-layout',
-        'archive_body_pattern_post_tag'     => 'modfarm/basic-archive-layout',
-        'archive_body_pattern_author'       => 'modfarm/basic-author-archive-layout',
-        'archive_body_pattern_search'       => 'modfarm/basic-archive-layout',
-        'archive_body_pattern_date'         => 'modfarm/basic-archive-layout',
+        'archive_body_pattern_post_index'   => 'modfarm/post-archive-layout',
+        'archive_body_pattern_category'     => 'modfarm/post-archive-layout',
+        'archive_body_pattern_post_tag'     => 'modfarm/post-archive-layout',
+        'archive_body_pattern_author'       => 'modfarm/post-archive-layout',
+        'archive_body_pattern_search'       => 'modfarm/post-archive-layout',
+        'archive_body_pattern_date'         => 'modfarm/post-archive-layout',
         'archive_body_pattern_book_series'  => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_genre'   => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_authors' => 'modfarm/basic-archive-layout',
@@ -1139,7 +1139,21 @@ function modfarm_resolve_archive_body_pattern_slug(?array $opts = null): string 
         }
     }
 
-    return modfarm_ppb_resolve_pattern_slug($key, $opts[$key] ?? null, $opts);
+    $raw_value = $opts[$key] ?? null;
+    $post_archive_keys = [
+        'archive_body_pattern_post_index',
+        'archive_body_pattern_category',
+        'archive_body_pattern_post_tag',
+        'archive_body_pattern_author',
+        'archive_body_pattern_search',
+        'archive_body_pattern_date',
+    ];
+
+    if (in_array($key, $post_archive_keys, true) && modfarm_ppb_normalize_slug($raw_value) === 'modfarm/basic-archive-layout') {
+        $raw_value = null;
+    }
+
+    return modfarm_ppb_resolve_pattern_slug($key, $raw_value, $opts);
 }
 
 /**
