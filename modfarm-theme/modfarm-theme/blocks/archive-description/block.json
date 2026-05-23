@@ -1,0 +1,18 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/archive-description",
+  "title": "ModFarm Archive Description",
+  "category": "modfarm-theme",
+  "icon": "editor-paragraph",
+  "description": "Displays the current archive description, including Collection archive descriptions.",
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  },
+  "attributes": {
+    "alignText": {
+      "type": "string",
+      "default": "center"
+    }
+  }
+}

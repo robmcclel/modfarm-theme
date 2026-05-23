@@ -42,8 +42,28 @@ function modfarm_render_hero_cover_block( $attributes, $content = '', $block = n
         $image_url = esc_url( $manual_url );
     } else {
 
+        // Collection CPT archives
+        if (
+            is_post_type_archive()
+            && function_exists('modfarm_get_current_collection_archive_post_type')
+            && ($collection_post_type = modfarm_get_current_collection_archive_post_type())
+        ) {
+            if (function_exists('modfarm_get_collection_archive_media') && function_exists('modfarm_get_collection_archive_meta')) {
+                if (modfarm_get_collection_archive_meta($collection_post_type, 'display_hero', 0)) {
+                    $image_url = modfarm_get_collection_archive_media($collection_post_type, 'hero', 'full');
+                }
+
+                if (!$image_url && modfarm_get_collection_archive_meta($collection_post_type, 'display_default', 0)) {
+                    $image_url = modfarm_get_collection_archive_media($collection_post_type, 'default', 'full');
+                }
+            }
+
+            if ( ! $image_url ) {
+                return '<div class="modfarm-hero-cover missing-hero">No collection archive image found.</div>';
+            }
+
         // Taxonomy archives
-        if ( is_category() || is_tag() || is_tax() ) {
+        } elseif ( is_category() || is_tag() || is_tax() ) {
             $term = get_queried_object();
             if ( $term && ! empty( $term->term_id ) ) {
                 $raw = get_term_meta( (int) $term->term_id, $term_meta_key, true );

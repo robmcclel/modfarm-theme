@@ -48,6 +48,7 @@ add_action('init', function () {
         'column'                     => 'modfarm_render_column_block',
         'navigation-menu'            => 'modfarm_render_navigation_menu_block',
         'archive-book-list'          => 'modfarm_render_archive_book_list_block',
+        'archive-description'        => 'modfarm_render_archive_description_block',
         'archive-layout-loader'      => 'modfarm_render_archive_layout_loader_block',
         'zone'                       => 'modfarm_render_zone_block',
         'simple-tabs'                => 'modfarm_render_simple_tabs_block',

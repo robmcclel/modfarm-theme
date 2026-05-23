@@ -32,6 +32,53 @@ if (!function_exists('modfarm_get_collection_post_types')) {
     }
 }
 
+if (!function_exists('modfarm_get_current_collection_archive_post_type')) {
+    function modfarm_get_current_collection_archive_post_type(): string {
+        if (!is_post_type_archive()) {
+            return '';
+        }
+
+        $post_type = get_query_var('post_type');
+        if (is_array($post_type)) {
+            $post_type = reset($post_type);
+        }
+
+        $post_type = sanitize_key((string) $post_type);
+        return $post_type !== '' && modfarm_is_collection_type($post_type) ? $post_type : '';
+    }
+}
+
+if (!function_exists('modfarm_get_collection_archive_meta')) {
+    function modfarm_get_collection_archive_meta($post_type, $key = '', $default = '') {
+        $post_type = sanitize_key((string) $post_type);
+        $key = sanitize_key((string) $key);
+        $types = modfarm_get_collection_type_defs();
+
+        if ($post_type === '' || empty($types[$post_type]['archive']) || !is_array($types[$post_type]['archive'])) {
+            return $default;
+        }
+
+        if ($key === '') {
+            return $types[$post_type]['archive'];
+        }
+
+        return array_key_exists($key, $types[$post_type]['archive']) ? $types[$post_type]['archive'][$key] : $default;
+    }
+}
+
+if (!function_exists('modfarm_get_collection_archive_media')) {
+    function modfarm_get_collection_archive_media($post_type, $which = 'hero', $size = 'full'): string {
+        $which = $which === 'default' ? 'default_image' : 'hero_image';
+        $attachment_id = absint(modfarm_get_collection_archive_meta($post_type, $which, 0));
+        if (!$attachment_id) {
+            return '';
+        }
+
+        $url = wp_get_attachment_image_url($attachment_id, $size);
+        return $url ? (string) $url : '';
+    }
+}
+
 if (!function_exists('modfarm_get_ppb_supported_post_types')) {
     function modfarm_get_ppb_supported_post_types(): array {
         $types = ['page', 'book', 'post', 'offer', 'mf_offer'];
@@ -247,3 +294,28 @@ add_filter('template_include', function ($template) {
     $archive_template = locate_template('archive.php');
     return $archive_template ?: $template;
 }, 20);
+
+add_filter('get_the_archive_title', function ($title) {
+    $post_type = modfarm_get_current_collection_archive_post_type();
+    if ($post_type === '') {
+        return $title;
+    }
+
+    $custom_title = trim((string) modfarm_get_collection_archive_meta($post_type, 'title', ''));
+    if ($custom_title !== '') {
+        return $custom_title;
+    }
+
+    $types = modfarm_get_collection_type_defs();
+    return isset($types[$post_type]['labels']['plural']) ? (string) $types[$post_type]['labels']['plural'] : $title;
+});
+
+add_filter('get_the_archive_description', function ($description) {
+    $post_type = modfarm_get_current_collection_archive_post_type();
+    if ($post_type === '') {
+        return $description;
+    }
+
+    $custom_description = (string) modfarm_get_collection_archive_meta($post_type, 'description', '');
+    return trim($custom_description) !== '' ? wp_kses_post($custom_description) : $description;
+});
