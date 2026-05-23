@@ -524,6 +524,8 @@ function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, a
         $template_slug = (string) get_page_template_slug($post_id);
         if (($template_slug === '' || $template_slug === 'default') && $post_type === 'post' && function_exists('modfarm_get_default_post_template_slug')) {
             $template_slug = modfarm_get_default_post_template_slug();
+        } elseif (($template_slug === '' || $template_slug === 'default') && function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type) && function_exists('modfarm_get_collection_hybrid_template_slug')) {
+            $template_slug = modfarm_get_collection_hybrid_template_slug($post_type);
         }
         if ($template_slug === 'singular-hybrid-sidebar.php') {
             return 'Hybrid: Right Sidebar';
@@ -536,6 +538,17 @@ function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, a
             return 'Full PPB';
         }
         return 'Hybrid (Default)';
+    }
+
+    if (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type)) {
+        $mode = function_exists('modfarm_get_collection_layout_mode') ? modfarm_get_collection_layout_mode($post_type) : 'ppb';
+        if ($mode === 'hybrid-sidebar') {
+            return 'Hybrid: Right Sidebar';
+        }
+        if ($mode === 'hybrid') {
+            return 'Hybrid: No Sidebar';
+        }
+        return 'Full PPB';
     }
 
     if (in_array($post_type, ['page', 'book', 'modfarm_book', 'offer', 'mf_offer'], true)) {
@@ -635,7 +648,8 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
         );
     }
 
-    $convert_supported_post_type = in_array($post_type, ['page', 'post', 'book', 'modfarm_book', 'offer', 'mf_offer'], true);
+    $convert_supported_post_type = in_array($post_type, ['page', 'post', 'book', 'modfarm_book', 'offer', 'mf_offer'], true)
+        || (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type));
     if (!$is_zoned && $convert_supported_post_type && function_exists('modfarm_ppb_get_pattern_content_by_slug') && function_exists('modfarm_ppb_resolve_pattern_slug')) {
         $header_field = function_exists('modfarm_ppb_get_field_id_for_post_zone')
             ? modfarm_ppb_get_field_id_for_post_zone($post_type, 'header')
@@ -645,8 +659,14 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
             : '';
         $opts = get_option('modfarm_theme_settings', []);
 
-        $header_pattern = $header_field !== '' ? modfarm_ppb_resolve_pattern_slug($header_field, $opts[$header_field] ?? null, $opts) : '';
-        $footer_pattern = $footer_field !== '' ? modfarm_ppb_resolve_pattern_slug($footer_field, $opts[$footer_field] ?? null, $opts) : '';
+        if (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type) && function_exists('modfarm_get_collection_patterns')) {
+            $collection_patterns = modfarm_get_collection_patterns($post_type, 'single');
+            $header_pattern = $collection_patterns['header'] ?? '';
+            $footer_pattern = $collection_patterns['footer'] ?? '';
+        } else {
+            $header_pattern = $header_field !== '' ? modfarm_ppb_resolve_pattern_slug($header_field, $opts[$header_field] ?? null, $opts) : '';
+            $footer_pattern = $footer_field !== '' ? modfarm_ppb_resolve_pattern_slug($footer_field, $opts[$footer_field] ?? null, $opts) : '';
+        }
 
         $actions['convert'] = [
             'enabled' => true,

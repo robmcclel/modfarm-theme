@@ -51,10 +51,30 @@ function mfs_book_archive_taxonomies() {
 }
 
 /**
+ * Return public taxonomies that can use ModFarm archive description/image meta.
+ */
+function mfs_archive_taxonomies() {
+    $tax_objects = get_taxonomies(['public' => true], 'objects');
+    $tax = array();
+
+    foreach ($tax_objects as $tx => $obj) {
+        if (!empty($obj->show_ui)) {
+            $tax[] = $tx;
+        }
+    }
+
+    return apply_filters('mfs_archive_taxonomies', array_values(array_unique($tax)));
+}
+
+function mfs_taxonomy_supports_book_archive_controls($taxonomy) {
+    return in_array((string) $taxonomy, mfs_book_archive_taxonomies(), true);
+}
+
+/**
  * Register term meta with schema + REST.
  */
 add_action('init', function () {
-    $taxes = mfs_book_archive_taxonomies();
+    $taxes = mfs_archive_taxonomies();
 
     $bool_schema = [
       'type'              => 'boolean',
@@ -108,7 +128,7 @@ add_action('init', function () {
  * Admin UI: add fields to EDIT form (per term).
  */
 add_action('admin_init', function () {
-    foreach (mfs_book_archive_taxonomies() as $tx) {
+    foreach (mfs_archive_taxonomies() as $tx) {
         add_action("{$tx}_edit_form_fields", 'mfs_render_book_archive_term_fields', 10, 2);
         add_action("edited_{$tx}",           'mfs_save_book_archive_term_fields',   10, 2);
 
@@ -126,7 +146,7 @@ add_action('admin_enqueue_scripts', function ($hook) {
 
     $screen = get_current_screen();
     if (empty($screen->taxonomy)) return;
-    if (!in_array($screen->taxonomy, mfs_book_archive_taxonomies(), true)) return;
+    if (!in_array($screen->taxonomy, mfs_archive_taxonomies(), true)) return;
 
     wp_enqueue_media();
     wp_enqueue_editor();
@@ -176,7 +196,7 @@ add_action('admin_footer-term.php', 'mfs_rich_taxonomy_description_editor');
 
 function mfs_rich_taxonomy_description_editor() {
     $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-    if (!$screen || empty($screen->taxonomy) || !in_array($screen->taxonomy, mfs_book_archive_taxonomies(), true)) {
+    if (!$screen || empty($screen->taxonomy) || !in_array($screen->taxonomy, mfs_archive_taxonomies(), true)) {
         return;
     }
 
@@ -307,6 +327,7 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
     ]);
     ?>
     <table class="form-table mfs-term-table" role="presentation">
+        <?php if (mfs_taxonomy_supports_book_archive_controls($taxonomy)) : ?>
         <tr class="form-field">
             <th scope="row"><label for="archive_image_variant">Image Variant</label></th>
             <td>
@@ -399,6 +420,7 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
                 <p class="description mfs-term-note">Toggle visibility of these UI elements on this archive's listing.</p>
             </td>
         </tr>
+        <?php endif; ?>
         <tr class="form-field">
             <th scope="row">Hero Image</th>
             <td>
@@ -491,6 +513,7 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         'hide_empty' => false,
     ]);
     ?>
+    <?php if (mfs_taxonomy_supports_book_archive_controls($taxonomy)) : ?>
     <div class="form-field term-group">
         <label for="archive_image_variant">Image Variant</label>
         <select name="archive_image_variant" id="archive_image_variant">
@@ -553,6 +576,7 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         <label><input type="checkbox" name="archive_show_title"  value="1" checked> Title</label><br>
         <label><input type="checkbox" name="archive_show_series" value="1"> Series</label>
     </div>
+    <?php endif; ?>
     <div class="form-field term-group">
         <label>Hero Image</label>
         <input type="hidden" id="archive_hero_image" name="archive_hero_image" value="">

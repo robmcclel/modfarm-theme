@@ -18,6 +18,21 @@ function modfarm_render_archive_layout_loader_block($attributes) {
         ? modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $options['archive_footer_pattern'] ?? null, $options)
         : ($options['archive_footer_pattern'] ?? null);
 
+    if (is_post_type_archive() && function_exists('modfarm_is_collection_type') && function_exists('modfarm_get_collection_patterns')) {
+        $post_type = get_query_var('post_type');
+        if (is_array($post_type)) {
+            $post_type = reset($post_type);
+        }
+        $post_type = sanitize_key((string) $post_type);
+
+        if ($post_type !== '' && modfarm_is_collection_type($post_type)) {
+            $collection_patterns = modfarm_get_collection_patterns($post_type, 'archive');
+            if (!empty($collection_patterns['body'])) {
+                $body = $collection_patterns['body'];
+            }
+        }
+    }
+
     if (is_tax()) {
         $queried = get_queried_object();
         $taxonomy = ($queried && !empty($queried->taxonomy)) ? (string) $queried->taxonomy : '';

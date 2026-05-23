@@ -92,7 +92,9 @@ add_action('enqueue_block_editor_assets', function () {
         return;
     }
 
-    $supported_types = ['page', 'book', 'post', 'offer', 'mf_offer'];
+    $supported_types = function_exists('modfarm_get_ppb_supported_post_types')
+        ? modfarm_get_ppb_supported_post_types()
+        : ['page', 'book', 'post', 'offer', 'mf_offer'];
     if (!in_array((string) $screen->post_type, $supported_types, true)) {
         return;
     }
@@ -131,10 +133,16 @@ add_action('enqueue_block_editor_assets', function () {
         $panel_config = modfarm_get_local_ppb_manager_config_for_post($post_id, (string) $screen->post_type);
     }
 
-    $initialization_enabled = (($GLOBALS['pagenow'] ?? '') === 'post-new.php') && in_array((string) $screen->post_type, ['page', 'book', 'offer', 'mf_offer'], true);
+    $initialization_supported_types = ['page', 'book', 'offer', 'mf_offer'];
+    if (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type((string) $screen->post_type)) {
+        $initialization_supported_types[] = (string) $screen->post_type;
+    }
     $initialization_markup = function_exists('modfarm_ppb_get_default_zoned_content_markup')
         ? modfarm_ppb_get_default_zoned_content_markup((string) $screen->post_type)
         : '';
+    $initialization_enabled = (($GLOBALS['pagenow'] ?? '') === 'post-new.php')
+        && in_array((string) $screen->post_type, $initialization_supported_types, true)
+        && $initialization_markup !== '';
 
     wp_register_script(
         'modfarm-ppb-zones-panel',
@@ -188,7 +196,11 @@ add_action('init', function () {
         },
     ];
 
-    foreach (['page', 'post', 'book', 'offer', 'mf_offer'] as $post_type) {
+    $post_types = function_exists('modfarm_get_ppb_supported_post_types')
+        ? modfarm_get_ppb_supported_post_types()
+        : ['page', 'post', 'book', 'offer', 'mf_offer'];
+
+    foreach ($post_types as $post_type) {
         if (!post_type_exists($post_type)) {
             continue;
         }
@@ -581,11 +593,6 @@ add_action('init', function () {
     register_block_pattern_category('modfarm-collection-body',   [ 'label' => 'ModFarm Collection Layouts' ]);
     register_block_pattern_category('modfarm-collection-footer', [ 'label' => 'ModFarm Collection Footers' ]);
 
-    // Collection archive zones
-    register_block_pattern_category('modfarm-collection-archive-header', [ 'label' => 'ModFarm Collection Archive Headers' ]);
-    register_block_pattern_category('modfarm-collection-archive-body',   [ 'label' => 'ModFarm Collection Archive Layouts' ]);
-    register_block_pattern_category('modfarm-collection-archive-footer', [ 'label' => 'ModFarm Collection Archive Footers' ]);
-
     // ===== Element libraries =====
     register_block_pattern_category('modfarm-book-elements',    [ 'label' => 'ModFarm Book Elements' ]);
     register_block_pattern_category('modfarm-page-elements',    [ 'label' => 'ModFarm Page Elements' ]);
@@ -830,6 +837,10 @@ function modfarm_ppb_is_hybrid_template_for_post(int $post_id, string $post_type
         return true;
     }
 
+    if (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type) && function_exists('modfarm_get_collection_layout_mode')) {
+        return in_array(modfarm_get_collection_layout_mode($post_type), ['hybrid', 'hybrid-sidebar'], true);
+    }
+
     return $post_type === 'post' && ($template_slug === '' || $template_slug === 'default');
 }
 
@@ -966,7 +977,15 @@ function modfarm_ppb_get_field_id_for_post_zone(string $post_type, string $slot)
         ],
     ];
 
-    return $map[$post_type][$slot] ?? '';
+    if (isset($map[$post_type][$slot])) {
+        return $map[$post_type][$slot];
+    }
+
+    if (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type)) {
+        return 'mfc_collection_single_' . sanitize_key($slot) . '__' . sanitize_key($post_type);
+    }
+
+    return '';
 }
 
 /**
@@ -1010,6 +1029,17 @@ function modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post(int $post_id, st
 
         case 'post':
         default:
+            if (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type)) {
+                $patterns = function_exists('modfarm_get_collection_patterns')
+                    ? modfarm_get_collection_patterns($post_type, 'single')
+                    : ['header' => '', 'footer' => ''];
+                $resolved = [
+                    'header' => $patterns['header'] ?? '',
+                    'footer' => $patterns['footer'] ?? '',
+                ];
+                break;
+            }
+
             $resolved = [
                 'header' => modfarm_ppb_resolve_pattern_slug('post_header_pattern', $options['post_header_pattern'] ?? null, $options),
                 'footer' => modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $options['post_footer_pattern'] ?? null, $options),

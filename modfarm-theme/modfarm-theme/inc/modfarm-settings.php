@@ -531,9 +531,7 @@ function modfarm_ppb_pattern_category_map(): array {
         'mfc_collection_single_header'  => 'modfarm-collection-header',
         'mfc_collection_single_body'    => 'modfarm-collection-body',
         'mfc_collection_single_footer'  => 'modfarm-collection-footer',
-        'mfc_collection_archive_header' => 'modfarm-collection-archive-header',
-        'mfc_collection_archive_body'   => 'modfarm-collection-archive-body',
-        'mfc_collection_archive_footer' => 'modfarm-collection-archive-footer',
+        'mfc_collection_archive_body'   => 'modfarm-archive-body',
     ];
 }
 
@@ -584,9 +582,11 @@ function modfarm_get_registered_patterns_by_category(string $category_slug, bool
  */
 function modfarm_get_registered_patterns_for_field(string $field_id): array {
     $map = modfarm_ppb_pattern_category_map();
+    $map_field_id = preg_replace('/__.*/', '', $field_id);
+    $map_field_id = is_string($map_field_id) ? $map_field_id : $field_id;
 
-    if (!empty($map[$field_id])) {
-        return modfarm_get_registered_patterns_by_category($map[$field_id], true);
+    if (!empty($map[$map_field_id])) {
+        return modfarm_get_registered_patterns_by_category($map[$map_field_id], true);
     }
 
     // Fallback: old behavior (all modfarm/* + user/*)
@@ -740,6 +740,32 @@ function modfarm_collection_pattern_dropdown(string $type, string $context, stri
     }
 }
 
+function modfarm_get_collection_layout_mode_for_settings(string $type): string {
+    return function_exists('modfarm_get_collection_layout_mode')
+        ? modfarm_get_collection_layout_mode($type)
+        : 'ppb';
+}
+
+function modfarm_collection_layout_mode_dropdown(string $type): void {
+    $type = sanitize_key($type);
+    if ($type === '') {
+        return;
+    }
+
+    $value = modfarm_get_collection_layout_mode_for_settings($type);
+    $options = [
+        'ppb' => __('PPB', 'modfarm'),
+        'hybrid' => __('Hybrid', 'modfarm'),
+        'hybrid-sidebar' => __('Hybrid with Right Sidebar', 'modfarm'),
+    ];
+
+    echo '<select name="mfc_collection_layout_mode[' . esc_attr($type) . ']">';
+    foreach ($options as $mode => $label) {
+        echo '<option value="' . esc_attr($mode) . '"' . selected($value, $mode, false) . '>' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
+}
+
 /**
  * Build supported content-type options for Apply All preview.
  */
@@ -756,6 +782,10 @@ function modfarm_get_ppb_apply_all_content_types(): array {
 
     if (post_type_exists('mf_offer')) {
         $types['mf_offer'] = 'Offers';
+    }
+
+    foreach (modfarm_get_collection_type_defs_for_settings() as $slug => $def) {
+        $types[$slug] = modfarm_get_collection_type_label_for_settings($slug, $def);
     }
 
     return $types;
@@ -860,7 +890,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
         $label = modfarm_get_collection_type_label_for_settings($slug, $def);
 
         $types['mfc_collection_single__' . $slug] = [
-            'label' => sprintf(__('%s Single', 'modfarm'), $label),
+            'label' => $label,
             'sample_label' => sprintf(__('Sample %s', 'modfarm'), $label),
             'fields' => [
                 'header' => 'mfc_collection_single_header__' . $slug,
@@ -869,15 +899,6 @@ function modfarm_get_ppb_visualizer_content_types(): array {
             ],
         ];
 
-        $types['mfc_collection_archive__' . $slug] = [
-            'label' => sprintf(__('%s Archive', 'modfarm'), $label),
-            'sample_label' => sprintf(__('%s Archive Context', 'modfarm'), $label),
-            'fields' => [
-                'header' => 'mfc_collection_archive_header__' . $slug,
-                'body' => 'mfc_collection_archive_body__' . $slug,
-                'footer' => 'mfc_collection_archive_footer__' . $slug,
-            ],
-        ];
     }
 
     return $types;
@@ -890,11 +911,6 @@ function modfarm_get_ppb_visualizer_samples(): array {
     $samples = [];
 
     foreach (modfarm_get_ppb_visualizer_content_types() as $post_type => $config) {
-        if (str_starts_with($post_type, 'mfc_collection_archive__')) {
-            $samples[$post_type] = [];
-            continue;
-        }
-
         if (str_starts_with($post_type, 'mfc_collection_single__')) {
             $collection_type = substr($post_type, strlen('mfc_collection_single__'));
             $query_post_type = sanitize_key($collection_type);
@@ -1115,7 +1131,7 @@ function modfarm_build_ppb_visualizer_document(array $args): string {
 
     $sample_id = absint($args['sample_id'] ?? 0);
     $sample_is_active = false;
-    if ($sample_id > 0 && $content_type !== 'archive' && !str_starts_with($content_type, 'mfc_collection_archive__')) {
+    if ($sample_id > 0 && $content_type !== 'archive') {
         $sample_post = get_post($sample_id);
         $expected_post_type = str_starts_with($content_type, 'mfc_collection_single__')
             ? sanitize_key(substr($content_type, strlen('mfc_collection_single__')))
@@ -2280,7 +2296,10 @@ function modfarm_save_collection_ppb_settings_from_request(): void {
         return;
     }
 
-    if (!isset($_POST['mfc_collection_ppb']) || !is_array($_POST['mfc_collection_ppb'])) {
+    if (
+        (!isset($_POST['mfc_collection_ppb']) || !is_array($_POST['mfc_collection_ppb'])) &&
+        (!isset($_POST['mfc_collection_layout_mode']) || !is_array($_POST['mfc_collection_layout_mode']))
+    ) {
         return;
     }
 
@@ -2290,7 +2309,9 @@ function modfarm_save_collection_ppb_settings_from_request(): void {
     }
 
     $defs['types'] = isset($defs['types']) && is_array($defs['types']) ? $defs['types'] : [];
-    $raw = wp_unslash($_POST['mfc_collection_ppb']);
+    $raw = isset($_POST['mfc_collection_ppb']) && is_array($_POST['mfc_collection_ppb'])
+        ? wp_unslash($_POST['mfc_collection_ppb'])
+        : [];
 
     foreach ($raw as $type => $contexts) {
         $type = sanitize_key((string) $type);
@@ -2323,6 +2344,28 @@ function modfarm_save_collection_ppb_settings_from_request(): void {
                 $defs['types'][$type]['ppb'][$context][$slot] = $value;
             }
         }
+    }
+
+    $raw_modes = isset($_POST['mfc_collection_layout_mode']) && is_array($_POST['mfc_collection_layout_mode'])
+        ? wp_unslash($_POST['mfc_collection_layout_mode'])
+        : [];
+
+    foreach ($raw_modes as $type => $mode) {
+        $type = sanitize_key((string) $type);
+        if ($type === '' || empty($defs['types'][$type]) || !is_array($defs['types'][$type])) {
+            continue;
+        }
+
+        $mode = sanitize_key((string) $mode);
+        if (!in_array($mode, ['ppb', 'hybrid', 'hybrid-sidebar'], true)) {
+            $mode = 'ppb';
+        }
+
+        if (!isset($defs['types'][$type]['ppb']) || !is_array($defs['types'][$type]['ppb'])) {
+            $defs['types'][$type]['ppb'] = [];
+        }
+
+        $defs['types'][$type]['ppb']['layout_mode'] = $mode;
     }
 
     update_option('mfc_content_defs', $defs, false);
@@ -2444,7 +2487,21 @@ function modfarm_render_settings_page() {
                                                          Standard posts use Hybrid by default. Choose the sidebar chassis when posts should render with the Post Sidebar widget area.
                                                      </p>
                                                  </td>
-                                             </tr>
+                                              </tr>
+                                             <?php foreach (modfarm_get_collection_type_defs_for_settings() as $mf_layout_collection_slug => $mf_layout_collection_def) : ?>
+                                                 <?php $mf_layout_collection_label = modfarm_get_collection_type_label_for_settings($mf_layout_collection_slug, $mf_layout_collection_def); ?>
+                                                 <tr>
+                                                     <th scope="row">
+                                                         <label><?php echo esc_html($mf_layout_collection_label); ?> Layout Mode</label>
+                                                     </th>
+                                                     <td>
+                                                         <?php modfarm_collection_layout_mode_dropdown($mf_layout_collection_slug); ?>
+                                                         <p class="description">
+                                                             PPB assembles Header, Body, and Footer zones for new items. Hybrid keeps imported or authored body content intact and uses PPB Header/Footer chrome.
+                                                         </p>
+                                                     </td>
+                                                 </tr>
+                                             <?php endforeach; ?>
                                              </tbody>
                                          </table>
                                     </div>
@@ -3069,6 +3126,15 @@ function modfarm_render_settings_page() {
                                                 <th scope="row"><label>Archive Footer Pattern</label></th>
                                                 <td><?php modfarm_pattern_dropdown(['id' => 'archive_footer_pattern']); ?></td>
                                             </tr>
+                                            <?php foreach (modfarm_get_collection_type_defs_for_settings() as $mf_archive_collection_slug => $mf_archive_collection_def) : ?>
+                                                <?php $mf_archive_collection_label = modfarm_get_collection_type_label_for_settings($mf_archive_collection_slug, $mf_archive_collection_def); ?>
+                                                <tr>
+                                                    <th scope="row">
+                                                        <label><?php echo esc_html($mf_archive_collection_label); ?> Archive Body Pattern</label>
+                                                    </th>
+                                                    <td><?php modfarm_collection_pattern_dropdown($mf_archive_collection_slug, 'archive', 'body'); ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
                                             </tbody>
                                         </table>
                                     </div>
@@ -3080,7 +3146,7 @@ function modfarm_render_settings_page() {
                                             <p class="description">
                                                 Configure PPB layouts for custom Collection Types such as documentation, webcomics, reviews, podcasts, and other structured content.
                                             </p>
-                                            <p>No Collection Types exist yet. Create one in ModFarm Collections, then return here to assign its Single and Archive layouts.</p>
+                                            <p>No Collection Types exist yet. Create one in ModFarm Collections, then return here to assign its page layout. Collection archive body selectors appear in the Archive Layout panel.</p>
                                         </div>
                                     <?php else : ?>
                                         <?php foreach ($mf_collection_types as $mf_collection_slug => $mf_collection_def) : ?>
@@ -3110,30 +3176,6 @@ function modfarm_render_settings_page() {
                                                 </table>
                                             </div>
 
-                                            <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="mfc_collection_archive__<?php echo esc_attr($mf_collection_slug); ?>">
-                                                <h3 class="mf-group-title">Collection Layouts</h3>
-                                                <p class="description">
-                                                    Configure PPB layouts for custom Collection Types such as documentation, webcomics, reviews, podcasts, and other structured content.
-                                                </p>
-                                                <h4><?php echo esc_html($mf_collection_label); ?> <code><?php echo esc_html($mf_collection_slug); ?></code></h4>
-                                                <h4>Archive Layout</h4>
-                                                <table class="form-table mf-form-table">
-                                                    <tbody>
-                                                    <tr>
-                                                        <th scope="row"><label>Header Pattern</label></th>
-                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'archive', 'header'); ?></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th scope="row"><label>Body Pattern</label></th>
-                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'archive', 'body'); ?></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th scope="row"><label>Footer Pattern</label></th>
-                                                        <td><?php modfarm_collection_pattern_dropdown($mf_collection_slug, 'archive', 'footer'); ?></td>
-                                                    </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
 
