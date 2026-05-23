@@ -412,6 +412,12 @@ function modfarm_register_settings() {
     // ARCHIVE Layout
     add_settings_field('archive_header_pattern',              'Archive Header Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_header_pattern']);
     add_settings_field('archive_body_pattern',                'Archive Body Pattern',        'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern']);
+    add_settings_field('archive_body_pattern_post_index',     'Blog Index Archive Pattern',  'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_post_index']);
+    add_settings_field('archive_body_pattern_category',       'Category Archive Pattern',    'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_category']);
+    add_settings_field('archive_body_pattern_post_tag',       'Tag Archive Pattern',         'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_post_tag']);
+    add_settings_field('archive_body_pattern_author',         'Author Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_author']);
+    add_settings_field('archive_body_pattern_search',         'Search Results Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_search']);
+    add_settings_field('archive_body_pattern_date',           'Date Archive Pattern',        'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_date']);
     add_settings_field('archive_body_pattern_book_series',    'Book Series Archive Pattern', 'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_series']);
     add_settings_field('archive_body_pattern_book_genre',     'Genre Archive Pattern',       'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_genre']);
     add_settings_field('archive_body_pattern_book_authors',   'Author Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_authors']);
@@ -523,6 +529,12 @@ function modfarm_ppb_pattern_category_map(): array {
         'archive_footer_pattern' => 'modfarm-archive-footer',
 
         // Archive overrides
+        'archive_body_pattern_post_index'   => 'modfarm-archive-body',
+        'archive_body_pattern_category'     => 'modfarm-archive-body',
+        'archive_body_pattern_post_tag'     => 'modfarm-archive-body',
+        'archive_body_pattern_author'       => 'modfarm-archive-body',
+        'archive_body_pattern_search'       => 'modfarm-archive-body',
+        'archive_body_pattern_date'         => 'modfarm-archive-body',
         'archive_body_pattern_book_series'  => 'modfarm-archive-body',
         'archive_body_pattern_book_genre'   => 'modfarm-archive-body',
         'archive_body_pattern_book_authors' => 'modfarm-archive-body',
@@ -2200,6 +2212,12 @@ function modfarm_sanitize_settings($settings) {
         'offer_footer_pattern',
         'archive_header_pattern',
         'archive_body_pattern',
+        'archive_body_pattern_post_index',
+        'archive_body_pattern_category',
+        'archive_body_pattern_post_tag',
+        'archive_body_pattern_author',
+        'archive_body_pattern_search',
+        'archive_body_pattern_date',
         'archive_body_pattern_book_series',
         'archive_body_pattern_book_genre',
         'archive_body_pattern_book_authors',
@@ -2504,10 +2522,64 @@ function modfarm_render_settings_page() {
                                              <?php endforeach; ?>
                                              </tbody>
                                          </table>
-                                    </div>
-                                </div>
+                                     </div>
 
-                                <aside class="mf-settings-preview">
+                                     <div class="mf-settings-group">
+                                         <h3 class="mf-group-title">Archive Body Layouts</h3>
+                                         <p class="description">
+                                             Assign universal body layouts for WordPress archive views. Archive headers and footers continue to use the default Archive Header and Archive Footer patterns.
+                                         </p>
+                                         <table class="form-table mf-form-table">
+                                             <tbody>
+                                             <?php
+                                             $mf_archive_body_fields = [
+                                                 'archive_body_pattern_post_index' => [
+                                                     'label' => 'Blog Index',
+                                                     'help'  => 'Used for the posts index when WordPress is showing the blog feed.',
+                                                 ],
+                                                 'archive_body_pattern_category' => [
+                                                     'label' => 'Categories',
+                                                     'help'  => 'Used for standard post category archives.',
+                                                 ],
+                                                 'archive_body_pattern_post_tag' => [
+                                                     'label' => 'Tags',
+                                                     'help'  => 'Used for standard post tag archives.',
+                                                 ],
+                                                 'archive_body_pattern_author' => [
+                                                     'label' => 'Authors',
+                                                     'help'  => 'Used for author archive pages.',
+                                                 ],
+                                                 'archive_body_pattern_search' => [
+                                                     'label' => 'Search Results',
+                                                     'help'  => 'Used for site search result pages.',
+                                                 ],
+                                                 'archive_body_pattern_date' => [
+                                                     'label' => 'Date Archives',
+                                                     'help'  => 'Used for year, month, and day archives.',
+                                                 ],
+                                             ];
+                                             ?>
+                                             <?php foreach ($mf_archive_body_fields as $mf_archive_body_id => $mf_archive_body_config) : ?>
+                                                 <tr>
+                                                     <th scope="row">
+                                                         <label for="mf-<?php echo esc_attr(str_replace('_', '-', $mf_archive_body_id)); ?>">
+                                                             <?php echo esc_html($mf_archive_body_config['label']); ?>
+                                                         </label>
+                                                     </th>
+                                                     <td>
+                                                         <?php modfarm_pattern_dropdown(['id' => $mf_archive_body_id]); ?>
+                                                         <p class="description">
+                                                             <?php echo esc_html($mf_archive_body_config['help']); ?>
+                                                         </p>
+                                                     </td>
+                                                 </tr>
+                                             <?php endforeach; ?>
+                                             </tbody>
+                                         </table>
+                                     </div>
+                                 </div>
+
+                                 <aside class="mf-settings-preview">
                                     <div class="mf-preview-card">
                                         <div class="mf-preview-cover"></div>
                                         <div class="mf-preview-meta">

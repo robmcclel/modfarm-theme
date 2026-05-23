@@ -669,6 +669,12 @@ function modfarm_ppb_canonical_defaults(): array {
         'archive_header_pattern'            => 'modfarm/archive-header-basic',
         'archive_body_pattern'              => 'modfarm/basic-archive-layout',
         'archive_footer_pattern'            => 'modfarm/footer-simple',
+        'archive_body_pattern_post_index'   => 'modfarm/basic-archive-layout',
+        'archive_body_pattern_category'     => 'modfarm/basic-archive-layout',
+        'archive_body_pattern_post_tag'     => 'modfarm/basic-archive-layout',
+        'archive_body_pattern_author'       => 'modfarm/basic-author-archive-layout',
+        'archive_body_pattern_search'       => 'modfarm/basic-archive-layout',
+        'archive_body_pattern_date'         => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_series'  => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_genre'   => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_authors' => 'modfarm/basic-archive-layout',
@@ -1097,6 +1103,45 @@ function modfarm_detect_archive_image_type($taxonomy) {
     return $map[$taxonomy] ?? 'kindle';
 }
 
+function modfarm_resolve_archive_body_pattern_slug(?array $opts = null): string {
+    $opts = is_array($opts) ? $opts : get_option('modfarm_theme_settings', []);
+    $key = 'archive_body_pattern';
+
+    if (is_home()) {
+        $key = 'archive_body_pattern_post_index';
+    } elseif (is_category()) {
+        $key = 'archive_body_pattern_category';
+    } elseif (is_tag()) {
+        $key = 'archive_body_pattern_post_tag';
+    } elseif (is_author()) {
+        $key = 'archive_body_pattern_author';
+    } elseif (is_search()) {
+        $key = 'archive_body_pattern_search';
+    } elseif (is_date()) {
+        $key = 'archive_body_pattern_date';
+    } elseif (is_tax()) {
+        $qo = get_queried_object();
+        $taxonomy = (is_object($qo) && !empty($qo->taxonomy)) ? (string) $qo->taxonomy : '';
+        $known = [
+            'book-series' => 'archive_body_pattern_book_series',
+            'book-genre' => 'archive_body_pattern_book_genre',
+            'book-author' => 'archive_body_pattern_book_authors',
+            'book-authors' => 'archive_body_pattern_book_authors',
+        ];
+
+        if ($taxonomy !== '' && !empty($known[$taxonomy])) {
+            $key = $known[$taxonomy];
+        }
+
+        $generic_key = $taxonomy !== '' ? 'archive_body_pattern__' . $taxonomy : '';
+        if ($generic_key !== '' && !empty($opts[$generic_key])) {
+            return modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $opts[$generic_key], $opts);
+        }
+    }
+
+    return modfarm_ppb_resolve_pattern_slug($key, $opts[$key] ?? null, $opts);
+}
+
 /**
  * Archive pattern resolution for PPB.
  * Uses ModFarm Settings (option) rather than theme_mods.
@@ -1117,10 +1162,16 @@ function modfarm_get_archive_patterns() {
 
     // Fresh or unused sites must resolve to usable archive patterns.
     $default_header = modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $opts['archive_header_pattern'] ?? null, $opts);
-    $default_body   = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $opts['archive_body_pattern'] ?? null, $opts);
+    $default_body   = modfarm_resolve_archive_body_pattern_slug($opts);
     $default_footer = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
 
     $taxonomy_overrides = [
+        'post_index'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_post_index', $opts['archive_body_pattern_post_index'] ?? null, $opts),
+        'category'    => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_category', $opts['archive_body_pattern_category'] ?? null, $opts),
+        'post_tag'    => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_post_tag', $opts['archive_body_pattern_post_tag'] ?? null, $opts),
+        'author'      => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_author', $opts['archive_body_pattern_author'] ?? null, $opts),
+        'search'      => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_search', $opts['archive_body_pattern_search'] ?? null, $opts),
+        'date'        => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_date', $opts['archive_body_pattern_date'] ?? null, $opts),
         'book-series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
         'book-genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
         'book-author'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
@@ -1331,44 +1382,8 @@ function modfarm_render_archive_page() {
 
     // Fresh or unused archive settings must still render usable defaults.
     $header_slug = modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $opts['archive_header_pattern'] ?? null, $opts);
-    $body_slug   = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $opts['archive_body_pattern'] ?? null, $opts);
+    $body_slug   = modfarm_resolve_archive_body_pattern_slug($opts);
     $footer_slug = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
-
-    // Known taxonomy overrides (current UI fields)
-    $known_overrides = [
-        'book-series'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_series', $opts['archive_body_pattern_book_series'] ?? null, $opts),
-        'book-genre'   => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_genre', $opts['archive_body_pattern_book_genre'] ?? null, $opts),
-        'book-author'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
-        'book-authors' => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_book_authors', $opts['archive_body_pattern_book_authors'] ?? null, $opts),
-    ];
-
-    // Generic override support: archive_body_pattern__{taxonomy}
-    $generic_overrides = [];
-    foreach ($opts as $k => $v) {
-        if (!is_string($k) || !str_starts_with($k, 'archive_body_pattern__')) continue;
-        $tax = substr($k, strlen('archive_body_pattern__'));
-        if ($tax) {
-            $resolved = modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $v, $opts);
-            if ($resolved !== '') {
-                $generic_overrides[$tax] = $resolved;
-                $generic_overrides[str_replace('_', '-', $tax)] = $resolved;
-            }
-        }
-    }
-
-    // Apply override for the current taxonomy archive
-    if (is_tax()) {
-        $qo = get_queried_object();
-        $taxonomy = (is_object($qo) && !empty($qo->taxonomy)) ? $qo->taxonomy : '';
-
-        if ($taxonomy) {
-            if (!empty($generic_overrides[$taxonomy])) {
-                $body_slug = $generic_overrides[$taxonomy];
-            } elseif (!empty($known_overrides[$taxonomy])) {
-                $body_slug = $known_overrides[$taxonomy];
-            }
-        }
-    }
 
     $registry = WP_Block_Patterns_Registry::get_instance();
 

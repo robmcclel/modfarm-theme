@@ -11,8 +11,8 @@ function modfarm_render_archive_layout_loader_block($attributes) {
     $header = function_exists('modfarm_ppb_resolve_pattern_slug')
         ? modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $options['archive_header_pattern'] ?? null, $options)
         : ($options['archive_header_pattern'] ?? null);
-    $body = function_exists('modfarm_ppb_resolve_pattern_slug')
-        ? modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $options['archive_body_pattern'] ?? null, $options)
+    $body = function_exists('modfarm_resolve_archive_body_pattern_slug')
+        ? modfarm_resolve_archive_body_pattern_slug($options)
         : ($options['archive_body_pattern'] ?? null);
     $footer = function_exists('modfarm_ppb_resolve_pattern_slug')
         ? modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $options['archive_footer_pattern'] ?? null, $options)
@@ -33,7 +33,7 @@ function modfarm_render_archive_layout_loader_block($attributes) {
         }
     }
 
-    if (is_tax()) {
+    if (!function_exists('modfarm_resolve_archive_body_pattern_slug') && is_tax()) {
         $queried = get_queried_object();
         $taxonomy = ($queried && !empty($queried->taxonomy)) ? (string) $queried->taxonomy : '';
         $tax_setting_suffixes = [
