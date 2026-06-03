@@ -26,6 +26,7 @@ export default function BookCardControls( { attributes, setAttributes, prefix = 
     // Attribute names (kept centralized so all blocks use the same schema)
     const attr = {
         useGlobal:            withPrefix( 'UseGlobal' ),
+        imageAspect:          withPrefix( 'ImageAspect' ),
         coverShape:           withPrefix( 'CoverShape' ),
         buttonShape:          withPrefix( 'ButtonShape' ),
         sampleShape:          withPrefix( 'SampleShape' ),
@@ -43,6 +44,7 @@ export default function BookCardControls( { attributes, setAttributes, prefix = 
 
     const values = {
         useGlobal:   attributes[ attr.useGlobal ] ?? true,
+        imageAspect: attributes[ attr.imageAspect ] || 'auto',
         coverShape:  attributes[ attr.coverShape ] || 'inherit',
         buttonShape: attributes[ attr.buttonShape ] || 'inherit',
         sampleShape: attributes[ attr.sampleShape ] || 'inherit',
@@ -95,6 +97,21 @@ export default function BookCardControls( { attributes, setAttributes, prefix = 
                 title={ __( 'Card Layout & Effects', 'modfarm' ) }
                 initialOpen={ true }
             >
+                <PanelRow>
+                    <SelectControl
+                        label={ __( 'Cover Aspect', 'modfarm' ) }
+                        value={ values.imageAspect }
+                        onChange={ ( v ) => set( 'imageAspect', v ) }
+                        disabled={ disableOverrides }
+                        help={ __( 'Use Auto for normal flat covers, rendered 3D book-card crops, and square audiobook art. Override only when the selected image uses a different crop.', 'modfarm' ) }
+                        options={ [
+                            { label: __( 'Auto', 'modfarm' ), value: 'auto' },
+                            { label: __( 'Book Card (2:3)', 'modfarm' ), value: '2-3' },
+                            { label: __( 'Square (1:1)', 'modfarm' ), value: '1-1' },
+                            { label: __( 'Legacy 3D (4:3)', 'modfarm' ), value: '4-3' },
+                        ] }
+                    />
+                </PanelRow>
                 <PanelRow>
                     <SelectControl
                         label={ __( 'Cover Shape', 'modfarm' ) }

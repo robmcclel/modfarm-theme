@@ -13,6 +13,7 @@ function mfb_ui_media(array $args): string {
     'link'    => '',
     'image'   => '',
     'aspect'  => '2 / 3',
+    'image_fit' => 'fill',
 
     // primary button
     'btn_text' => '',
@@ -39,6 +40,7 @@ function mfb_ui_media(array $args): string {
   $format   = (string)(($a['format'] ?? '') ?: '');
   $meta_key = (string)($a['meta_key'] ?? '');
   $analytics_context = (isset($a['analytics_context']) && is_array($a['analytics_context'])) ? $a['analytics_context'] : [];
+  $image_fit = in_array((string)($a['image_fit'] ?? 'fill'), ['fill', 'contain', 'cover'], true) ? (string)$a['image_fit'] : 'fill';
 
   // ---- COVER click payload (internal)
   $cover_destination = (string)($a['link'] ?? '');
@@ -108,7 +110,8 @@ function mfb_ui_media(array $args): string {
         <img src="<?php echo esc_url((string)$a['image']); ?>"
              alt="<?php echo esc_attr($title); ?>"
              loading="lazy"
-             decoding="async" />
+             decoding="async"
+             style="object-fit: <?php echo esc_attr($image_fit); ?>;" />
       </a>
     <?php endif; ?>
 
@@ -337,6 +340,7 @@ function mfb_ui_card(array $card): string {
   $link      = (string)($card['permalink'] ?? '');
   $image     = (string)($card['image_url'] ?? '');
   $aspect    = (string)($card['aspect'] ?? '2 / 3');
+  $image_fit = (string)($card['image_fit'] ?? 'fill');
   $format    = $card['format'] ?? null;
 
   $series    = (string)($card['series_name'] ?? '');
@@ -403,6 +407,7 @@ function mfb_ui_card(array $card): string {
       'link'     => $link,
       'image'    => $image,
       'aspect'   => $aspect,
+      'image_fit' => $image_fit,
       'btn_text' => $btn_text,
       'btn_url'  => $btn_url,
       'btn_tgt'  => $btn_tgt,

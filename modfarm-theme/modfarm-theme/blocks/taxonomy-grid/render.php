@@ -1,4 +1,6 @@
 <?php
+require_once get_template_directory() . '/blocks/shared/book-options.php';
+
 if (!function_exists('modfarm_render_taxonomy_grid_block')) {
   function modfarm_render_taxonomy_grid_block($attributes, $content = '', $block = null) {
 
@@ -28,6 +30,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
       'primaryImageSource' => 'archive_default_image',  // archive_default_image | first_cover_in_series | archive_hero_image | initials
       'fallbackImageSource'=> 'first_cover_in_series',
+      'bookCoverSource'    => 'cover_ebook',
+      'bookLinkSource'     => 'permalink',
 
       'shape'              => 'square',  // square|rounded|circle
       'aspectRatioOpt'     => '1/1',     // 'auto' or 'W/H' (e.g., '3/4')
@@ -237,31 +241,22 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       return '<div class="mfc-headshot mfc-fallback" aria-hidden="true">' . esc_html(mb_substr(get_the_title($book_id), 0, 1)) . '</div>';
     };
 
-    $book_image_url = function($book_id): string {
-      foreach (['cover_ebook','cover_paperback','cover_hardcover','cover_image_audio','cover_image_kindle','coverart','hero_image'] as $key) {
-        $value = get_post_meta($book_id, $key, true);
-        if (!$value) continue;
-        if (is_numeric($value)) {
-          $url = wp_get_attachment_image_url((int)$value, 'full');
-          if ($url) return (string)$url;
-        }
-        if (is_string($value) && stripos($value, 'http') === 0) {
-          return esc_url_raw($value);
-        }
-      }
+    $book_cover_source = modfarm_book_option_normalize_cover_source((string)$a['bookCoverSource']);
+    $book_link_source = modfarm_book_option_normalize_link_source((string)$a['bookLinkSource']);
 
-      return get_the_post_thumbnail_url($book_id, 'full') ?: '';
+    $book_image_url = function($book_id) use ($book_cover_source): string {
+      return modfarm_book_cover_url((int)$book_id, $book_cover_source);
     };
 
     $tracker = !empty($a['trackerLoc']) ? sanitize_key($a['trackerLoc']) : 'taxonomy-grid';
 
-    $book_card = function($book_id, $series_term, array $analytics_context = []) use ($book_image_url, $tracker): array {
+    $book_card = function($book_id, $series_term, array $analytics_context = []) use ($book_image_url, $book_link_source, $tracker): array {
       $permalink = get_permalink($book_id);
-      $button_url = $permalink;
+      $button_url = modfarm_book_link_url((int)$book_id, $book_link_source, (string)$permalink);
       $opts = get_option('modfarm_theme_settings', []);
-      $button_text = (string)($opts['book_card_button_text'] ?? __('See The Book', 'modfarm'));
+      $button_text = (string)($opts['book_card_button_text'] ?? modfarm_book_link_default_label($book_link_source));
       if ($button_text === '') {
-        $button_text = __('See The Book', 'modfarm');
+        $button_text = modfarm_book_link_default_label($book_link_source);
       }
 
       return [
@@ -287,7 +282,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         'button' => [
           'text'    => $button_text,
           'url'     => $button_url,
-          'target'  => '_self',
+          'target'  => modfarm_book_link_is_internal($book_link_source) ? '_self' : '_blank',
           'tracker' => $tracker,
           'origin'  => 'taxonomy-grid-series-books',
         ],

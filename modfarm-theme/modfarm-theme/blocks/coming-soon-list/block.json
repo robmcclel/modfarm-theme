@@ -50,6 +50,7 @@
 
     "effect":          { "type": "string",  "default": "flat" },
     "cover-shape":     { "type": "string",  "default": "square" },
+    "cardImageAspect": { "type": "string",  "default": "auto" },
     "button-shape":    { "type": "string",  "default": "square" },
     "cta-join":        { "type": "string",  "default": "joined" },
     "card-style":      { "type": "string",  "default": "flat" },

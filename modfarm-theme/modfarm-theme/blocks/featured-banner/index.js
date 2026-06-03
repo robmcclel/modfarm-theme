@@ -65,7 +65,6 @@
     { label: 'Target', value: 'target' },
     { label: 'Libro.fm', value: 'librofm' },
     { label: 'Downpour', value: 'downpour' },
-    { label: 'Target', value: 'target' },
     { label: 'Walmart', value: 'walmart' },
     { label: 'Audiobooks.com', value: 'audiobooks_com' },
     { label: 'Spotify', value: 'spotify' },

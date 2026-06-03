@@ -20,6 +20,15 @@
 
   // Server-side renderer (global)
   const ServerSideRender = wp.serverSideRender;
+  const BOOK_BUTTON_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.BUTTON_OPTIONS) || [
+    { label: 'See The Book (Permalink)', value: 'permalink' }
+  ];
+  const BOOK_COVER_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.COVER_OPTIONS) || [
+    { label: 'eBook Cover (BMS)', value: 'cover_ebook' },
+    { label: 'Featured Image (Book Page)', value: 'featured_image' }
+  ];
+  const normalizeLinkOption = (value) => ({ bookpage: 'permalink', kindle: 'kindle_url', amazon: 'kindle_url', paperback: 'amazon_paper', hardcover: 'amazon_hard', audible: 'audible_url', bn: 'nook' }[value] || value || 'permalink');
+  const normalizeCoverOption = (value) => ({ featured: 'featured_image', hero_image: 'featured_image', cover_image_flat: 'cover_ebook', cover_audio: 'cover_image_audio' }[value] || value || 'cover_ebook');
 
   // Helpers ---------------------------------------------------------------
   function useAllPublicTaxonomies() {
@@ -352,6 +361,22 @@
           el(
             PanelBody,
             { title: 'Image Sources', initialOpen: false },
+            (attributes.groupMode || 'terms') === 'books_by_series' &&
+              el(SelectControl, {
+                label: 'Book Cover Source',
+                value: normalizeCoverOption(attributes.bookCoverSource),
+                options: BOOK_COVER_OPTIONS,
+                onChange: (v) => setAttributes({ bookCoverSource: normalizeCoverOption(v) })
+              }),
+            (attributes.groupMode || 'terms') === 'books_by_series' &&
+              el(SelectControl, {
+                label: 'Book Link Destination',
+                value: normalizeLinkOption(attributes.bookLinkSource),
+                options: BOOK_BUTTON_OPTIONS,
+                onChange: (v) => setAttributes({ bookLinkSource: normalizeLinkOption(v) })
+              }),
+            (attributes.groupMode || 'terms') === 'books_by_series' &&
+              el('hr', {}),
             el(SelectControl, {
               label: 'Primary',
               value: attributes.primaryImageSource,

@@ -1,5 +1,6 @@
 <?php
 // blocks/book-cover-art/render.php
+require_once get_template_directory() . '/blocks/shared/book-options.php';
 
 function modfarm_render_book_cover_art_block( $attributes, $content = '', $block = null ) {
 	$post_id = isset( $block->context['postId'] ) ? $block->context['postId'] : get_the_ID();
@@ -7,20 +8,11 @@ function modfarm_render_book_cover_art_block( $attributes, $content = '', $block
 		return '<div class="modfarm-cover-art missing-cover">No post context.</div>';
 	}
 
-	$meta_key   = $attributes['coverType'] ?? 'cover_ebook';
+	$cover_type = modfarm_book_option_normalize_cover_source( (string) ( $attributes['coverType'] ?? 'cover_ebook' ) );
 	$alignment  = esc_attr( $attributes['alignment'] ?? 'center' );
 	$class_name = "modfarm-cover-art align-{$alignment}";
 
-	$image_value = get_post_meta( $post_id, $meta_key, true );
-	if ( is_numeric( $image_value ) ) {
-		$image_url = wp_get_attachment_url( $image_value );
-	} else {
-		$image_url = esc_url( $image_value );
-	}
-
-	if ( ! $image_url && has_post_thumbnail( $post_id ) ) {
-		$image_url = get_the_post_thumbnail_url( $post_id, 'full' );
-	}
+	$image_url = modfarm_book_cover_url( (int) $post_id, $cover_type );
 
 	if ( ! $image_url ) {
 		return '<div class="modfarm-cover-art missing-cover">No image found.</div>';

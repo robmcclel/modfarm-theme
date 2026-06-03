@@ -107,6 +107,7 @@ add_action('init', function () {
 
     foreach ($taxes as $tx) {
         register_term_meta($tx, 'archive_image_variant', $image_variant_schema);
+        register_term_meta($tx, 'archive_image_aspect',  $string_schema);
         register_term_meta($tx, 'archive_show_button',   $bool_schema);
         register_term_meta($tx, 'archive_show_sample',   $bool_schema);
         register_term_meta($tx, 'archive_show_title',    $bool_schema);
@@ -260,6 +261,7 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
     $get = fn($k,$d='') => get_term_meta($term->term_id, $k, true) ?: $d;
 
     $variant     = $get('archive_image_variant', 'featured');
+    $aspect      = $get('archive_image_aspect', 'auto');
 
     $show_button = (int) $get('archive_show_button', 1);
     $show_sample = (int) $get('archive_show_sample', 0);
@@ -310,6 +312,12 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
         '20%' => '5 per row',
         '16.666%' => '6 per row',
     ];
+    $aspect_options = [
+        'auto' => 'Auto',
+        '2-3'  => 'Book Card (2:3)',
+        '1-1'  => 'Square (1:1)',
+        '4-3'  => 'Legacy 3D (4:3)',
+    ];
     $order_options = [
         'ASC' => 'Oldest first',
         'DESC' => 'Most recent first',
@@ -339,6 +347,20 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
                     <?php endforeach; ?>
                 </select>
                 <p class="description mfs-term-note">Controls which image style the archive’s book cards prefer.</p>
+            </td>
+        </tr>
+
+        <tr class="form-field">
+            <th scope="row"><label for="archive_image_aspect">Image Aspect</label></th>
+            <td>
+                <select name="archive_image_aspect" id="archive_image_aspect">
+                    <?php foreach ($aspect_options as $val => $label): ?>
+                        <option value="<?php echo esc_attr($val); ?>" <?php selected($aspect, $val); ?>>
+                            <?php echo esc_html($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="description mfs-term-note">Controls the image slot shape for this archive's book cards. Auto follows the selected/fallback image source.</p>
             </td>
         </tr>
 
@@ -497,6 +519,12 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         '20%' => '5 per row',
         '16.666%' => '6 per row',
     ];
+    $aspect_options = [
+        'auto' => 'Auto',
+        '2-3'  => 'Book Card (2:3)',
+        '1-1'  => 'Square (1:1)',
+        '4-3'  => 'Legacy 3D (4:3)',
+    ];
     $order_options = [
         'ASC' => 'Oldest first',
         'DESC' => 'Most recent first',
@@ -522,6 +550,17 @@ function mfs_render_book_archive_add_fields($taxonomy) {
             <?php endforeach; ?>
         </select>
         <p class="description">Controls which image style this archive prefers.</p>
+    </div>
+    <div class="form-field term-group">
+        <label for="archive_image_aspect">Image Aspect</label>
+        <select name="archive_image_aspect" id="archive_image_aspect">
+            <?php foreach ($aspect_options as $val => $label): ?>
+                <option value="<?php echo esc_attr($val); ?>" <?php selected($val, 'auto'); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description">Controls the image slot shape for this archive's book cards.</p>
     </div>
     <div class="form-field term-group">
         <label for="archive_books_in_row">Books Per Row</label>
@@ -640,6 +679,12 @@ function mfs_save_book_archive_term_fields($term_id, $tt_id = 0) {
         'cover_image_audio_3d',
         'cover_image_composite',
     ], 'featured'));
+    update_term_meta($term_id, 'archive_image_aspect', $one_of('archive_image_aspect', [
+        'auto',
+        '2-3',
+        '1-1',
+        '4-3',
+    ], 'auto'));
 
     update_term_meta($term_id, 'archive_show_button',   $cb('archive_show_button'));
     update_term_meta($term_id, 'archive_show_sample',   $cb('archive_show_sample'));

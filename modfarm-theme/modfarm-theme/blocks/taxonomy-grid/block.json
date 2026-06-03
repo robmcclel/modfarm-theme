@@ -35,6 +35,8 @@
 
     "primaryImageSource":  { "type": "string", "default": "archive_default_image" },
     "fallbackImageSource": { "type": "string", "default": "first_cover_in_series" },
+    "bookCoverSource":     { "type": "string", "default": "cover_ebook" },
+    "bookLinkSource":      { "type": "string", "default": "permalink" },
 
     "shape":            { "type": "string",  "default": "square" }, 
     "aspectRatioOpt":   { "type": "string",  "default": "1/1" },

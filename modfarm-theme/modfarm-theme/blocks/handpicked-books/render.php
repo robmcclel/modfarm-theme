@@ -54,6 +54,7 @@ function modfarm_render_handpicked_books_block( $attributes ) {
     $opts['book_card_cover_shape'] ?? '',
     'square'
   );
+  $local_image_aspect = $attributes['cardImageAspect'] ?? 'auto';
 
   $button_shape = $pick_token(
     $card_use_global ? 'inherit' : ($attributes['cardButtonShape'] ?? 'inherit'),
@@ -212,8 +213,10 @@ function modfarm_render_handpicked_books_block( $attributes ) {
 
       // Image URL
       $image_source = modfarm_book_option_normalize_cover_source((string)$image_type);
-      $img_url      = modfarm_book_cover_url((int)$book_id, $image_source);
-      $aspect       = modfarm_book_cover_aspect($image_source);
+      $cover_data   = modfarm_book_cover_data((int)$book_id, $image_source);
+      $img_url      = (string)$cover_data['url'];
+      $aspect       = modfarm_book_cover_aspect((string)$cover_data['source'], (string)$local_image_aspect);
+      $image_fit    = modfarm_book_cover_image_fit((string)$cover_data['source'], (string)$local_image_aspect);
 
       // Series
       $series_name = '';
@@ -254,6 +257,7 @@ function modfarm_render_handpicked_books_block( $attributes ) {
         'permalink' => $permalink,
         'image_url' => $img_url,
         'aspect'    => $aspect,
+        'image_fit' => $image_fit,
         'format'    => null,
 
         // helps ui.php embed per-book identity in event payloads

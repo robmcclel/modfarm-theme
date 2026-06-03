@@ -81,6 +81,7 @@
       const cardUseGlobal = attributes.cardUseGlobal !== false; // default true
 
       const cardCoverShape       = attributes.cardCoverShape       || 'inherit';
+      const cardImageAspect      = attributes.cardImageAspect      || 'auto';
       const cardButtonShape      = attributes.cardButtonShape      || 'inherit';
       const cardSampleShape      = attributes.cardSampleShape      || 'inherit';
       const cardCtaMode          = attributes.cardCtaMode          || 'inherit';
@@ -278,6 +279,17 @@
                   __('Using global shapes, spacing, and shadows from ModFarm Settings. Turn this off to override styles for this block only.', 'modfarm')
                 )
               : el(Fragment, {},
+                  el(SelectControl, {
+                    label: __('Cover Aspect', 'modfarm'),
+                    value: cardImageAspect,
+                    options: [
+                      { label: __('Auto', 'modfarm'), value: 'auto' },
+                      { label: __('Book Card (2:3)', 'modfarm'), value: '2-3' },
+                      { label: __('Square (1:1)', 'modfarm'), value: '1-1' },
+                      { label: __('Legacy 3D (4:3)', 'modfarm'), value: '4-3' }
+                    ],
+                    onChange: (v) => setAttributes({ cardImageAspect: v })
+                  }),
                   el(SelectControl, {
                     label: __('Cover Shape', 'modfarm'),
                     value: cardCoverShape,

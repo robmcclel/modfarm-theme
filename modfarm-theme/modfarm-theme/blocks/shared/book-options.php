@@ -31,6 +31,7 @@ if (!function_exists('modfarm_book_option_normalize_cover_source')) {
             'featured'         => 'featured_image',
             'hero_image'       => 'featured_image',
             'cover_image_flat' => 'cover_ebook',
+            'cover_audio'      => 'cover_image_audio',
         ];
         return $aliases[$source] ?? $source;
     }
@@ -93,48 +94,158 @@ if (!function_exists('modfarm_book_cover_source_keys')) {
             'cover_image_composite',
             'cover_image_3d',
             'featured_image',
-            'cover_image_flat',
-            'hero_image',
+        ];
+    }
+}
+
+if (!function_exists('modfarm_book_cover_fallback_keys')) {
+    function modfarm_book_cover_fallback_keys(string $source): array {
+        $source = modfarm_book_option_normalize_cover_source($source);
+
+        $groups = [
+            'cover_image_audio' => [
+                'cover_image_audio',
+                'cover_image_audio_3d',
+            ],
+            'cover_image_audio_3d' => [
+                'cover_image_audio_3d',
+                'cover_image_audio',
+            ],
+            'cover_ebook' => [
+                'cover_ebook',
+                'featured_image',
+                'cover_ebook_3d',
+            ],
+            'cover_ebook_3d' => [
+                'cover_ebook_3d',
+                'cover_ebook',
+                'featured_image',
+            ],
+            'cover_paperback' => [
+                'cover_paperback',
+                'cover_paperback_3d',
+                'cover_ebook',
+                'featured_image',
+            ],
+            'cover_paperback_3d' => [
+                'cover_paperback_3d',
+                'cover_paperback',
+                'cover_ebook_3d',
+                'cover_ebook',
+                'featured_image',
+            ],
+            'cover_hardcover' => [
+                'cover_hardcover',
+                'cover_hardcover_3d',
+                'cover_ebook',
+                'featured_image',
+            ],
+            'cover_hardcover_3d' => [
+                'cover_hardcover_3d',
+                'cover_hardcover',
+                'cover_ebook_3d',
+                'cover_ebook',
+                'featured_image',
+            ],
+            'cover_image_3d' => [
+                'cover_ebook_3d',
+                'cover_paperback_3d',
+                'cover_hardcover_3d',
+                'cover_image_3d',
+                'cover_ebook',
+                'featured_image',
+            ],
+            'cover_image_composite' => [
+                'cover_image_composite',
+                'cover_ebook_3d',
+                'cover_paperback_3d',
+                'cover_hardcover_3d',
+                'cover_image_audio_3d',
+                'cover_ebook',
+                'featured_image',
+            ],
+            'featured_image' => [
+                'featured_image',
+                'cover_ebook',
+            ],
+        ];
+
+        $keys = $groups[$source] ?? [$source, 'cover_ebook', 'featured_image'];
+        return array_values(array_unique(array_merge($keys, modfarm_book_cover_source_keys())));
+    }
+}
+
+if (!function_exists('modfarm_book_cover_source_url')) {
+    function modfarm_book_cover_source_url(int $book_id, string $source): string {
+        $source = modfarm_book_option_normalize_cover_source($source);
+
+        if ($source === 'featured_image') {
+            return get_the_post_thumbnail_url($book_id, 'full') ?: '';
+        }
+
+        $valid = modfarm_book_cover_source_keys();
+        if (!in_array($source, $valid, true)) {
+            return '';
+        }
+
+        return modfarm_book_option_value_to_url(get_post_meta($book_id, $source, true));
+    }
+}
+
+if (!function_exists('modfarm_book_cover_data')) {
+    function modfarm_book_cover_data(int $book_id, string $source, bool $fallback = true): array {
+        $requested = modfarm_book_option_normalize_cover_source($source);
+        $keys = $fallback ? modfarm_book_cover_fallback_keys($requested) : [$requested];
+
+        foreach ($keys as $try) {
+            $url = modfarm_book_cover_source_url($book_id, $try);
+            if (!$url) {
+                continue;
+            }
+
+            if (strpos($url, 'm.media-amazon.com') !== false) {
+                $url = preg_replace('~\._[A-Z0-9_,-]+(?:_)?\.~', '.', $url);
+                $url = preg_replace('~\._[A-Z0-9_,-]+$~', '', $url);
+            }
+
+            return [
+                'url' => $url,
+                'source' => modfarm_book_option_normalize_cover_source($try),
+                'requested_source' => $requested,
+                'is_fallback' => $try !== $requested,
+            ];
+        }
+
+        return [
+            'url' => '',
+            'source' => $requested,
+            'requested_source' => $requested,
+            'is_fallback' => false,
         ];
     }
 }
 
 if (!function_exists('modfarm_book_cover_url')) {
     function modfarm_book_cover_url(int $book_id, string $source, bool $fallback = true): string {
-        $source = modfarm_book_option_normalize_cover_source($source);
-
-        if ($source === 'featured_image') {
-            $url = get_the_post_thumbnail_url($book_id, 'full') ?: '';
-        } else {
-            $valid = modfarm_book_cover_source_keys();
-            $key = in_array($source, $valid, true) ? $source : 'cover_ebook';
-            $url = modfarm_book_option_value_to_url(get_post_meta($book_id, $key, true));
-        }
-
-        if (!$url && $fallback) {
-            foreach (modfarm_book_cover_source_keys() as $try) {
-                if ($try === 'featured_image') {
-                    $url = get_the_post_thumbnail_url($book_id, 'full') ?: '';
-                } else {
-                    $url = modfarm_book_option_value_to_url(get_post_meta($book_id, $try, true));
-                }
-                if ($url) {
-                    break;
-                }
-            }
-        }
-
-        if ($url && strpos($url, 'm.media-amazon.com') !== false) {
-            $url = preg_replace('~\._[A-Z0-9_,-]+(?:_)?\.~', '.', $url);
-            $url = preg_replace('~\._[A-Z0-9_,-]+$~', '', $url);
-        }
-
-        return $url ?: '';
+        $cover = modfarm_book_cover_data($book_id, $source, $fallback);
+        return (string) $cover['url'];
     }
 }
 
 if (!function_exists('modfarm_book_cover_aspect')) {
-    function modfarm_book_cover_aspect(string $source): string {
+    function modfarm_book_cover_aspect(string $source, string $override = ''): string {
+        $override = sanitize_key($override);
+        $allowed = [
+            '1-1' => '1 / 1',
+            '2-3' => '2 / 3',
+            '3-4' => '3 / 4',
+            '4-3' => '4 / 3',
+            '16-9' => '16 / 9',
+        ];
+        if (isset($allowed[$override])) {
+            return $allowed[$override];
+        }
+
         $source = modfarm_book_option_normalize_cover_source($source);
 
         if ($source === 'cover_image_audio') {
@@ -142,7 +253,7 @@ if (!function_exists('modfarm_book_cover_aspect')) {
         }
 
         if (in_array($source, ['cover_image_3d', 'cover_ebook_3d', 'cover_paperback_3d', 'cover_hardcover_3d', 'cover_image_audio_3d'], true)) {
-            return '4 / 3';
+            return '2 / 3';
         }
 
         if ($source === 'cover_image_composite') {
@@ -150,6 +261,20 @@ if (!function_exists('modfarm_book_cover_aspect')) {
         }
 
         return '2 / 3';
+    }
+}
+
+if (!function_exists('modfarm_book_cover_image_fit')) {
+    function modfarm_book_cover_image_fit(string $actual_source, string $aspect_override = ''): string {
+        $override = sanitize_key($aspect_override);
+        if ($override === '' || $override === 'auto') {
+            return 'fill';
+        }
+
+        $actual = modfarm_book_cover_aspect($actual_source);
+        $forced = modfarm_book_cover_aspect($actual_source, $override);
+
+        return $actual === $forced ? 'fill' : 'contain';
     }
 }
 

@@ -17,6 +17,7 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
   $show_pagination = $display_layout === 'horizontal' ? false : !empty($attributes['show-pagination']);
 
   $image_type      = $attributes['image-type']      ?? 'featured';
+  $image_aspect    = $attributes['cardImageAspect'] ?? 'auto';
 
   $show_title   = (($attributes['show-title']  ?? 'block') === 'block');
   $show_series  = (($attributes['show-series'] ?? 'block') === 'block');
@@ -339,8 +340,10 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
 
       // Image URL
       $image_source = modfarm_book_option_normalize_cover_source((string)$image_type);
-      $img_url      = modfarm_book_cover_url((int)$book_id, $image_source);
-      $aspect       = modfarm_book_cover_aspect($image_source);
+      $cover_data   = modfarm_book_cover_data((int)$book_id, $image_source);
+      $img_url      = (string)$cover_data['url'];
+      $aspect       = modfarm_book_cover_aspect((string)$cover_data['source'], (string)$image_aspect);
+      $image_fit    = modfarm_book_cover_image_fit((string)$cover_data['source'], (string)$image_aspect);
 
       // Series
       $series_name = '';
@@ -366,6 +369,7 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
         'permalink' => $permalink,
         'image_url' => $img_url,
         'aspect'    => $aspect,
+        'image_fit' => $image_fit,
         'format'    => null,
 
         // used by ui.php to include book identity in events

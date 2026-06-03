@@ -1,7 +1,7 @@
 (function (window) {
   window.ModFarmBookOptions = {
     BUTTON_OPTIONS: [
-      { label: '— None —', value: '__none__' },
+      { label: '- None -', value: '__none__' },
       { label: 'See The Book (Permalink)', value: 'permalink' },
       { label: 'Series Permalink (Series page)', value: 'series_permalink' },
 
@@ -36,17 +36,16 @@
       { label: 'Target', value: 'target' },
       { label: 'Libro.fm', value: 'librofm' },
       { label: 'Downpour', value: 'downpour' },
-      { label: 'Target', value: 'target' },
       { label: 'Walmart', value: 'walmart' },
       { label: 'Audiobooks.com', value: 'audiobooks_com' },
       { label: 'Spotify', value: 'spotify' },
 
       { label: 'Buy Direct (General)', value: 'buydirect' },
-      { label: 'Buy Direct – eBook', value: 'ebook_buy_url' },
-      { label: 'Buy Direct – Audiobook', value: 'audio_buy_url' },
-      { label: 'Buy Direct – Signed Copy', value: 'signed_buy_url' },
-      { label: 'Buy Direct – Paperback', value: 'paper_buy_url' },
-      { label: 'Buy Direct – Hardcover', value: 'hard_buy_url' },
+      { label: 'Buy Direct - eBook', value: 'ebook_buy_url' },
+      { label: 'Buy Direct - Audiobook', value: 'audio_buy_url' },
+      { label: 'Buy Direct - Signed Copy', value: 'signed_buy_url' },
+      { label: 'Buy Direct - Paperback', value: 'paper_buy_url' },
+      { label: 'Buy Direct - Hardcover', value: 'hard_buy_url' },
       { label: 'Custom Link 1', value: 'custom1' },
       { label: 'Custom Link 2', value: 'custom2' },
       { label: 'Custom Link 3', value: 'custom3' },

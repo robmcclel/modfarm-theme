@@ -9,18 +9,26 @@
 	const ServerSideRender = wp.serverSideRender;
 	const { Fragment, createElement: el } = wp.element;
 
-	const COVER_OPTIONS = [
-		{ label: 'Flat', value: 'cover_image_flat' },
-		{ label: '3D', value: 'cover_image_3d' },
-		{ label: 'Composite', value: 'cover_image_composite' },
-		{ label: 'Hero Image', value: 'hero_image' },
-		{ label: 'Ebook (Kindle)', value: 'cover_ebook' },
-		{ label: 'Paperback', value: 'cover_paperback' },
-		{ label: 'Hardcover', value: 'cover_hardcover' },
-		{ label: 'Audio (Legacy)', value: 'cover_image_audio' },
-		{ label: 'Audio (New)', value: 'cover_audio' },
-		{ label: 'Featured Image', value: 'featured' },
+	const COVER_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.COVER_OPTIONS) || [
+		{ label: 'eBook Cover (BMS)', value: 'cover_ebook' },
+		{ label: 'Audiobook Cover (BMS)', value: 'cover_image_audio' },
+		{ label: 'Paperback Cover', value: 'cover_paperback' },
+		{ label: 'Hardcover Cover', value: 'cover_hardcover' },
+		{ label: '3D eBook Cover', value: 'cover_ebook_3d' },
+		{ label: '3D Paperback Cover', value: 'cover_paperback_3d' },
+		{ label: '3D Hardcover Cover', value: 'cover_hardcover_3d' },
+		{ label: '3D Audiobook Cover', value: 'cover_image_audio_3d' },
+		{ label: 'Composite (BMS)', value: 'cover_image_composite' },
+		{ label: '3D Mockup (BMS)', value: 'cover_image_3d' },
+		{ label: 'Featured Image (Book Page)', value: 'featured_image' },
 	];
+
+	const normalizeCoverOption = (value) => ({
+		featured: 'featured_image',
+		hero_image: 'featured_image',
+		cover_image_flat: 'cover_ebook',
+		cover_audio: 'cover_image_audio',
+	}[value] || value || 'cover_ebook');
 
 	registerBlockType('modfarm/book-cover-art', {
 		edit: function ({ attributes, setAttributes }) {
@@ -45,9 +53,9 @@
         				{ title: 'Cover Settings' },
         				el(SelectControl, {
         					label: 'Cover Type',
-        					value: coverType,
+        					value: normalizeCoverOption(coverType),
         					options: COVER_OPTIONS,
-        					onChange: (value) => setAttributes({ coverType: value }),
+        					onChange: (value) => setAttributes({ coverType: normalizeCoverOption(value) }),
         				}),
         				el(TextControl, {
         					label: 'Alt Text (optional)',

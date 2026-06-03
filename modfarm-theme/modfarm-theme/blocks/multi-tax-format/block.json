@@ -51,6 +51,7 @@
 
     
     "cardCoverShape":         { "type": "string",  "default": "inherit" },   
+    "cardImageAspect":        { "type": "string",  "default": "auto" },
     "cardButtonShape":        { "type": "string",  "default": "inherit" },   
     "cardSampleShape":        { "type": "string",  "default": "inherit" },   
     "cardCtaMode":            { "type": "string",  "default": "inherit" },   

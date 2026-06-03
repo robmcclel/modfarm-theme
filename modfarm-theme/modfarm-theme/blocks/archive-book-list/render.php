@@ -117,6 +117,10 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         if ( ( empty( $a['image-type'] ) || $a['image-type'] === 'featured' ) && ! empty( $image_map[ $variant ] ) ) {
             $a['image-type'] = $image_map[ $variant ];
         }
+        $term_image_aspect = mfs_get_archive_term_meta( $qo->term_id, 'archive_image_aspect', 'auto' );
+        if ( in_array( $term_image_aspect, array( 'auto', '2-3', '1-1', '4-3' ), true ) ) {
+            $a['cardImageAspect'] = $term_image_aspect;
+        }
 
         $term_books_in_row = mfs_get_archive_term_meta( $qo->term_id, 'archive_books_in_row', '' );
         if ( in_array( $term_books_in_row, array( '50%', '33.333%', '25%', '20%', '16.666%' ), true ) ) {
@@ -178,6 +182,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     $global_sample_shape = $opts['book_card_sample_shape'] ?? '';
 
     $local_cover_shape   = $card_use_global ? 'inherit' : ( $a['cardCoverShape']  ?? 'inherit' );
+    $local_image_aspect  = $a['cardImageAspect'] ?? 'auto';
     $local_button_shape  = $card_use_global ? 'inherit' : ( $a['cardButtonShape'] ?? 'inherit' );
     $local_sample_shape  = $card_use_global ? 'inherit' : ( $a['cardSampleShape'] ?? 'inherit' );
 
@@ -478,8 +483,10 @@ function modfarm_render_archive_book_list_block( $attributes ) {
 
             // Image + fallbacks
             $image_source = modfarm_book_option_normalize_cover_source( (string) $image_type );
-            $img_url      = modfarm_book_cover_url( (int) $book_id, $image_source );
-            $aspect       = modfarm_book_cover_aspect( $image_source );
+            $cover_data   = modfarm_book_cover_data( (int) $book_id, $image_source );
+            $img_url      = (string) $cover_data['url'];
+            $aspect       = modfarm_book_cover_aspect( (string) $cover_data['source'], (string) $local_image_aspect );
+            $image_fit    = modfarm_book_cover_image_fit( (string) $cover_data['source'], (string) $local_image_aspect );
 
             // Series
             $series_terms = get_the_terms( $book_id, 'book-series' );
@@ -513,6 +520,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
                 'permalink' => $permalink,
                 'image_url' => $img_url,
                 'aspect'    => $aspect,
+                'image_fit' => $image_fit,
                 'format'    => null,
 
                 'show_title'      => $show_title,

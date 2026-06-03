@@ -417,6 +417,17 @@
               onChange: (v) => setCanon('effect', v, EFFECT_OPTIONS.map(o => o.value), 'flat')
             }),
             el(SelectControl, {
+              label: __('Cover Aspect', 'modfarm'),
+              value: attributes.cardImageAspect || 'auto',
+              options: [
+                { label: __('Auto', 'modfarm'), value: 'auto' },
+                { label: __('Book Card (2:3)', 'modfarm'), value: '2-3' },
+                { label: __('Square (1:1)', 'modfarm'), value: '1-1' },
+                { label: __('Legacy 3D (4:3)', 'modfarm'), value: '4-3' }
+              ],
+              onChange: (v) => setAttributes({ cardImageAspect: v })
+            }),
+            el(SelectControl, {
               label: __('Cover Shape', 'modfarm'),
               value: attributes['cover-shape'],
               options: [
