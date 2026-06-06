@@ -1399,6 +1399,24 @@ function modfarm_render_archive_page() {
     $body_slug   = modfarm_resolve_archive_body_pattern_slug($opts);
     $footer_slug = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
 
+    // A designated posts page is a page-shaped archive: keep page chrome,
+    // but replace the page body with the blog-index archive body layout.
+    if (is_home() && !is_front_page()) {
+        $posts_page_id = (int) get_option('page_for_posts');
+        if ($posts_page_id > 0 && function_exists('modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post')) {
+            $page_chrome = modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($posts_page_id, 'page', $opts);
+            if (!empty($page_chrome['header'])) {
+                $header_slug = (string) $page_chrome['header'];
+            }
+            if (!empty($page_chrome['footer'])) {
+                $footer_slug = (string) $page_chrome['footer'];
+            }
+        } else {
+            $header_slug = modfarm_ppb_resolve_pattern_slug('page_header_pattern', $opts['page_header_pattern'] ?? null, $opts);
+            $footer_slug = modfarm_ppb_resolve_pattern_slug('page_footer_pattern', $opts['page_footer_pattern'] ?? null, $opts);
+        }
+    }
+
     $registry = WP_Block_Patterns_Registry::get_instance();
 
     $get_content = static function($slug) use ($registry) {

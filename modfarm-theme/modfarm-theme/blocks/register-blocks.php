@@ -38,6 +38,7 @@ add_action('init', function () {
         'content-slot'               => 'modfarm_render_content_slot_block',
         'theme-icon'                 => 'modfarm_render_theme_icon_block',
         'author-social-links'        => 'modfarm_render_author_social_links_block',
+        'interview-qa'               => 'modfarm_render_interview_qa_block',
         'taxonomy-grid'              => 'modfarm_render_taxonomy_grid_block',
         'tax-description'            => 'modfarm_render_tax_description_block',
         'coming-soon-list'           => 'modfarm_render_coming_soon_list_block',
