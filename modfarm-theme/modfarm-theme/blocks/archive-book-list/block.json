@@ -12,6 +12,7 @@
     "image-type":      { "type": "string",  "default": "featured" },
 
     "books-in-row":    { "type": "string",  "default": "25%" },
+    "book-list-mode":  { "type": "string",  "default": "flat" },
     "display-layout":  { "type": "string",  "default": "grid" },
     "horizontal-columns": { "type": "number", "default": 4 },
     "display-order":   { "type": "string",  "default": "DESC" },

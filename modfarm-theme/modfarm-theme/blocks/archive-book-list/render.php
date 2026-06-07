@@ -22,6 +22,37 @@ if ( ! function_exists( 'mfs_get_archive_term_meta' ) ) {
     }
 }
 
+if ( ! function_exists( 'modfarm_archive_book_list_taxonomy_defaults' ) ) {
+    function modfarm_archive_book_list_taxonomy_defaults( $taxonomy ) {
+        $taxonomy = (string) $taxonomy;
+        $keys = array(
+            'book-series'   => 'book_series',
+            'book-genre'    => 'book_genre',
+            'book-author'   => 'book_authors',
+            'book-authors'  => 'book_authors',
+            'book-format'   => 'book_format',
+            'book-language' => 'book_language',
+            'book-tags'     => 'book_tags',
+        );
+        $settings_key = $keys[ $taxonomy ] ?? str_replace( '-', '_', $taxonomy );
+        $settings = get_option( 'modfarm_theme_settings', array() );
+        $base = array(
+            'books-in-row' => '25%',
+            'display-order' => 'DESC',
+            'book-list-mode' => 'flat',
+        );
+        if ( 'book-series' === $taxonomy ) {
+            $base['display-order'] = 'ASC';
+        }
+
+        return array(
+            'books-in-row'   => (string) ( $settings[ 'archive_default_' . $settings_key . '_books_in_row' ] ?? $base['books-in-row'] ) ?: $base['books-in-row'],
+            'display-order'  => (string) ( $settings[ 'archive_default_' . $settings_key . '_display_order' ] ?? $base['display-order'] ) ?: $base['display-order'],
+            'book-list-mode' => (string) ( $settings[ 'archive_default_' . $settings_key . '_list_mode' ] ?? $base['book-list-mode'] ) ?: $base['book-list-mode'],
+        );
+    }
+}
+
 if ( ! function_exists( 'modfarm_render_archive_book_list_block' ) ) :
 function modfarm_render_archive_book_list_block( $attributes ) {
 
@@ -32,6 +63,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         'image-type'      => 'featured',
 
         'books-in-row'    => '25%',
+        'book-list-mode'  => 'flat',
         'display-layout'  => 'grid',
         'display-order'   => 'DESC',
         'order-date-key'   => 'publication_date',
@@ -94,6 +126,18 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     $archive_show_sample = null;
 
     if ( $qo instanceof WP_Term ) {
+        $taxonomy_defaults = modfarm_archive_book_list_taxonomy_defaults( (string) $qo->taxonomy );
+
+        if ( ! empty( $taxonomy_defaults['books-in-row'] ) ) {
+            $a['books-in-row'] = $taxonomy_defaults['books-in-row'];
+        }
+        if ( ! empty( $taxonomy_defaults['display-order'] ) ) {
+            $a['display-order'] = $taxonomy_defaults['display-order'];
+        }
+        if ( ! empty( $taxonomy_defaults['book-list-mode'] ) ) {
+            $a['book-list-mode'] = $taxonomy_defaults['book-list-mode'];
+        }
+
         // Image variant mapping
         $variant = mfs_get_archive_term_meta( $qo->term_id, 'archive_image_variant', 'featured' );
         $image_map = array(
@@ -392,6 +436,151 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     $tracker         = (string) $a['tracker-loc'];
     $volume_txt      = (string) $a['volume-text'];
     $sample_btn_text = (string) ( $a['samplebtn-text'] ?? __( 'Play Sample', 'modfarm' ) );
+    $book_list_mode  = in_array( (string) ( $a['book-list-mode'] ?? 'flat' ), array( 'flat', 'grouped-by-series' ), true )
+        ? (string) $a['book-list-mode']
+        : 'flat';
+    $is_author_archive = $qo instanceof WP_Term && in_array( (string) $qo->taxonomy, array( 'book-author', 'book-authors' ), true );
+    if ( ! $is_author_archive && 'grouped-by-series' === $book_list_mode ) {
+        $book_list_mode = 'flat';
+    }
+
+    $render_card_item = function( $book_id ) use (
+        $btn_link,
+        $btn_text,
+        $show_primary_btn,
+        $btn_target,
+        $use_smartlinks,
+        $image_type,
+        $local_image_aspect,
+        $show_title,
+        $show_series,
+        $volume_txt,
+        $audio_mode,
+        $sample_btn_text,
+        $card_btn_bg,
+        $card_btn_fg,
+        $tracker
+    ) {
+        $book_id = (int) $book_id;
+        $permalink = get_permalink( $book_id );
+
+        $btn_meta_key = modfarm_book_option_normalize_link_source( (string) $btn_link );
+        $button_url   = $show_primary_btn ? modfarm_book_link_url( $book_id, $btn_meta_key, (string) $permalink ) : '';
+
+        if ( $show_primary_btn && $button_url === '' && $btn_meta_key !== '__none__' ) {
+            $btn_meta_key = 'permalink';
+            $button_url   = $permalink;
+        }
+
+        $button_is_internal_bookpage = modfarm_book_link_is_internal( $btn_meta_key );
+        $resolved_target = $btn_target;
+        if ( ! $button_is_internal_bookpage && ( $resolved_target === '' || $resolved_target === '_self' ) ) {
+            $resolved_target = '_blank';
+        }
+
+        if ( $button_url !== '' && ! $button_is_internal_bookpage && $use_smartlinks && function_exists( 'modfarm_smartlink_url' ) ) {
+            $button_url = modfarm_smartlink_url( $button_url, array(
+                'context'  => 'book_list',
+                'book_id'  => $book_id,
+                'origin'   => 'archive-list',
+                'meta_key' => $btn_meta_key,
+            ) );
+        }
+
+        $dest_host = '';
+        $parsed = wp_parse_url( $button_url );
+        if ( ! empty( $parsed['host'] ) ) {
+            $dest_host = strtolower( $parsed['host'] );
+        }
+
+        $image_source = modfarm_book_option_normalize_cover_source( (string) $image_type );
+        $cover_data   = modfarm_book_cover_data( $book_id, $image_source );
+        $img_url      = (string) $cover_data['url'];
+        $aspect       = modfarm_book_cover_aspect( (string) $cover_data['source'], (string) $local_image_aspect );
+        $image_fit    = modfarm_book_cover_image_fit( (string) $cover_data['source'], (string) $local_image_aspect );
+
+        $series_terms = get_the_terms( $book_id, 'book-series' );
+        $series_name  = ( ! empty( $series_terms ) && ! is_wp_error( $series_terms ) ) ? $series_terms[0]->name : '';
+        $series_pos   = get_post_meta( $book_id, 'series_position', true );
+
+        $audio_embed  = (string) get_post_meta( $book_id, 'audio_player_embed', true );
+        $audio_sample = (string) get_post_meta( $book_id, 'audio_sample_url', true );
+        $audio_date   = get_post_meta( $book_id, 'audiobook_publication_date', true ) ?: null;
+        $audible_asin = (string) get_post_meta( $book_id, 'audible_asin', true );
+        $amazon_asin  = (string) get_post_meta( $book_id, 'asin_kindle', true );
+
+        if ( $audio_mode !== 'off' ) {
+            $has_sample    = ( $audio_sample !== '' );
+            $has_construct = ( $audible_asin !== '' || $amazon_asin !== '' );
+            $card_audio_mode = ( ! $has_sample && ! $has_construct ) ? 'off' : $audio_mode;
+        } else {
+            $card_audio_mode = 'off';
+        }
+
+        $card = array(
+            'id'        => $book_id,
+            'title'     => get_the_title( $book_id ),
+            'permalink' => $permalink,
+            'image_url' => $img_url,
+            'aspect'    => $aspect,
+            'image_fit' => $image_fit,
+            'format'    => null,
+
+            'show_title'      => $show_title,
+            'series_name'     => $show_series ? $series_name : '',
+            'series_position' => $show_series ? $series_pos : '',
+            'volume_text'     => $volume_txt,
+
+            'audio_mode'   => $card_audio_mode,
+            'audio_embed'  => $audio_embed,
+            'audio_sample' => $audio_sample,
+            'audible_asin' => $audible_asin,
+            'amazon_asin'  => $amazon_asin,
+            'audio_date'   => $audio_date,
+
+            'audio_player_embed'         => $audio_embed,
+            'audio_sample_url'           => $audio_sample,
+            'audiobook_publication_date' => $audio_date,
+
+            'sample_button_text' => $sample_btn_text,
+
+            'button' => ( $show_primary_btn && $button_url !== '' ) ? array(
+                'text'       => $btn_text,
+                'url'        => $button_url,
+                'target'     => $resolved_target,
+                'bg'         => $card_btn_bg,
+                'fg'         => $card_btn_fg,
+                'tracker'    => $tracker,
+                'origin'     => 'archive-list',
+                'smartlinks' => ( ! $button_is_internal_bookpage && $use_smartlinks ),
+                'dest_host'  => $dest_host,
+                'meta_key'   => $btn_meta_key,
+            ) : array(
+                'text'   => '',
+                'url'    => '',
+                'origin' => 'archive-list',
+            ),
+        );
+
+        ob_start();
+        echo '<div class="mfb-item">';
+        if ( function_exists( 'modfarm_render_book_card' ) ) {
+            modfarm_render_book_card( $card );
+        } else {
+            echo '<article class="mfb-card"><div class="mfb-media">';
+            echo '<a class="mfb-image" href="' . esc_url( $card['permalink'] ) . '">';
+            if ( ! empty( $card['image_url'] ) ) {
+                echo '<img src="' . esc_url( $card['image_url'] ) . '" alt="' . esc_attr( $card['title'] ) . '"/>';
+            }
+            echo '</a></div>';
+            if ( ! empty( $card['title'] ) ) {
+                echo '<span class="mfb-title">' . esc_html( $card['title'] ) . '</span>';
+            }
+            echo '</article>';
+        }
+        echo '</div>';
+        return ob_get_clean();
+    };
 
     $wrapper_classes = array(
         'mfb-wrapper',
@@ -402,6 +591,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         'mfb-sample--' . sanitize_html_class( $sample_shape ),
         'mfb-cta--'    . sanitize_html_class( $cta_mode ),
         'mfb-wrapper--' . sanitize_html_class( $display_layout ),
+        'mfb-list-mode--' . sanitize_html_class( $book_list_mode ),
     );
 
     $pct  = floatval( str_replace( '%', '', $books_per_row ) );
@@ -449,6 +639,74 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         echo '<button type="button" class="mfb-scroll-control mfb-scroll-control--next" data-mf-card-scroll-target="' . esc_attr( $scroll_id ) . '" data-mf-card-scroll-direction="1" aria-label="' . esc_attr__( 'Next books', 'modfarm' ) . '"><span aria-hidden="true">&rarr;</span></button>';
         echo '</div></div>';
     }
+    if ( 'grouped-by-series' === $book_list_mode && $query->have_posts() ) {
+        $groups = array();
+        $standalone = array();
+
+        while ( $query->have_posts() ) {
+            $query->the_post();
+            $book_id = get_the_ID();
+            $series_terms = get_the_terms( $book_id, 'book-series' );
+
+            if ( ! empty( $series_terms ) && ! is_wp_error( $series_terms ) ) {
+                $series = $series_terms[0];
+                $key = 'series-' . (int) $series->term_id;
+                if ( empty( $groups[ $key ] ) ) {
+                    $groups[ $key ] = array(
+                        'term' => $series,
+                        'books' => array(),
+                    );
+                }
+                $groups[ $key ]['books'][] = $book_id;
+            } else {
+                $standalone[] = $book_id;
+            }
+        }
+
+        $sort_by_series_position = static function( &$book_ids ) {
+            usort( $book_ids, static function( $a, $b ) {
+                $a_pos = (float) get_post_meta( (int) $a, 'series_position', true );
+                $b_pos = (float) get_post_meta( (int) $b, 'series_position', true );
+
+                if ( $a_pos === $b_pos ) {
+                    return strcasecmp( get_the_title( (int) $a ), get_the_title( (int) $b ) );
+                }
+
+                return $a_pos <=> $b_pos;
+            } );
+        };
+
+        echo '<div class="mfb-series-groups" style="' . esc_attr( $wrapper_style ) . '">';
+        foreach ( $groups as $group ) {
+            $term = $group['term'];
+            $book_ids = $group['books'];
+            $sort_by_series_position( $book_ids );
+            $term_link = get_term_link( $term );
+
+            echo '<section class="mfb-series-group">';
+            if ( ! is_wp_error( $term_link ) ) {
+                echo '<h2 class="mfb-series-group__title"><a href="' . esc_url( $term_link ) . '">' . esc_html( $term->name ) . '</a></h2>';
+            } else {
+                echo '<h2 class="mfb-series-group__title">' . esc_html( $term->name ) . '</h2>';
+            }
+            echo '<div class="mfb-grid">';
+            foreach ( $book_ids as $book_id ) {
+                echo $render_card_item( $book_id );
+            }
+            echo '</div></section>';
+        }
+
+        if ( ! empty( $standalone ) ) {
+            echo '<section class="mfb-series-group mfb-series-group--standalone">';
+            echo '<h2 class="mfb-series-group__title">' . esc_html__( 'Standalone Books', 'modfarm' ) . '</h2>';
+            echo '<div class="mfb-grid">';
+            foreach ( $standalone as $book_id ) {
+                echo $render_card_item( $book_id );
+            }
+            echo '</div></section>';
+        }
+        echo '</div></div>';
+    } else {
     echo '<div id="' . esc_attr( $scroll_id ) . '" class="mfb-grid' . ( $display_layout === 'horizontal' ? ' mfb-grid--horizontal' : '' ) . '" style="' . esc_attr( $wrapper_style ) . '"' . ( $display_layout === 'horizontal' ? ' data-mf-card-scroll-rail' : '' ) . '>';
 
     if ( $query->have_posts() ) {
@@ -593,6 +851,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     }
 
     echo '</div></div>'; // grid + wrapper
+    }
 
     // Pagination
     if ( $show_pagination && ! empty( $query->max_num_pages ) ) {

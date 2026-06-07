@@ -539,6 +539,20 @@ function modfarm_ppb_pattern_category_map(): array {
         'archive_body_pattern_book_genre'   => 'modfarm-archive-body',
         'archive_body_pattern_book_authors' => 'modfarm-archive-body',
 
+        'archive_default_book_series_books_in_row'   => '25%',
+        'archive_default_book_series_display_order'  => 'ASC',
+        'archive_default_book_authors_books_in_row'  => '25%',
+        'archive_default_book_authors_display_order' => 'DESC',
+        'archive_default_book_authors_list_mode'     => 'flat',
+        'archive_default_book_genre_books_in_row'    => '25%',
+        'archive_default_book_genre_display_order'   => 'DESC',
+        'archive_default_book_format_books_in_row'   => '25%',
+        'archive_default_book_format_display_order'  => 'DESC',
+        'archive_default_book_language_books_in_row' => '25%',
+        'archive_default_book_language_display_order'=> 'DESC',
+        'archive_default_book_tags_books_in_row'     => '25%',
+        'archive_default_book_tags_display_order'    => 'DESC',
+
         // Collection layouts use per-type pseudo field IDs.
         'mfc_collection_single_header'  => 'modfarm-collection-header',
         'mfc_collection_single_body'    => 'modfarm-collection-body',
@@ -2222,6 +2236,19 @@ function modfarm_sanitize_settings($settings) {
         'archive_body_pattern_book_genre',
         'archive_body_pattern_book_authors',
         'archive_footer_pattern',
+        'archive_default_book_series_books_in_row',
+        'archive_default_book_series_display_order',
+        'archive_default_book_authors_books_in_row',
+        'archive_default_book_authors_display_order',
+        'archive_default_book_authors_list_mode',
+        'archive_default_book_genre_books_in_row',
+        'archive_default_book_genre_display_order',
+        'archive_default_book_format_books_in_row',
+        'archive_default_book_format_display_order',
+        'archive_default_book_language_books_in_row',
+        'archive_default_book_language_display_order',
+        'archive_default_book_tags_books_in_row',
+        'archive_default_book_tags_display_order',
 
         // Book Cards & Buttons Ã¢â‚¬â€œ colors
         'book_card_button_bg_color',
@@ -2277,6 +2304,31 @@ function modfarm_sanitize_settings($settings) {
             case 'book_page_button_radius':
                 $num = intval($val);
                 $clean[$key] = $num > 0 ? (string) $num : '';
+                break;
+
+            case 'archive_default_book_series_books_in_row':
+            case 'archive_default_book_authors_books_in_row':
+            case 'archive_default_book_genre_books_in_row':
+            case 'archive_default_book_format_books_in_row':
+            case 'archive_default_book_language_books_in_row':
+            case 'archive_default_book_tags_books_in_row':
+                $val = sanitize_text_field($val);
+                $clean[$key] = in_array($val, ['', '50%', '33.333%', '25%', '20%', '16.666%'], true) ? $val : '';
+                break;
+
+            case 'archive_default_book_series_display_order':
+            case 'archive_default_book_authors_display_order':
+            case 'archive_default_book_genre_display_order':
+            case 'archive_default_book_format_display_order':
+            case 'archive_default_book_language_display_order':
+            case 'archive_default_book_tags_display_order':
+                $val = sanitize_text_field($val);
+                $clean[$key] = in_array($val, ['', 'ASC', 'DESC', 'rand'], true) ? $val : '';
+                break;
+
+            case 'archive_default_book_authors_list_mode':
+                $val = sanitize_text_field($val);
+                $clean[$key] = in_array($val, ['', 'flat', 'grouped-by-series'], true) ? $val : '';
                 break;
 
             default:
@@ -3193,6 +3245,67 @@ function modfarm_render_settings_page() {
                                             <tr>
                                                 <th scope="row"><label>Author Archive Pattern</label></th>
                                                 <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_book_authors']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Book Taxonomy Defaults</label></th>
+                                                <td>
+                                                    <?php
+                                                    $mf_archive_tax_defaults = [
+                                                        'book_series' => 'Series',
+                                                        'book_authors' => 'Authors',
+                                                        'book_genre' => 'Genres',
+                                                        'book_format' => 'Formats',
+                                                        'book_language' => 'Languages',
+                                                        'book_tags' => 'Book Tags',
+                                                    ];
+                                                    $mf_archive_row_options = [
+                                                        '' => 'Theme default',
+                                                        '50%' => '2 per row',
+                                                        '33.333%' => '3 per row',
+                                                        '25%' => '4 per row',
+                                                        '20%' => '5 per row',
+                                                        '16.666%' => '6 per row',
+                                                    ];
+                                                    $mf_archive_order_options = [
+                                                        '' => 'Theme default',
+                                                        'ASC' => 'Oldest first',
+                                                        'DESC' => 'Most recent first',
+                                                        'rand' => 'Random',
+                                                    ];
+                                                    $mf_archive_list_mode_options = [
+                                                        '' => 'Theme default',
+                                                        'flat' => 'Flat book list',
+                                                        'grouped-by-series' => 'Grouped by series',
+                                                    ];
+                                                    ?>
+                                                    <table class="widefat striped" style="max-width:860px;">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Taxonomy</th>
+                                                                <th>Books Per Row</th>
+                                                                <th>Book Order</th>
+                                                                <th>List Mode</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php foreach ($mf_archive_tax_defaults as $mf_archive_tax_key => $mf_archive_tax_label) : ?>
+                                                                <tr>
+                                                                    <td><?php echo esc_html($mf_archive_tax_label); ?></td>
+                                                                    <td><?php modfarm_select_field(['id' => 'archive_default_' . $mf_archive_tax_key . '_books_in_row', 'options' => $mf_archive_row_options]); ?></td>
+                                                                    <td><?php modfarm_select_field(['id' => 'archive_default_' . $mf_archive_tax_key . '_display_order', 'options' => $mf_archive_order_options]); ?></td>
+                                                                    <td>
+                                                                        <?php if ('book_authors' === $mf_archive_tax_key) : ?>
+                                                                            <?php modfarm_select_field(['id' => 'archive_default_book_authors_list_mode', 'options' => $mf_archive_list_mode_options]); ?>
+                                                                        <?php else : ?>
+                                                                            <span class="description">Flat book list</span>
+                                                                        <?php endif; ?>
+                                                                    </td>
+                                                                </tr>
+                                                            <?php endforeach; ?>
+                                                        </tbody>
+                                                    </table>
+                                                    <p class="description">Term-level archive settings override these taxonomy defaults. Use Authors grouped by series for large multi-author catalogs.</p>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <th scope="row"><label>Archive Footer Pattern</label></th>

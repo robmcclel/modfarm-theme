@@ -597,6 +597,24 @@ body.mfb-hide-sample-button {
 .mfb-wrapper.mfb-button--pill .mfb-pagination .page-numbers a,
 .mfb-wrapper.mfb-button--pill .mfb-pagination .page-numbers span { border-radius: 9999px; }
 
+/* Archive grouped-by-series mode */
+.mfb-series-groups {
+  display: grid;
+  gap: clamp(2rem, 4vw, 4rem);
+}
+
+.mfb-series-group__title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  line-height: 1.15;
+}
+
+.mfb-series-group__title a {
+  color: inherit;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
 /* Coming Soon timing states */
 /* .is-coming-soon .mfb-item.is-launch .mfb-card { outline: 2px solid rgba(0,0,0,.15); outline-offset: 4px; }
 .is-coming-soon .mfb-item.is-faded { opacity: .45; filter: grayscale(.15); } */

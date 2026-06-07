@@ -1103,6 +1103,56 @@ function modfarm_detect_archive_image_type($taxonomy) {
     return $map[$taxonomy] ?? 'kindle';
 }
 
+/**
+ * Return the public content types that should participate in site search.
+ *
+ * Core search forms only submit the search term. The search result query is
+ * responsible for deciding which post types are included.
+ */
+function modfarm_get_site_search_post_types(): array {
+    $post_types = get_post_types([
+        'public'              => true,
+        'exclude_from_search' => false,
+    ], 'names');
+
+    $post_types = is_array($post_types) ? array_values($post_types) : [];
+
+    foreach (['post', 'page', 'book'] as $required_type) {
+        if (post_type_exists($required_type) && !in_array($required_type, $post_types, true)) {
+            $post_types[] = $required_type;
+        }
+    }
+
+    $internal_types = [
+        'attachment',
+        'wp_block',
+        'wp_global_styles',
+        'wp_navigation',
+        'wp_template',
+        'wp_template_part',
+    ];
+
+    $post_types = array_values(array_diff(array_unique($post_types), $internal_types));
+
+    /**
+     * Filter the post types included in front-end site search.
+     *
+     * @param string[] $post_types Public searchable post type names.
+     */
+    return array_values(array_filter((array) apply_filters('modfarm_site_search_post_types', $post_types), 'post_type_exists'));
+}
+
+add_action('pre_get_posts', function ($query) {
+    if (is_admin() || !($query instanceof WP_Query) || !$query->is_main_query() || !$query->is_search()) {
+        return;
+    }
+
+    $post_types = modfarm_get_site_search_post_types();
+    if (!empty($post_types)) {
+        $query->set('post_type', $post_types);
+    }
+});
+
 function modfarm_resolve_archive_body_pattern_slug(?array $opts = null): string {
     $opts = is_array($opts) ? $opts : get_option('modfarm_theme_settings', []);
     $key = 'archive_body_pattern';
