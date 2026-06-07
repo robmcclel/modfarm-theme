@@ -673,7 +673,7 @@ function modfarm_ppb_canonical_defaults(): array {
         'archive_body_pattern_category'     => 'modfarm/post-archive-layout',
         'archive_body_pattern_post_tag'     => 'modfarm/post-archive-layout',
         'archive_body_pattern_author'       => 'modfarm/post-archive-layout',
-        'archive_body_pattern_search'       => 'modfarm/post-archive-layout',
+        'archive_body_pattern_search'       => 'modfarm/search-results-layout',
         'archive_body_pattern_date'         => 'modfarm/post-archive-layout',
         'archive_body_pattern_book_series'  => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_genre'   => 'modfarm/basic-archive-layout',
@@ -1198,6 +1198,23 @@ function modfarm_resolve_archive_body_pattern_slug(?array $opts = null): string 
         'archive_body_pattern_search',
         'archive_body_pattern_date',
     ];
+
+    if ($key === 'archive_body_pattern_search') {
+        $search_slug = modfarm_ppb_normalize_slug($raw_value);
+        $legacy_search_patterns = [
+            'modfarm/post-archive-layout',
+            'modfarm/post-archive-large-card-feed',
+            'modfarm/post-archive-image-right-feed',
+            'modfarm/post-archive-centered-feed',
+            'modfarm/post-archive-image-left',
+            'modfarm/post-archive-compact-list',
+            'modfarm/post-archive-feature-story',
+        ];
+
+        if (in_array($search_slug, $legacy_search_patterns, true)) {
+            $raw_value = null;
+        }
+    }
 
     if (in_array($key, $post_archive_keys, true) && modfarm_ppb_normalize_slug($raw_value) === 'modfarm/basic-archive-layout') {
         $raw_value = null;

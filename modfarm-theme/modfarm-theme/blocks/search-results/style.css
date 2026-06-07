@@ -1,0 +1,124 @@
+.mf-search-results {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3.5rem);
+}
+
+.mf-search-results__empty {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.mf-search-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.mf-search-section__header {
+  align-items: baseline;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding-bottom: .6rem;
+}
+
+.mf-search-section__title {
+  font-size: clamp(1.35rem, 2vw, 1.85rem);
+  line-height: 1.15;
+  margin: 0;
+}
+
+.mf-search-section__count {
+  font-size: .9rem;
+  opacity: .7;
+}
+
+.mf-search-books {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.mf-search-book {
+  display: grid;
+  gap: .75rem;
+}
+
+.mf-search-book__cover {
+  aspect-ratio: 2 / 3;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  overflow: hidden;
+}
+
+.mf-search-book__cover img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.mf-search-book__title,
+.mf-search-result__title,
+.mf-search-term__title {
+  font-size: 1.05rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.mf-search-book__meta,
+.mf-search-result__meta,
+.mf-search-term__meta {
+  font-size: .9rem;
+  opacity: .72;
+}
+
+.mf-search-book__excerpt,
+.mf-search-result__excerpt,
+.mf-search-term__description {
+  margin: 0;
+}
+
+.mf-search-posts,
+.mf-search-terms {
+  display: grid;
+  gap: .9rem;
+}
+
+.mf-search-result,
+.mf-search-term {
+  display: grid;
+  gap: .35rem;
+}
+
+.mf-search-terms {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mf-search-term {
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  padding: 1rem;
+}
+
+.mf-search-term__image {
+  aspect-ratio: 1 / 1;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  display: block;
+  margin-bottom: .6rem;
+  max-width: 130px;
+  overflow: hidden;
+}
+
+.mf-search-term__image img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .mf-search-section__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .25rem;
+  }
+}

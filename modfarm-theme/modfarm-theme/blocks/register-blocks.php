@@ -51,6 +51,7 @@ add_action('init', function () {
         'archive-book-list'          => 'modfarm_render_archive_book_list_block',
         'archive-description'        => 'modfarm_render_archive_description_block',
         'archive-layout-loader'      => 'modfarm_render_archive_layout_loader_block',
+        'search-results'             => 'modfarm_render_search_results_block',
         'zone'                       => 'modfarm_render_zone_block',
         'simple-tabs'                => 'modfarm_render_simple_tabs_block',
         'tab-panel'                  => 'modfarm_render_tab_panel',
