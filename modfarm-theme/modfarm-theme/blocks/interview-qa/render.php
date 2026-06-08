@@ -312,7 +312,8 @@ function modfarm_render_interview_qa_block($attributes = []) {
   <?php
 
   $html = trim(ob_get_clean());
-  if (!empty($a['emitStructuredData'])) {
+  $is_rest_request = defined('REST_REQUEST') && REST_REQUEST;
+  if (!empty($a['emitStructuredData']) && !is_admin() && !$is_rest_request) {
     $html .= "\n" . modfarm_interview_qa_structured_data($items, $author);
   }
 

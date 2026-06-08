@@ -12,10 +12,96 @@
   } = wp.components;
   const { Fragment, createElement: el } = wp.element;
   const { useSelect } = wp.data;
-  const ServerSideRender = wp.serverSideRender;
 
   function normalizeItems(items) {
     return Array.isArray(items) ? items : [];
+  }
+
+  function cleanItems(items) {
+    return normalizeItems(items).filter((item) => {
+      if (!item || typeof item !== 'object') return false;
+      const question = String(item.question || '').replace(/<[^>]*>/g, '').trim();
+      const answer = String(item.answer || '').replace(/<[^>]*>/g, '').trim();
+      return question !== '' || answer !== '';
+    });
+  }
+
+  function allowedQuestionTag(tag) {
+    return ['h2', 'h3', 'h4', 'p'].indexOf(tag) !== -1 ? tag : 'h3';
+  }
+
+  function previewStyle(attributes) {
+    if ((attributes.colorMode || 'inherit') !== 'custom') {
+      return {};
+    }
+
+    const style = {};
+    if (attributes.accentColor) {
+      style['--mf-interview-accent'] = attributes.accentColor;
+    }
+    if (attributes.questionBgColor) {
+      style['--mf-interview-question-bg'] = attributes.questionBgColor;
+    }
+    if (attributes.markerTextColor) {
+      style['--mf-interview-marker-text'] = attributes.markerTextColor;
+    }
+    return style;
+  }
+
+  function renderLocalPreview(attributes, isSelected) {
+    const previewItems = cleanItems(attributes.items);
+    const visibleItems = isSelected ? previewItems : previewItems.slice(0, 3);
+    const questionTag = allowedQuestionTag(attributes.questionTag || 'h3');
+    const hiddenCount = previewItems.length - visibleItems.length;
+
+    if (previewItems.length === 0) {
+      return el('div', { className: 'mf-interview-qa mf-interview-qa--empty' },
+        __('Interview Q&A: add at least one question and answer pair.', 'modfarm')
+      );
+    }
+
+    return el(
+      'section',
+      {
+        className: 'mf-interview-qa mf-interview-qa--editor-preview',
+        style: previewStyle(attributes),
+        'data-mf-block': 'interview-qa'
+      },
+      attributes.heading
+        ? el('h2', { className: 'mf-interview-qa__heading' }, attributes.heading)
+        : null,
+      !!attributes.showAuthorProfile && !!parseInt(attributes.authorId, 10)
+        ? el('div', { className: 'mf-interview-qa-editor__profile-preview' },
+          __('Author profile will render on the front end.', 'modfarm')
+        )
+        : null,
+      el('div', { className: 'mf-interview-qa__items' },
+        visibleItems.map((item, index) =>
+          el('article', { className: 'mf-interview-qa__item', key: index },
+            el('div', {
+              className: `mf-interview-qa__question-row${attributes.showQuestionMarker === false ? ' mf-interview-qa__question-row--no-marker' : ''}`
+            },
+            attributes.showQuestionMarker === false
+              ? null
+              : el('span', { className: 'mf-interview-qa__question-marker', 'aria-hidden': true }, '?'),
+            el(questionTag, {
+              className: 'mf-interview-qa__question',
+              dangerouslySetInnerHTML: { __html: item.question || '' }
+            })
+            ),
+            el('div', {
+              className: 'mf-interview-qa__answer',
+              dangerouslySetInnerHTML: { __html: item.answer || '' }
+            })
+          )
+        )
+      ),
+      hiddenCount > 0
+        ? el('p', { className: 'mf-interview-qa-editor__more' },
+          `${hiddenCount} ${__('more Q&A pairs shown when the block is selected.', 'modfarm')}`
+        )
+        : null
+    );
   }
 
   function emptyItem() {
@@ -214,10 +300,7 @@
           'div',
           blockProps,
           el('div', { className: 'mf-interview-qa-editor__preview' },
-            el(ServerSideRender, {
-              block: 'modfarm/interview-qa',
-              attributes: attributes
-            })
+            renderLocalPreview(attributes, isSelected)
           ),
           isSelected && el('div', { className: 'mf-interview-qa-editor__controls' },
             items.length === 0 && el('p', {}, __('Add the first question and answer pair.', 'modfarm')),

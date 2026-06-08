@@ -77,6 +77,52 @@ if (!function_exists('modfarm_search_results_find_terms_any')) {
     }
 }
 
+if (!function_exists('modfarm_search_results_merge_terms')) {
+    function modfarm_search_results_merge_terms(array ...$term_groups): array {
+        $terms = [];
+        $seen = [];
+
+        foreach ($term_groups as $group) {
+            foreach ($group as $term) {
+                if (!($term instanceof WP_Term)) {
+                    continue;
+                }
+
+                $key = $term->taxonomy . ':' . $term->term_id;
+                if (isset($seen[$key])) {
+                    continue;
+                }
+
+                $seen[$key] = true;
+                $terms[] = $term;
+            }
+        }
+
+        return $terms;
+    }
+}
+
+if (!function_exists('modfarm_search_results_terms_for_books')) {
+    function modfarm_search_results_terms_for_books(array $book_ids, array $taxonomies, int $limit): array {
+        $terms = [];
+
+        foreach ($book_ids as $book_id) {
+            foreach ($taxonomies as $taxonomy) {
+                if (!taxonomy_exists((string) $taxonomy)) {
+                    continue;
+                }
+
+                $book_terms = get_the_terms((int) $book_id, (string) $taxonomy);
+                if (!empty($book_terms) && !is_wp_error($book_terms)) {
+                    $terms = modfarm_search_results_merge_terms($terms, $book_terms);
+                }
+            }
+        }
+
+        return array_slice($terms, 0, max(1, $limit));
+    }
+}
+
 if (!function_exists('modfarm_search_results_book_ids_for_terms')) {
     function modfarm_search_results_book_ids_for_terms(array $terms, int $limit): array {
         $tax_query = [];
@@ -116,6 +162,51 @@ if (!function_exists('modfarm_search_results_book_ids_for_terms')) {
     }
 }
 
+if (!function_exists('modfarm_search_results_first_book_id_for_term')) {
+    function modfarm_search_results_first_book_id_for_term(WP_Term $term): int {
+        if (!post_type_exists('book')) {
+            return 0;
+        }
+
+        $ids = get_posts([
+            'post_type'      => 'book',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'tax_query'      => [[
+                'taxonomy' => $term->taxonomy,
+                'field'    => 'term_id',
+                'terms'    => [(int) $term->term_id],
+            ]],
+            'meta_key'       => 'series_position',
+            'orderby'        => 'meta_value_num title',
+            'order'          => 'ASC',
+            'no_found_rows'  => true,
+        ]);
+
+        if (!empty($ids)) {
+            return (int) $ids[0];
+        }
+
+        $ids = get_posts([
+            'post_type'      => 'book',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'tax_query'      => [[
+                'taxonomy' => $term->taxonomy,
+                'field'    => 'term_id',
+                'terms'    => [(int) $term->term_id],
+            ]],
+            'orderby'        => 'date',
+            'order'          => 'ASC',
+            'no_found_rows'  => true,
+        ]);
+
+        return !empty($ids) ? (int) $ids[0] : 0;
+    }
+}
+
 if (!function_exists('modfarm_search_results_direct_book_ids')) {
     function modfarm_search_results_direct_book_ids(string $search, int $limit): array {
         if (!post_type_exists('book') || $search === '') {
@@ -134,6 +225,39 @@ if (!function_exists('modfarm_search_results_direct_book_ids')) {
             'update_post_meta_cache' => false,
             'update_post_term_cache' => true,
         ]);
+    }
+}
+
+if (!function_exists('modfarm_search_results_book_card')) {
+    function modfarm_search_results_book_card(int $book_id, string $cover_source): array {
+        $permalink = get_permalink($book_id) ?: '';
+        $cover_data = modfarm_book_cover_data($book_id, $cover_source);
+        $series_terms = get_the_terms($book_id, 'book-series');
+        $series_name = (!empty($series_terms) && !is_wp_error($series_terms)) ? $series_terms[0]->name : '';
+        $series_pos = get_post_meta($book_id, 'series_position', true);
+
+        return [
+            'id'              => $book_id,
+            'title'           => get_the_title($book_id),
+            'permalink'       => $permalink,
+            'image_url'       => (string) ($cover_data['url'] ?? ''),
+            'aspect'          => modfarm_book_cover_aspect((string) ($cover_data['source'] ?? $cover_source), 'auto'),
+            'image_fit'       => modfarm_book_cover_image_fit((string) ($cover_data['source'] ?? $cover_source), 'auto'),
+            'format'          => null,
+            'show_title'      => true,
+            'series_name'     => $series_name,
+            'series_position' => $series_pos,
+            'volume_text'     => __('Book', 'modfarm'),
+            'audio_mode'      => 'off',
+            'button'          => [
+                'text'   => __('See The Book', 'modfarm'),
+                'url'    => $permalink,
+                'target' => '_self',
+                'bg'     => '',
+                'fg'     => '',
+                'origin' => 'search-results',
+            ],
+        ];
     }
 }
 
@@ -216,14 +340,23 @@ if (!function_exists('modfarm_render_search_results_block')) {
         $posts_limit = max(1, min(24, (int) $a['postsLimit']));
         $terms_limit = max(1, min(24, (int) $a['termsLimit']));
 
-        $author_terms = modfarm_search_results_find_terms_any(['book-author', 'book-authors'], $search, $terms_limit);
-        $series_terms = modfarm_search_results_find_terms('book-series', $search, $terms_limit);
+        $direct_author_terms = modfarm_search_results_find_terms_any(['book-author', 'book-authors'], $search, $terms_limit);
+        $direct_series_terms = modfarm_search_results_find_terms('book-series', $search, $terms_limit);
 
         $book_ids = array_values(array_unique(array_merge(
             modfarm_search_results_direct_book_ids($search, $books_limit),
-            modfarm_search_results_book_ids_for_terms(array_merge($author_terms, $series_terms), $books_limit)
+            modfarm_search_results_book_ids_for_terms(array_merge($direct_author_terms, $direct_series_terms), $books_limit)
         )));
         $book_ids = array_slice($book_ids, 0, $books_limit);
+
+        $author_terms = array_slice(modfarm_search_results_merge_terms(
+            $direct_author_terms,
+            modfarm_search_results_terms_for_books($book_ids, ['book-author', 'book-authors'], $terms_limit)
+        ), 0, $terms_limit);
+        $series_terms = array_slice(modfarm_search_results_merge_terms(
+            $direct_series_terms,
+            modfarm_search_results_terms_for_books($book_ids, ['book-series'], $terms_limit)
+        ), 0, $terms_limit);
 
         $posts = modfarm_search_results_posts($search, $posts_limit);
 
@@ -261,7 +394,8 @@ if (!function_exists('modfarm_render_search_results_block')) {
         if (!empty($a['showBooks']) && !empty($sections['books'])) {
             echo '<section class="mf-search-section mf-search-section--books">';
             $render_header(__('Books', 'modfarm'), count($sections['books']));
-            echo '<div class="mf-search-books">';
+            echo '<div class="mf-search-books mfb-wrapper is-archive mfb-effect--flat mfb-cover--square mfb-button--square mfb-sample--square mfb-cta--gap mfb-wrapper--grid">';
+            echo '<div class="mfb-grid" style="--mfb-cols:4;">';
             foreach ($sections['books'] as $book_id) {
                 $book_id = (int) $book_id;
                 $permalink = get_permalink($book_id);
@@ -269,27 +403,23 @@ if (!function_exists('modfarm_render_search_results_block')) {
                     continue;
                 }
 
-                $cover = modfarm_book_cover_data($book_id, (string) $a['bookCoverSource']);
-                echo '<article class="mf-search-book">';
-                echo '<a class="mf-search-book__cover" href="' . esc_url($permalink) . '">';
-                if (!empty($cover['url'])) {
-                    echo '<img src="' . esc_url($cover['url']) . '" alt="' . esc_attr(get_the_title($book_id)) . '" loading="lazy" decoding="async">';
-                }
-                echo '</a>';
-                echo '<div class="mf-search-book__body">';
-                echo '<h3 class="mf-search-book__title"><a href="' . esc_url($permalink) . '">' . esc_html(get_the_title($book_id)) . '</a></h3>';
-                $meta = modfarm_search_results_book_meta($book_id);
-                if ($meta !== '') {
-                    echo '<div class="mf-search-book__meta">' . esc_html($meta) . '</div>';
-                }
-                $excerpt = modfarm_search_results_excerpt($book_id, 20);
-                if ($excerpt !== '') {
-                    echo '<p class="mf-search-book__excerpt">' . esc_html($excerpt) . '</p>';
+                echo '<div class="mfb-item mf-search-book">';
+                if (function_exists('modfarm_render_book_card')) {
+                    modfarm_render_book_card(modfarm_search_results_book_card($book_id, (string) $a['bookCoverSource']));
+                } else {
+                    $cover = modfarm_book_cover_data($book_id, (string) $a['bookCoverSource']);
+                    echo '<article class="mfb-card"><div class="mfb-media">';
+                    echo '<a class="mfb-image" href="' . esc_url($permalink) . '">';
+                    if (!empty($cover['url'])) {
+                        echo '<img src="' . esc_url($cover['url']) . '" alt="' . esc_attr(get_the_title($book_id)) . '" loading="lazy" decoding="async">';
+                    }
+                    echo '</a></div>';
+                    echo '<span class="mfb-title"><a href="' . esc_url($permalink) . '">' . esc_html(get_the_title($book_id)) . '</a></span>';
+                    echo '</article>';
                 }
                 echo '</div>';
-                echo '</article>';
             }
-            echo '</div>';
+            echo '</div></div>';
             echo '</section>';
         }
 
@@ -342,7 +472,13 @@ if (!function_exists('modfarm_render_search_results_block')) {
                 }
 
                 $image = modfarm_search_results_term_image_url($term);
-                echo '<article class="mf-search-term">';
+                if ($image === '' && $term->taxonomy === 'book-series') {
+                    $first_book_id = modfarm_search_results_first_book_id_for_term($term);
+                    if ($first_book_id > 0) {
+                        $image = modfarm_book_cover_url($first_book_id, 'cover_ebook', true);
+                    }
+                }
+                echo '<article class="mf-search-term mf-search-term--' . esc_attr(sanitize_html_class($term->taxonomy)) . '">';
                 if ($image !== '') {
                     echo '<a class="mf-search-term__image" href="' . esc_url($url) . '"><img src="' . esc_url($image) . '" alt="' . esc_attr($term->name) . '" loading="lazy" decoding="async"></a>';
                 }

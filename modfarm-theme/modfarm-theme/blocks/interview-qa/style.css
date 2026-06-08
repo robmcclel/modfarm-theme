@@ -192,6 +192,20 @@
   margin-bottom: 1rem;
 }
 
+.mf-interview-qa-editor__profile-preview {
+  padding: 0.75rem 1rem;
+  margin: 0 0 1rem;
+  border: 1px dashed #c3c4c7;
+  color: #50575e;
+  background: #f6f7f7;
+}
+
+.mf-interview-qa-editor__more {
+  margin: -1.25rem 0 2rem;
+  color: #50575e;
+  font-size: 0.9rem;
+}
+
 .mf-interview-qa-editor__item {
   border: 1px solid #dcdcde;
   padding: 1rem;

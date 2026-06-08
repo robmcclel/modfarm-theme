@@ -34,27 +34,20 @@
 }
 
 .mf-search-books {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 0;
 }
 
 .mf-search-book {
-  display: grid;
-  gap: .75rem;
+  min-width: 0;
 }
 
-.mf-search-book__cover {
-  aspect-ratio: 2 / 3;
-  background: color-mix(in srgb, currentColor 8%, transparent);
-  overflow: hidden;
+.mf-search-books.mfb-wrapper {
+  --mfb-gap: 18px;
 }
 
-.mf-search-book__cover img {
-  display: block;
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
+.mf-search-books .mfb-grid,
+.mf-search-books.mfb-wrapper--grid {
+  max-width: none;
 }
 
 .mf-search-book__title,
@@ -78,10 +71,16 @@
   margin: 0;
 }
 
-.mf-search-posts,
+.mf-search-posts {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .mf-search-terms {
   display: grid;
-  gap: .9rem;
+  gap: 1.25rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .mf-search-result,
@@ -90,22 +89,21 @@
   gap: .35rem;
 }
 
-.mf-search-terms {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
 .mf-search-term {
-  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-  padding: 1rem;
+  align-content: start;
+  display: grid;
+  gap: .35rem;
+  justify-items: center;
+  text-align: center;
 }
 
 .mf-search-term__image {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 2 / 3;
   background: color-mix(in srgb, currentColor 8%, transparent);
   display: block;
   margin-bottom: .6rem;
-  max-width: 130px;
   overflow: hidden;
+  width: min(100%, 160px);
 }
 
 .mf-search-term__image img {
@@ -115,10 +113,35 @@
   width: 100%;
 }
 
+.mf-search-section--authors .mf-search-term__image {
+  aspect-ratio: 1 / 1;
+  border-radius: 9999px;
+}
+
+.mf-search-section--authors .mf-search-term__image img {
+  border-radius: inherit;
+}
+
+.mf-search-result {
+  align-content: start;
+}
+
 @media (max-width: 640px) {
   .mf-search-section__header {
     align-items: flex-start;
     flex-direction: column;
     gap: .25rem;
+  }
+
+  .mf-search-posts,
+  .mf-search-terms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .mf-search-posts,
+  .mf-search-terms {
+    grid-template-columns: 1fr;
   }
 }
