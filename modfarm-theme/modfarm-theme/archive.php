@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 /**
  * Archive Template
  * Handles Collection CPT archives before falling back to the standard PPB archive renderer.

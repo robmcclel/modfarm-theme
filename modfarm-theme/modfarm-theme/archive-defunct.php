@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 /**
  * Archive Template
  * Handles taxonomy archives, post type archives, and the blog index

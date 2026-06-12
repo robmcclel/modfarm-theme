@@ -1,4 +1,6 @@
-<?php// footer.php
+<?php
+defined('ABSPATH') || exit;
+// footer.php
 ?>
 </div> <!-- end #page -->
 <?php wp_footer(); ?>

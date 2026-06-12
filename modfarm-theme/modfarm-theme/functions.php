@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 /**
  * ModFarm Theme Functions
  * Loads block types, settings, utilities, and admin tools.

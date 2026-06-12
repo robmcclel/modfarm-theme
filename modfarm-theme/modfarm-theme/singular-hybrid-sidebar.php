@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 /**
  * Hybrid singular template with right sidebar.
  * - Uses PPB-selected Header/Footer

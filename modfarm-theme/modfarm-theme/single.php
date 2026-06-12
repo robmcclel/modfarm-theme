@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 /**
  * Template for single CPTs like book, modfarm_book, etc.
  */

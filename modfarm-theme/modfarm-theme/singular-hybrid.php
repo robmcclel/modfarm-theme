@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 /**
  * Hybrid singular template
  * - Uses PPB-selected Header/Footer (resolved at render time, like Archives)

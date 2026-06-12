@@ -1,4 +1,5 @@
 <?php
+defined('ABSPATH') || exit;
 // header.php
 ?><!DOCTYPE html>
 <html <?php language_attributes(); ?>>
