@@ -43,7 +43,14 @@ if (!function_exists('modfarm_render_advanced_book_details_block')) {
       return implode(', ', $links);
     };
 
-    $render_meta = function ($post_id, $key) {
+    $date_meta_keys = [
+      'publication_date',
+      'hardcover_publication_date',
+      'paperback_publication_date',
+      'audiobook_publication_date',
+    ];
+
+    $render_meta = function ($post_id, $key) use ($date_meta_keys) {
       $key = sanitize_key($key);
       if (!$key) return '';
       $val = get_post_meta($post_id, $key, true);
@@ -52,6 +59,12 @@ if (!function_exists('modfarm_render_advanced_book_details_block')) {
         $val = implode(', ', $val);
       } else {
         $val = trim(wp_strip_all_tags((string) $val));
+      }
+      if (in_array($key, $date_meta_keys, true)) {
+        $timestamp = strtotime($val);
+        if ($timestamp) {
+          $val = date_i18n('F j, Y', $timestamp);
+        }
       }
       return $val;
     };
@@ -71,6 +84,7 @@ if (!function_exists('modfarm_render_advanced_book_details_block')) {
         'Asin' => 'ASIN',
         'Ebook' => 'eBook',
         'Hardcover Publication Date' => 'Hardcover Publication Date',
+        'Paperback Publication Date' => 'Paperback Publication Date',
       ];
       return $map[$s] ?? $s;
     };

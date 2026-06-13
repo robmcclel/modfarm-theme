@@ -8,11 +8,29 @@ function modfarm_render_book_details_block( $attributes, $content, $block ) {
     }
 
 	$fields = [];
+	$date_meta_keys = [
+		'publication_date',
+		'hardcover_publication_date',
+		'paperback_publication_date',
+		'audiobook_publication_date',
+	];
+
+	$format_meta_value = function( $value, $meta_key ) use ( $date_meta_keys ) {
+		$value = trim( (string) $value );
+		if ( in_array( $meta_key, $date_meta_keys, true ) ) {
+			$timestamp = strtotime( $value );
+			if ( $timestamp ) {
+				return date_i18n( 'F j, Y', $timestamp );
+			}
+		}
+		return $value;
+	};
 
 	// Helper: add meta field
-	$add_meta = function( $label, $meta_key ) use ( $post_id, &$fields ) {
+	$add_meta = function( $label, $meta_key ) use ( $post_id, &$fields, $format_meta_value ) {
 		$value = get_post_meta( $post_id, $meta_key, true );
 		if ( $value ) {
+			$value = $format_meta_value( $value, $meta_key );
 			$fields[] = [ $label, esc_html( $value ) ];
 		}
 	};
@@ -35,6 +53,7 @@ function modfarm_render_book_details_block( $attributes, $content, $block ) {
 	// Add meta fields
 	if ( ! empty( $attributes['show_publication_date'] ) ) $add_meta( 'Publication Date', 'publication_date' );
 	if ( ! empty( $attributes['show_hardcover_publication_date'] ) ) $add_meta( 'Hardcover Pub Date', 'hardcover_publication_date' );
+	if ( ! empty( $attributes['show_paperback_publication_date'] ) ) $add_meta( 'Paperback Pub Date', 'paperback_publication_date' );
 	if ( ! empty( $attributes['show_pages'] ) ) $add_meta( 'Page Count', 'page_count' );
 	if ( ! empty( $attributes['show_isbn'] ) ) $add_meta( 'ISBN', 'isbn' );
 	if ( ! empty( $attributes['show_asin'] ) ) $add_meta( 'ASIN', 'asin' );
