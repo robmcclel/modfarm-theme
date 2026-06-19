@@ -6,7 +6,7 @@
   position: relative;
   width: 100%;
   display: block;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .mf-hero-cover__overlay{
@@ -38,7 +38,7 @@
 
 .wp-block-modfarm-hero-cover .modfarm-hero-cover{
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .wp-block-modfarm-hero-cover .modfarm-hero-cover__overlay{
@@ -73,14 +73,14 @@
 /* The block wrapper IS the container in many dynamic blocks */
 .wp-block-modfarm-hero-cover{
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* If you also output .modfarm-hero-cover as the same element or nested, cover both */
 .wp-block-modfarm-hero-cover.modfarm-hero-cover,
 .wp-block-modfarm-hero-cover .modfarm-hero-cover{
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Overlay must be pinned to the hero container */

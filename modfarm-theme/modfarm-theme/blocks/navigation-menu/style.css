@@ -1,11 +1,16 @@
 /* === ModFarm Navigation Styles (navigation-menu) === */
 
 /* BAR */
+.wp-block-modfarm-navigation-menu{
+  position:relative;z-index:20;overflow:visible;
+}
+
 .mfs-nav{
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
   width:100%;margin-left:auto;margin-right:auto;padding:1.25rem 2rem;box-sizing:border-box;gap:1rem;
   background-color:var(--mf-nav-bg);color:var(--mf-nav-color);
   font-family:var(--mf-nav-font);font-size:var(--mf-nav-font-size);
+  overflow:visible;
 }
 
 /* Footer Variant */
