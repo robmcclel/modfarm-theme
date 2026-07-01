@@ -76,7 +76,7 @@
 .mfc-card__desc {
   line-height: 1.6;
   /*color: var(--mfc-text);*/
-  max-width: 65ch;
+  max-width: 90ch;
 }
 
 .mfc-card__desc p {

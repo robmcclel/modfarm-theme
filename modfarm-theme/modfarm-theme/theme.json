@@ -103,7 +103,7 @@
         "rem",
         "%"
       ],
-      "blockGap": "var(--mf-spacing-md, 1rem)"
+      "blockGap": null
     },
     "supports": {
       "align": ["wide", "full"]
