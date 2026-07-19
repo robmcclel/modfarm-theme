@@ -259,6 +259,12 @@
     padding: 18px 14px;
   }
 
+  /* Match the desktop side-selector specificity so media-left cannot keep
+     row-reverse and push the body outside the mobile viewport. */
+  .mfbb.mfbb--media-left .mfbb__inner{
+    flex-direction: column;
+  }
+
   /* Media goes first */
   .mfbb__media{
     order: 0;

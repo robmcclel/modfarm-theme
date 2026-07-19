@@ -1,6 +1,6 @@
 (function (wp) {
   const { registerBlockType } = wp.blocks;
-  const { InspectorControls, MediaUpload, MediaUploadCheck, useBlockProps, ColorPalette } = wp.blockEditor || wp.editor;
+  const { BlockControls, InspectorControls, MediaUpload, MediaUploadCheck, useBlockProps, ColorPalette } = wp.blockEditor || wp.editor;
   const {
     PanelBody, SelectControl, RangeControl, Button,
     __experimentalVStack: VStack, __experimentalHStack: HStack,
@@ -42,7 +42,7 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
-  function buildFullCss(a) {
+  function buildFullCss(a, targetSelector = 'body') {
     const mode = a.mode || 'color';
     const decl = [];
 
@@ -84,16 +84,16 @@
     decl.push('background-clip:border-box;');
     decl.push('background-blend-mode:normal;');
 
-    let css = `body{${decl.join('')}}`;
+    let css = `${targetSelector}{${decl.join('')}}`;
     if (a.textColor) {
-  css += ` body{color:${a.textColor};}`;
-  css += ` body :is(h1,h2,h3,h4,h5,h6,.wp-block-heading){color:${a.textColor};}`;
+  css += ` ${targetSelector}{color:${a.textColor};}`;
+  css += ` ${targetSelector} :is(h1,h2,h3,h4,h5,h6,.wp-block-heading){color:${a.textColor};}`;
 }
 
 if (a.linkColor) {
-  css += ` body a{color:${a.linkColor};}`;
+  css += ` ${targetSelector} a{color:${a.linkColor};}`;
   // Optional: heading links too (so a linked H2 doesn’t fall back to default link color)
-  css += ` body :is(h1,h2,h3,h4,h5,h6,.wp-block-heading) a{color:${a.linkColor};}`;
+  css += ` ${targetSelector} :is(h1,h2,h3,h4,h5,h6,.wp-block-heading) a{color:${a.linkColor};}`;
 }
 
     return css;
@@ -187,11 +187,18 @@ if (a.linkColor) {
 
     edit: (props) => {
       const { attributes:a, setAttributes } = props;
-      const css = buildFullCss(a);
+      // Preview only the post-content canvas. The post title and editor UI
+      // share the document, so editor previews must never target `body`.
+      const css = buildFullCss(a, '.editor-styles-wrapper .is-root-container');
       const doReset = useCallback(() => setAttributes({ ...DEFAULTS }), [setAttributes]);
       const applyPreset = (preset) => preset.apply((patch) => setAttributes({ ...a, ...patch }));
 
-      const blockProps = useBlockProps({ className: 'mf-pb-shell', tabIndex: 0 });
+      const blockProps = useBlockProps({
+        className: 'mf-pb-shell',
+        tabIndex: 0,
+        role: 'button',
+        'aria-label': 'Page Background settings'
+      });
 
       /* --- Color mode --- */
       const colorUI = el(VStack, { spacing:'8px' },
@@ -241,12 +248,13 @@ if (a.linkColor) {
         el(WPColorField, { label:'Link Color', value:a.linkColor||'', onChange:(v)=>setAttributes({ linkColor: v || '' }) })
       );
 
-      blockProps.toolbar = el(ToolbarGroup, {},
-        el(ToolbarButton, { icon:'image-rotate', label:'Reset to Default', onClick: doReset })
-      );
-
       return el('div', blockProps,
         el('style', { id:'mf-site-page-background' }, css),
+        el(BlockControls, {},
+          el(ToolbarGroup, {},
+            el(ToolbarButton, { icon:'image-rotate', label:'Reset to Default', onClick: doReset })
+          )
+        ),
         el(InspectorControls, {},
           el(PanelBody, { title:'Background Type', initialOpen:true },
             el(SelectControl, {
@@ -265,6 +273,11 @@ if (a.linkColor) {
           el(PanelBody, { title:'Utilities', initialOpen:false },
             el(Button, { variant:'secondary', isDestructive:true, onClick: doReset }, 'Reset to Default')
           )
+        ),
+        el('span', { className:'mf-pb-icon dashicons dashicons-art', 'aria-hidden':'true' }),
+        el('span', { className:'mf-pb-label' }, 'Page Background'),
+        el('span', { className:'mf-pb-summary' },
+          a.mode === 'image' ? 'Image' : a.mode === 'gradient' ? 'Gradient' : 'Color'
         )
       );
     },

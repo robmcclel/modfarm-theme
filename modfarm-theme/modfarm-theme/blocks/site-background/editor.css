@@ -1,8 +1,32 @@
 .mf-pb-shell{
-  border:1px dashed #b3b3b3;
-  padding:10px;
-  min-height:40px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-sizing:border-box;
+  border:1px dashed #8c8f94;
+  padding:10px 12px;
+  min-height:44px;
+  color:#1e1e1e;
+  background:rgba(255,255,255,.92);
   cursor:pointer;
+}
+
+.mf-pb-shell:hover{ border-color:#007cba; }
+
+.mf-pb-shell:focus,
+.mf-pb-shell.is-selected{
+  border-style:solid;
+  border-color:var(--wp-admin-theme-color, #007cba);
+  box-shadow:0 0 0 1px var(--wp-admin-theme-color, #007cba);
+  outline:0;
+}
+
+.mf-pb-icon{ color:var(--wp-admin-theme-color, #007cba); }
+.mf-pb-label{ font-weight:600; }
+.mf-pb-summary{
+  margin-left:auto;
+  color:#50575e;
+  font-size:12px;
 }
 
 .mf-color-field{ margin: 6px 0 12px; }
