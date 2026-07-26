@@ -14,7 +14,7 @@
  * - archive_format_filter: int (book-format term ID; 0 = no additional filter)
  * - archive_books_in_row:  string percent width used by archive-list
  * - archive_display_order: string enum (ASC|DESC|rand)
- * - archive_order_date_key:string enum date meta key used by archive-list
+ * - archive_order_date_key:string enum meta key used to order archive-list
  * - archive_hero_image:    int (attachment ID)
  * - archive_default_image: int (attachment ID)
  * - archive_display_hero:  int(1|0)  (show hero image on archive page)
@@ -328,6 +328,7 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
         'paperback_publication_date' => 'Paperback Publication Date',
         'hardcover_publication_date' => 'Hardcover Publication Date',
         'audiobook_publication_date' => 'Audiobook Publication Date',
+        'reading_order' => 'Reading Order',
     ];
     $format_terms = get_terms([
         'taxonomy'   => 'book-format',
@@ -393,7 +394,7 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
         </tr>
 
         <tr class="form-field">
-            <th scope="row"><label for="archive_order_date_key">Order Date Basis</label></th>
+            <th scope="row"><label for="archive_order_date_key">Order By</label></th>
             <td>
                 <select name="archive_order_date_key" id="archive_order_date_key">
                     <?php foreach ($date_key_options as $val => $label): ?>
@@ -535,6 +536,7 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         'paperback_publication_date' => 'Paperback Publication Date',
         'hardcover_publication_date' => 'Hardcover Publication Date',
         'audiobook_publication_date' => 'Audiobook Publication Date',
+        'reading_order' => 'Reading Order',
     ];
     $format_terms = get_terms([
         'taxonomy'   => 'book-format',
@@ -583,7 +585,7 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         </select>
     </div>
     <div class="form-field term-group">
-        <label for="archive_order_date_key">Order Date Basis</label>
+        <label for="archive_order_date_key">Order By</label>
         <select name="archive_order_date_key" id="archive_order_date_key">
             <?php foreach ($date_key_options as $val => $label): ?>
                 <option value="<?php echo esc_attr($val); ?>" <?php selected($val, 'publication_date'); ?>>
@@ -693,7 +695,7 @@ function mfs_save_book_archive_term_fields($term_id, $tt_id = 0) {
     update_term_meta($term_id, 'archive_format_filter', $id('archive_format_filter'));
     update_term_meta($term_id, 'archive_books_in_row', $one_of('archive_books_in_row', ['50%', '33.333%', '25%', '20%', '16.666%'], '25%'));
     update_term_meta($term_id, 'archive_display_order', $one_of('archive_display_order', ['ASC', 'DESC', 'rand'], 'DESC'));
-    update_term_meta($term_id, 'archive_order_date_key', $one_of('archive_order_date_key', ['publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date'], 'publication_date'));
+    update_term_meta($term_id, 'archive_order_date_key', $one_of('archive_order_date_key', ['publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order'], 'publication_date'));
 
     update_term_meta($term_id, 'archive_hero_image',    $id('archive_hero_image'));
     update_term_meta($term_id, 'archive_default_image', $id('archive_default_image'));

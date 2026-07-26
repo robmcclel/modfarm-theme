@@ -22,8 +22,8 @@ function modfarm_render_book_page_tax_block( $attributes ) {
     // --------------------------------------------------
     $tax_source      = $attributes['tax-source']      ?? 'series'; // series|genre|author|language|booktag
     $order_setting   = $attributes['display-order']   ?? 'DESC';
-    $date_keys       = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
-    $order_date_key  = in_array( $attributes['order-date-key'] ?? '', $date_keys, true ) ? $attributes['order-date-key'] : 'publication_date';
+    $order_keys      = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order' ];
+    $order_date_key  = in_array( $attributes['order-date-key'] ?? '', $order_keys, true ) ? $attributes['order-date-key'] : 'publication_date';
     $books_per_page  = (int) ( $attributes['books-per-page'] ?? 12 );
     $books_per_row   = $attributes['books-in-row']    ?? '25%';
     $display_layout  = in_array( ( $attributes['display-layout'] ?? 'grid' ), [ 'grid', 'horizontal' ], true )
@@ -233,9 +233,9 @@ function modfarm_render_book_page_tax_block( $attributes ) {
     if ( $orderby === 'rand' ) {
         $args['orderby'] = 'rand';
     } else {
-        $args['orderby']   = 'meta_value';
+        $args['orderby']   = $order_date_key === 'reading_order' ? 'meta_value_num' : 'meta_value';
         $args['meta_key']  = $order_date_key;
-        $args['meta_type'] = 'DATE';
+        $args['meta_type'] = $order_date_key === 'reading_order' ? 'NUMERIC' : 'DATE';
         $args['order']     = $order;
     }
 
