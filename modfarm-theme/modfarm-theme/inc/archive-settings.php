@@ -329,6 +329,7 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
         'hardcover_publication_date' => 'Hardcover Publication Date',
         'audiobook_publication_date' => 'Audiobook Publication Date',
         'reading_order' => 'Reading Order',
+        'series_position' => 'Series Position',
     ];
     $format_terms = get_terms([
         'taxonomy'   => 'book-format',
@@ -537,6 +538,7 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         'hardcover_publication_date' => 'Hardcover Publication Date',
         'audiobook_publication_date' => 'Audiobook Publication Date',
         'reading_order' => 'Reading Order',
+        'series_position' => 'Series Position',
     ];
     $format_terms = get_terms([
         'taxonomy'   => 'book-format',
@@ -695,7 +697,7 @@ function mfs_save_book_archive_term_fields($term_id, $tt_id = 0) {
     update_term_meta($term_id, 'archive_format_filter', $id('archive_format_filter'));
     update_term_meta($term_id, 'archive_books_in_row', $one_of('archive_books_in_row', ['50%', '33.333%', '25%', '20%', '16.666%'], '25%'));
     update_term_meta($term_id, 'archive_display_order', $one_of('archive_display_order', ['ASC', 'DESC', 'rand'], 'DESC'));
-    update_term_meta($term_id, 'archive_order_date_key', $one_of('archive_order_date_key', ['publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order'], 'publication_date'));
+    update_term_meta($term_id, 'archive_order_date_key', $one_of('archive_order_date_key', ['publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order', 'series_position'], 'publication_date'));
 
     update_term_meta($term_id, 'archive_hero_image',    $id('archive_hero_image'));
     update_term_meta($term_id, 'archive_default_image', $id('archive_default_image'));

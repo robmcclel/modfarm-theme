@@ -298,7 +298,8 @@
                 { label: __('Publication Date', 'modfarm'), value: 'publication_date' },
                 { label: __('Hardcover Publication Date', 'modfarm'), value: 'hardcover_publication_date' },
                 { label: __('Audiobook Publication Date', 'modfarm'), value: 'audiobook_publication_date' },
-                { label: __('Reading Order', 'modfarm'), value: 'reading_order' }
+                { label: __('Reading Order', 'modfarm'), value: 'reading_order' },
+                { label: __('Series Position', 'modfarm'), value: 'series_position' }
               ],
               onChange: (val) => setAttributes({ 'order-date-key': val })
             }),

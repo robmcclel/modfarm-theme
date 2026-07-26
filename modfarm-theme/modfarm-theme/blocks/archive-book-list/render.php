@@ -177,7 +177,7 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         }
 
         $term_order_date_key = mfs_get_archive_term_meta( $qo->term_id, 'archive_order_date_key', '' );
-        if ( in_array( $term_order_date_key, array( 'publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order' ), true ) ) {
+        if ( in_array( $term_order_date_key, array( 'publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order', 'series_position' ), true ) ) {
             $a['order-date-key'] = $term_order_date_key;
         }
 
@@ -389,8 +389,9 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     // --------------------------------------------------
     $paged         = max( 1, get_query_var( 'paged' ) ?: get_query_var( 'page' ) ?: 1 );
     $order_setting = $a['display-order'];
-    $order_keys    = array( 'publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order' );
+    $order_keys    = array( 'publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order', 'series_position' );
     $order_date_key = in_array( $a['order-date-key'], $order_keys, true ) ? $a['order-date-key'] : 'publication_date';
+    $numeric_order = in_array( $order_date_key, array( 'reading_order', 'series_position' ), true );
     $orderby       = ( $order_setting === 'rand' ) ? 'rand' : 'meta_value';
     $order         = ( $order_setting === 'ASC' )  ? 'ASC'  : 'DESC';
 
@@ -410,9 +411,9 @@ function modfarm_render_archive_book_list_block( $attributes ) {
     if ( $orderby === 'rand' ) {
         $args['orderby'] = 'rand';
     } else {
-        $args['orderby']   = $order_date_key === 'reading_order' ? 'meta_value_num' : 'meta_value';
+        $args['orderby']   = $numeric_order ? 'meta_value_num' : 'meta_value';
         $args['meta_key']  = $order_date_key;
-        $args['meta_type'] = $order_date_key === 'reading_order' ? 'NUMERIC' : 'DATE';
+        $args['meta_type'] = $numeric_order ? 'NUMERIC' : 'DATE';
         $args['order']     = $order;
     }
 
