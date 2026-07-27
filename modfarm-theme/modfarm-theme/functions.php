@@ -293,6 +293,10 @@ CSS;
  * Inject ModFarm colors into the editor palette (ColorPalette + global color UI).
  */
 add_filter('block_editor_settings_all', function ($settings) {
+    // Keep theme-bundled unsynced patterns fully editable. WordPress 7.0
+    // otherwise places them in content-only mode behind an "Edit pattern" step.
+    $settings['disableContentOnlyForUnsyncedPatterns'] = true;
+
     $opts = get_option('modfarm_theme_settings', []);
 
     $primary   = $opts['primary_color']     ?? '';
