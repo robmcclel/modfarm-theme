@@ -1,6 +1,77 @@
 <?php
 require_once get_template_directory() . '/blocks/shared/offer-blocks.php';
 
+if (!function_exists('modfarm_related_products_offer_ids')) {
+function modfarm_related_products_offer_ids(int $current_offer_id, array $args = []): array {
+    $args = wp_parse_args($args, [
+        'limit' => 3,
+        'taxonomy' => '',
+        'manualIds' => [],
+        'contextType' => '',
+        'contextId' => 0,
+    ]);
+    $limit = max(1, min(24, (int) $args['limit']));
+
+    // 1. An explicit manual list always wins.
+    $manual_ids = array_values(array_filter(array_map('absint', (array) $args['manualIds']), static function ($id) use ($current_offer_id) {
+        return $id !== $current_offer_id && get_post_type($id) === 'mf_offer' && get_post_status($id) === 'publish';
+    }));
+    if (!empty($manual_ids)) {
+        return array_slice($manual_ids, 0, $limit);
+    }
+
+    // 2. Resolve Offers promoted for this exact Core context (plus only those
+    // family relationships that Core explicitly marks with family scope).
+    $context_type = sanitize_key((string) $args['contextType']);
+    $context_id = absint($args['contextId']);
+    if ($context_type !== '' && $context_id > 0 && function_exists('modfarm_get_promoted_display_ids')) {
+        $promoted_ids = modfarm_get_promoted_display_ids($context_type, $context_id, 'mf_offer', 'promotes', [
+            'limit' => $limit,
+        ]);
+        $promoted_ids = array_values(array_filter(array_map('absint', $promoted_ids), static function ($id) use ($current_offer_id) {
+            return $id !== $current_offer_id && get_post_type($id) === 'mf_offer' && get_post_status($id) === 'publish';
+        }));
+        if (!empty($promoted_ids)) {
+            return array_slice($promoted_ids, 0, $limit);
+        }
+    }
+
+    // 3. No fallback really means no products.
+    $taxonomy = sanitize_key((string) $args['taxonomy']);
+    if ($taxonomy === '') {
+        return [];
+    }
+
+    $query_args = [
+        'post_type' => 'mf_offer',
+        'post_status' => 'publish',
+        'posts_per_page' => $limit,
+        'post__not_in' => $current_offer_id > 0 ? [$current_offer_id] : [],
+        'ignore_sticky_posts' => true,
+        'no_found_rows' => true,
+    ];
+
+    // "Any published Offers" is the only fallback that intentionally queries all.
+    if ($taxonomy !== '__all__') {
+        if ($current_offer_id <= 0 || !taxonomy_exists($taxonomy)) {
+            return [];
+        }
+        $terms = wp_get_post_terms($current_offer_id, $taxonomy, ['fields' => 'ids']);
+        if (is_wp_error($terms) || empty($terms)) {
+            return [];
+        }
+        $query_args['tax_query'] = [[
+            'taxonomy' => $taxonomy,
+            'field' => 'term_id',
+            'terms' => array_map('absint', $terms),
+        ]];
+    }
+
+    $query = new WP_Query($query_args);
+    return array_map('intval', wp_list_pluck($query->posts, 'ID'));
+}
+}
+
 if (!function_exists('modfarm_render_related_products_block')) {
 function modfarm_render_related_products_block($attributes = [], $content = '', $block = null) {
     $offer_id = modfarm_store_block_get_offer_id($attributes, $block);
@@ -10,7 +81,7 @@ function modfarm_render_related_products_block($attributes = [], $content = '', 
     $display_layout = in_array(($attributes['displayLayout'] ?? 'grid'), ['grid', 'horizontal'], true)
         ? $attributes['displayLayout']
         : 'grid';
-    $ids = modfarm_store_block_related_offer_ids($offer_id, [
+    $ids = modfarm_related_products_offer_ids($offer_id, [
         'limit' => $limit,
         'taxonomy' => $attributes['taxonomy'] ?? '',
         'manualIds' => $attributes['manualIds'] ?? [],
