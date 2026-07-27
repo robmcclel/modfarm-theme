@@ -262,7 +262,7 @@
       }, []);
 
       const taxonomyOptions = [
-        { label: __('No taxonomy fallback', 'modfarm'), value: '' },
+        { label: __('No taxonomy fallback', 'modfarm'), value: '__none__' },
         { label: __('Any published Offers', 'modfarm'), value: '__all__' }
       ].concat(
         (taxonomies || []).map(function (tax) {
@@ -323,9 +323,11 @@
             }),
             el(ComboboxControl, {
               label: __('Fallback taxonomy', 'modfarm'),
-              value: attributes.taxonomy || '',
+              value: attributes.taxonomy || '__none__',
               options: taxonomyOptions,
-              onChange: function (value) { setAttributes({ taxonomy: value || '' }); }
+              onChange: function (value) {
+                setAttributes({ taxonomy: !value || value === '__none__' ? '' : value });
+              }
             }),
             el(RangeControl, {
               label: isHorizontal ? __('Total Products', 'modfarm') : __('Products to show', 'modfarm'),
