@@ -261,7 +261,10 @@
           });
       }, []);
 
-      const taxonomyOptions = [{ label: __('Any published Offers', 'modfarm'), value: '' }].concat(
+      const taxonomyOptions = [
+        { label: __('No taxonomy fallback', 'modfarm'), value: '' },
+        { label: __('Any published Offers', 'modfarm'), value: '__all__' }
+      ].concat(
         (taxonomies || []).map(function (tax) {
           return { label: tax.name || tax.slug, value: tax.slug };
         })
@@ -294,7 +297,7 @@
           ),
           el(PanelBody, { title: __('Source', 'modfarm'), initialOpen: true },
             el(Notice, { status: 'info', isDismissible: false },
-              __('Core Promotions are used first. Manual Offers override them; taxonomy is only a fallback when no promoted Offers are found.', 'modfarm')
+              __('Manual Offers are used first, followed by matching Core Promotions. The selected taxonomy fallback is used only when neither source finds Offers.', 'modfarm')
             ),
             el(OfferSearch, {
               label: __('Current Offer fallback', 'modfarm'),

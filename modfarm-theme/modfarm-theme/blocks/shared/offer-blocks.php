@@ -424,6 +424,11 @@ function modfarm_store_block_related_offer_ids(int $offer_id, array $args = []):
         }
     }
 
+    $taxonomy = sanitize_key((string) $args['taxonomy']);
+    if ($taxonomy === '') {
+        return [];
+    }
+
     $query_args = [
         'post_type' => 'mf_offer',
         'post_status' => 'publish',
@@ -433,16 +438,21 @@ function modfarm_store_block_related_offer_ids(int $offer_id, array $args = []):
         'no_found_rows' => true,
     ];
 
-    $taxonomy = sanitize_key((string) $args['taxonomy']);
-    if ($offer_id > 0 && $taxonomy !== '' && taxonomy_exists($taxonomy)) {
-        $terms = wp_get_post_terms($offer_id, $taxonomy, ['fields' => 'ids']);
-        if (!is_wp_error($terms) && !empty($terms)) {
-            $query_args['tax_query'] = [[
-                'taxonomy' => $taxonomy,
-                'field' => 'term_id',
-                'terms' => array_map('absint', $terms),
-            ]];
+    if ($taxonomy !== '__all__') {
+        if ($offer_id <= 0 || !taxonomy_exists($taxonomy)) {
+            return [];
         }
+
+        $terms = wp_get_post_terms($offer_id, $taxonomy, ['fields' => 'ids']);
+        if (is_wp_error($terms) || empty($terms)) {
+            return [];
+        }
+
+        $query_args['tax_query'] = [[
+            'taxonomy' => $taxonomy,
+            'field' => 'term_id',
+            'terms' => array_map('absint', $terms),
+        ]];
     }
 
     $query = new WP_Query($query_args);
