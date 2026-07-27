@@ -95,7 +95,7 @@
 .mfs-product-card--horizontal .mfs-product-card__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: .75rem;
+  gap: 0;
   order: 5;
   width: auto;
   margin: 1rem 0 0;
@@ -111,7 +111,12 @@
 
 .mfs-product-card--commerce.mfs-product-card--buttons-joined .mfs-product-card__button + .mfs-product-card__button,
 .mfs-product-card--horizontal.mfs-product-card--buttons-joined .mfs-product-card__button + .mfs-product-card__button {
-  margin-left: 0;
+  margin-left: -2px;
+}
+
+.mfs-product-card--commerce.mfs-product-card--buttons-gap .mfs-product-card__actions,
+.mfs-product-card--horizontal.mfs-product-card--buttons-gap .mfs-product-card__actions {
+  gap: .75rem;
 }
 
 .mfs-product-card--button-count-1 .mfs-product-card__actions {
@@ -284,6 +289,12 @@
   .mfs-product-card--horizontal .mfs-product-card__actions {
     flex-direction: column;
     width: 100%;
+  }
+
+  .mfs-product-card--commerce.mfs-product-card--buttons-joined .mfs-product-card__button + .mfs-product-card__button,
+  .mfs-product-card--horizontal.mfs-product-card--buttons-joined .mfs-product-card__button + .mfs-product-card__button {
+    margin-top: -2px;
+    margin-left: 0;
   }
 
   .mfs-product-card--commerce .mfs-product-card__button,

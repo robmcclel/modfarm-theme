@@ -7,8 +7,8 @@ function modfarm_render_theme_product_card_block($attributes = [], $content = ''
     $wrapper_attributes = get_block_wrapper_attributes(['class' => 'mfs-theme-product-card']);
 
     $card = modfarm_store_block_render_offer_card($offer_id, [
-        'layout' => $attributes['layout'] ?? 'commerce',
-        'imageAspect' => $attributes['imageAspect'] ?? '1 / 1',
+        'layout' => 'commerce',
+        'imageAspect' => 'auto',
         'showImage' => !isset($attributes['showImage']) || $attributes['showImage'] !== false,
         'showTitle' => !empty($attributes['showTitle']),
         'showExcerpt' => !empty($attributes['showExcerpt']),
@@ -16,7 +16,8 @@ function modfarm_render_theme_product_card_block($attributes = [], $content = ''
         'showDetails' => !isset($attributes['showDetails']) || $attributes['showDetails'] !== false,
         'showPrimaryButton' => !isset($attributes['showPrimaryButton']) || $attributes['showPrimaryButton'] !== false,
         'showSecondaryButton' => !isset($attributes['showSecondaryButton']) || $attributes['showSecondaryButton'] !== false,
-        'excerptWords' => $attributes['excerptWords'] ?? 24,
+        // A featured product shows the complete description; zero disables trimming.
+        'excerptWords' => 0,
         'descriptionOverride' => ($attributes['descriptionMode'] ?? 'auto') === 'custom' ? ($attributes['descriptionOverride'] ?? '') : '',
         'detailOverride' => ($attributes['detailMode'] ?? 'auto') === 'custom' ? ($attributes['detailOverride'] ?? '') : '',
         'primaryButtonLabel' => $attributes['primaryButtonLabel'] ?? 'Buy Now',

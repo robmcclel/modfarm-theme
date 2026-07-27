@@ -3,16 +3,10 @@
   const { Fragment, createElement: el, useState, useEffect } = wp.element;
   const { __ } = wp.i18n;
   const { useBlockProps, InspectorControls, RichText } = wp.blockEditor || {};
-  const { PanelBody, TextControl, SelectControl, ToggleControl, RangeControl, Button, Notice, ColorPalette, BaseControl } = wp.components || {};
+  const { PanelBody, TextControl, SelectControl, ToggleControl, Button, Notice, ColorPalette, BaseControl } = wp.components || {};
   const ServerSideRender = wp.serverSideRender;
   const apiFetch = wp.apiFetch;
   const useSelect = wp.data && wp.data.useSelect;
-
-  const IMAGE_ASPECT_OPTIONS = [
-    { label: __('Square', 'modfarm'), value: '1 / 1' },
-    { label: __('Portrait', 'modfarm'), value: '3 / 4' },
-    { label: __('Landscape', 'modfarm'), value: '16 / 9' }
-  ];
 
   function OfferSearch({ value, onPick }) {
     const [query, setQuery] = useState('');
@@ -237,28 +231,6 @@
               }
             })
           ),
-          el(PanelBody, { title: __('Card Layout', 'modfarm'), initialOpen: false },
-            el(SelectControl, {
-              label: __('Layout', 'modfarm'),
-              value: attributes.layout || 'commerce',
-              options: [
-                { label: __('Commerce card', 'modfarm'), value: 'commerce' },
-                { label: __('Vertical', 'modfarm'), value: 'vertical' },
-                { label: __('Horizontal', 'modfarm'), value: 'horizontal' }
-              ],
-              onChange: function (value) {
-                setAttributes({ layout: value || 'commerce' });
-              }
-            }),
-            el(SelectControl, {
-              label: __('Image aspect', 'modfarm'),
-              value: attributes.imageAspect || '1 / 1',
-              options: IMAGE_ASPECT_OPTIONS,
-              onChange: function (value) {
-                setAttributes({ imageAspect: value || '1 / 1' });
-              }
-            })
-          ),
           el(PanelBody, { title: __('Content', 'modfarm'), initialOpen: false },
             ['showImage', 'showTitle', 'showPrice', 'showDetails', 'showExcerpt'].map(function (key) {
               const labels = {
@@ -315,15 +287,6 @@
               },
               placeholder: __('Custom product-card description...', 'modfarm'),
               allowedFormats: ['core/bold', 'core/italic', 'core/link']
-            }),
-            el(RangeControl, {
-              label: __('Auto description words', 'modfarm'),
-              value: attributes.excerptWords || 24,
-              min: 8,
-              max: 60,
-              onChange: function (value) {
-                setAttributes({ excerptWords: value || 24 });
-              }
             })
           ),
           el(PanelBody, { title: __('Buttons', 'modfarm'), initialOpen: false },

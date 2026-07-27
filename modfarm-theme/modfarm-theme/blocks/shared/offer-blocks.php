@@ -149,10 +149,21 @@ function modfarm_store_block_get_offer_excerpt(int $offer_id, int $words = 24): 
         return '';
     }
 
+    $post = get_post($offer_id);
+    if (!$post) {
+        return '';
+    }
+
+    // A non-positive limit means "full description": prefer an explicitly written
+    // excerpt, otherwise use all of the Offer content without WordPress auto-trimming.
+    if ($words <= 0) {
+        $description = trim((string) $post->post_excerpt);
+        return $description !== '' ? $description : trim((string) $post->post_content);
+    }
+
     $excerpt = get_the_excerpt($offer_id);
     if ($excerpt === '') {
-        $post = get_post($offer_id);
-        $excerpt = $post ? wp_strip_all_tags(strip_shortcodes((string) $post->post_content)) : '';
+        $excerpt = wp_strip_all_tags(strip_shortcodes((string) $post->post_content));
     }
 
     return $excerpt !== '' ? wp_trim_words($excerpt, max(1, $words), '...') : '';
