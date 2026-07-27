@@ -53,6 +53,7 @@
 
 .mfs-product-card--commerce .mfs-product-card__media,
 .mfs-product-card--horizontal .mfs-product-card__media {
+  align-self: start;
   max-width: 350px;
   aspect-ratio: auto !important;
   background: transparent;
