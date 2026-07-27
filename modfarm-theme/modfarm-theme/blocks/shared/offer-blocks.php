@@ -154,11 +154,27 @@ function modfarm_store_block_get_offer_excerpt(int $offer_id, int $words = 24): 
         return '';
     }
 
-    // A non-positive limit means "full description": use all of the Offer content
-    // without WordPress auto-trimming, with the manual excerpt as a fallback only.
+    // A non-positive limit means "full description". Zoned PPB Offers keep their
+    // editorial description inside a content-slot, so extract that payload instead
+    // of asking WordPress to excerpt the entire header/body/footer block tree.
     if ($words <= 0) {
-        $description = trim((string) $post->post_content);
-        return $description !== '' ? $description : trim((string) $post->post_excerpt);
+        if (function_exists('modfarm_ppb_extract_slot_payloads_from_content')) {
+            $payloads = modfarm_ppb_extract_slot_payloads_from_content((string) $post->post_content);
+            $payload = $payloads['main'] ?? reset($payloads);
+            if (is_array($payload) && !empty($payload['blocks']) && is_string($payload['blocks'])) {
+                $description = trim(do_blocks($payload['blocks']));
+                if ($description !== '') {
+                    return $description;
+                }
+            }
+        }
+
+        $description = trim((string) get_the_excerpt($offer_id));
+        if ($description !== '') {
+            return $description;
+        }
+
+        return trim((string) $post->post_content);
     }
 
     $excerpt = get_the_excerpt($offer_id);
