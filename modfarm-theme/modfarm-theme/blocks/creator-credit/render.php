@@ -41,7 +41,7 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
       return '';
     }
 
-    // --- Pick the selected term, or fall back to current post context --------
+    // --- Pick the selected term, queried archive term, or post context -------
     $term = null;
     if ($term_id) {
       $candidate = get_term($term_id, $tax);
@@ -50,6 +50,16 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
       } elseif (current_user_can('edit_posts') && !$hide_empty) {
         return '<div class="mfc-team mfc--admin-note"><em>Creator Credit:</em> Selected term not found for <code>' .
                esc_html($tax) . '</code>.</div>';
+      }
+    }
+
+    // On taxonomy archives, the global post can point at a book in the archive
+    // loop. Prefer the archive's actual term so a co-author on that book cannot
+    // be mistaken for the creator whose page is being viewed.
+    if (!$term) {
+      $queried = get_queried_object();
+      if ($queried instanceof WP_Term && $queried->taxonomy === $tax) {
+        $term = $queried;
       }
     }
 
