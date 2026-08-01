@@ -56,6 +56,7 @@
 
     COVER_OPTIONS: [
       { label: 'eBook Cover (BMS)', value: 'cover_ebook' },
+      { label: 'Flat Image (BMS)', value: 'cover_image_flat' },
       { label: 'Audiobook Cover (BMS)', value: 'cover_image_audio' },
       { label: 'Paperback Cover', value: 'cover_paperback' },
       { label: 'Hardcover Cover', value: 'cover_hardcover' },

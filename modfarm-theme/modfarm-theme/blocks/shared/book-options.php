@@ -30,7 +30,6 @@ if (!function_exists('modfarm_book_option_normalize_cover_source')) {
         $aliases = [
             'featured'         => 'featured_image',
             'hero_image'       => 'featured_image',
-            'cover_image_flat' => 'cover_ebook',
             'cover_audio'      => 'cover_image_audio',
         ];
         return $aliases[$source] ?? $source;
@@ -84,6 +83,7 @@ if (!function_exists('modfarm_book_cover_source_keys')) {
     function modfarm_book_cover_source_keys(): array {
         return [
             'cover_ebook',
+            'cover_image_flat',
             'cover_image_audio',
             'cover_paperback',
             'cover_hardcover',
@@ -115,6 +115,11 @@ if (!function_exists('modfarm_book_cover_fallback_keys')) {
                 'cover_ebook',
                 'featured_image',
                 'cover_ebook_3d',
+            ],
+            'cover_image_flat' => [
+                'cover_image_flat',
+                'cover_ebook',
+                'featured_image',
             ],
             'cover_ebook_3d' => [
                 'cover_ebook_3d',

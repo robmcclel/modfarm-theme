@@ -23,10 +23,11 @@
   ];
   const BOOK_COVER_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.COVER_OPTIONS) || [
     { label: 'eBook Cover (BMS)', value: 'cover_ebook' },
+    { label: 'Flat Image (BMS)', value: 'cover_image_flat' },
     { label: 'Featured Image (Book Page)', value: 'featured_image' }
   ];
   const normalizeLinkOption = (value) => ({ bookpage: 'permalink', kindle: 'kindle_url', amazon: 'kindle_url', paperback: 'amazon_paper', hardcover: 'amazon_hard', audible: 'audible_url', bn: 'nook' }[value] || value || 'permalink');
-  const normalizeCoverOption = (value) => ({ featured: 'featured_image', hero_image: 'featured_image', cover_image_flat: 'cover_ebook' }[value] || value || 'cover_ebook');
+  const normalizeCoverOption = (value) => ({ featured: 'featured_image', hero_image: 'featured_image' }[value] || value || 'cover_ebook');
 
   // Canonical option lists (mostly for shapes/shadows)
   const CTA_OPTIONS = [

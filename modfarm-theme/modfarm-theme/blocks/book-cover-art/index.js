@@ -11,6 +11,7 @@
 
 	const COVER_OPTIONS = (window.ModFarmBookOptions && window.ModFarmBookOptions.COVER_OPTIONS) || [
 		{ label: 'eBook Cover (BMS)', value: 'cover_ebook' },
+		{ label: 'Flat Image (BMS)', value: 'cover_image_flat' },
 		{ label: 'Audiobook Cover (BMS)', value: 'cover_image_audio' },
 		{ label: 'Paperback Cover', value: 'cover_paperback' },
 		{ label: 'Hardcover Cover', value: 'cover_hardcover' },
@@ -26,7 +27,6 @@
 	const normalizeCoverOption = (value) => ({
 		featured: 'featured_image',
 		hero_image: 'featured_image',
-		cover_image_flat: 'cover_ebook',
 		cover_audio: 'cover_image_audio',
 	}[value] || value || 'cover_ebook');
 
