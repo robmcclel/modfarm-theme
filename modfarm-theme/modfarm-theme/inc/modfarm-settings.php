@@ -441,18 +441,13 @@ function modfarm_font_dropdown($args) {
     $options = get_option('modfarm_theme_settings');
     $value = $options[$id] ?? '';
 
-    $fonts = [
-        'Inter, sans-serif'        => 'Inter',
-        'Merriweather, serif'      => 'Merriweather',
-        'Lato, sans-serif'         => 'Lato',
-        'Playfair Display, serif'  => 'Playfair Display',
-        'Arvo, serif'              => 'Arvo',
-        'Roboto, sans-serif'       => 'Roboto',
-    ];
+    $fonts = modfarm_font_library();
+    $selected_family = modfarm_font_family_from_setting($value);
 
     echo '<select name="modfarm_theme_settings[' . esc_attr($id) . ']">';
-    foreach ($fonts as $css_val => $label) {
-        echo '<option value="' . esc_attr($css_val) . '" ' . selected($value, $css_val, false) . '>' . esc_html($label) . '</option>';
+    echo '<option value="" ' . selected($value, '', false) . '>Default</option>';
+    foreach ($fonts as $family => $font) {
+        echo '<option value="' . esc_attr($family) . '" ' . selected($selected_family, $family, false) . '>' . esc_html($font['label']) . '</option>';
     }
     echo '</select>';
 }

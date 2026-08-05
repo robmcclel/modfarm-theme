@@ -55,6 +55,17 @@ body {
   font-family: var(--mf-body-font, sans-serif);
 }
 
+.wp-block-site-title,
+.wp-block-site-title a,
+.mfs-brand__text,
+.site-title {
+  font-family: var(--mf-site-title-font, inherit);
+}
+
+.wp-block-navigation {
+  font-family: var(--mf-nav-font, inherit);
+}
+
 a {
   color: var(--mf-link-color, #0066cc);
 }

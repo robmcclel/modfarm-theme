@@ -514,6 +514,7 @@ add_action('wp_head', 'modfarm_output_nav_custom_properties');
 add_action('admin_head', 'modfarm_output_nav_custom_properties');
 
 require_once get_template_directory() . '/inc/theme-settings.php';
+require_once get_template_directory() . '/inc/font-library.php';
 require_once get_template_directory() . '/inc/author-meta.php';
 require_once get_template_directory() . '/blocks/register-blocks.php'; // ✅ All blocks now loaded here
 require_once get_template_directory() . '/inc/pattern-category-registration.php';
@@ -1630,8 +1631,10 @@ add_action('wp_head', function () {
         '--mf-button-text'     => $settings['button_text_color'] ?? '#ffffff',
         '--mf-background'      => $settings['background_color'] ?? '#ffffff',
         '--mf-secondary'       => $settings['secondary_color'] ?? '#eeeeee',
-        '--mf-heading-font'    => $settings['heading_font'] ?? 'Merriweather, serif',
-        '--mf-body-font'       => $settings['body_font'] ?? 'Inter, sans-serif',
+        '--mf-heading-font'    => modfarm_font_css_value(modfarm_effective_font_family($settings['heading_font'] ?? '')),
+        '--mf-body-font'       => modfarm_font_css_value(modfarm_effective_font_family($settings['body_font'] ?? '')),
+        '--mf-site-title-font' => modfarm_font_css_value(modfarm_effective_font_family($settings['site_title_font'] ?? '')),
+        '--mf-nav-font'        => modfarm_font_css_value(modfarm_effective_font_family($settings['nav_font'] ?? '')),
         '--mf-content-width'   => $settings['content_width'] ?? '1200px',
         '--mf-nav-center-max-width'   => $settings['nav_center_max_width'] ?? '250px',
     ];
@@ -1646,22 +1649,19 @@ add_action('wp_head', function () {
 add_action('wp_enqueue_scripts', 'modfarm_enqueue_google_fonts');
 add_action('admin_enqueue_scripts', 'modfarm_enqueue_google_fonts');
 function modfarm_enqueue_google_fonts() {
-    $options = get_option('modfarm_theme_settings');
-    $fonts = [];
+    $options = get_option('modfarm_theme_settings', []);
+    $catalog = modfarm_font_library();
+    $families = [];
 
-    foreach (['body_font', 'heading_font'] as $key) {
-        $font_string = $options[$key] ?? '';
-        if ($font_string && !preg_match('/^(Georgia|Arial)/i', $font_string)) {
-            $fonts[] = str_replace(' ', '+', $font_string);
+    foreach (['body_font', 'heading_font', 'site_title_font', 'nav_font'] as $key) {
+        $family = modfarm_effective_font_family($options[$key] ?? '');
+        if ($family && isset($catalog[$family])) {
+            $families[$family] = modfarm_google_font_family_query($catalog[$family]);
         }
     }
 
-    if (!empty($fonts)) {
-        $query_args = [
-            'family' => implode('&family=', array_unique($fonts)),
-            'display' => 'swap',
-        ];
-        $fonts_url = 'https://fonts.googleapis.com/css2?' . http_build_query($query_args);
-        wp_enqueue_style('modfarm-google-fonts', $fonts_url, false);
+    if ($families) {
+        $fonts_url = 'https://fonts.googleapis.com/css2?family=' . implode('&family=', array_map('rawurlencode', $families)) . '&display=swap';
+        wp_enqueue_style('modfarm-google-fonts', $fonts_url, [], null);
     }
 }
