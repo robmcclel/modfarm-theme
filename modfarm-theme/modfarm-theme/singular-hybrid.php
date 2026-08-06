@@ -107,9 +107,12 @@ get_header(); // ok if empty; theme may still use it for shell markup
 
     // HEADER: PPB pattern, else fall back to template-part "header"
     $header = mf_resolve_pattern_content($slugs['header']);
-    echo $header !== ''
+    $header_output = $header !== ''
       ? do_blocks($header)
       : do_blocks('<!-- wp:template-part {"slug":"header","area":"header"} /-->');
+    echo function_exists('maf_render_region')
+      ? maf_render_region('header', $header_output)
+      : $header_output;
 
     // BODY: classic content
     if (have_posts()) : while (have_posts()) : the_post(); ?>
@@ -128,9 +131,12 @@ get_header(); // ok if empty; theme may still use it for shell markup
 
     // FOOTER: PPB pattern, else fall back to template-part "footer"
     $footer = mf_resolve_pattern_content($slugs['footer']);
-    echo $footer !== ''
+    $footer_output = $footer !== ''
       ? do_blocks($footer)
       : do_blocks('<!-- wp:template-part {"slug":"footer","area":"footer"} /-->');
+    echo function_exists('maf_render_region')
+      ? maf_render_region('footer', $footer_output)
+      : $footer_output;
   }
   ?>
 </main>
