@@ -1635,6 +1635,8 @@ add_action('wp_head', function () {
         '--mf-body-font'       => modfarm_font_css_value(modfarm_effective_font_family($settings['body_font'] ?? '')),
         '--mf-site-title-font' => modfarm_font_css_value(modfarm_effective_font_family($settings['site_title_font'] ?? '')),
         '--mf-nav-font'        => modfarm_font_css_value(modfarm_effective_font_family($settings['nav_font'] ?? '')),
+		'--modfarm-font-heading' => modfarm_font_css_value(modfarm_effective_font_family($settings['heading_font'] ?? '')),
+		'--modfarm-font-body'    => modfarm_font_css_value(modfarm_effective_font_family($settings['body_font'] ?? '')),
         '--mf-content-width'   => $settings['content_width'] ?? '1200px',
         '--mf-nav-center-max-width'   => $settings['nav_center_max_width'] ?? '250px',
     ];
@@ -1661,7 +1663,16 @@ function modfarm_enqueue_google_fonts() {
     }
 
     if ($families) {
-        $fonts_url = 'https://fonts.googleapis.com/css2?family=' . implode('&family=', array_map('rawurlencode', $families)) . '&display=swap';
+		$encoded_families = array_map(
+			static function ($family) {
+				// Google Fonts uses + as a word separator. Encode the query
+				// grammar while preserving that separator instead of turning it
+				// into a literal %2B inside the family name.
+				return str_replace('%20', '+', rawurlencode(str_replace('+', ' ', $family)));
+			},
+			$families
+		);
+		$fonts_url = 'https://fonts.googleapis.com/css2?family=' . implode('&family=', $encoded_families) . '&display=swap';
         wp_enqueue_style('modfarm-google-fonts', $fonts_url, [], null);
     }
 }
