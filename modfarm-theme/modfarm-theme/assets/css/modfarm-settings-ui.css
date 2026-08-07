@@ -109,6 +109,16 @@
   display: block;
 }
 
+/* Remain resilient if WordPress or an optimizer normalizes the final DOM and
+   the controls are no longer direct siblings of the panel container. */
+.modfarm-settings-shell:has(#mf-tab-control-site-basics:checked) #mf-tab-site-basics,
+.modfarm-settings-shell:has(#mf-tab-control-theme-fonts:checked) #mf-tab-theme-fonts,
+.modfarm-settings-shell:has(#mf-tab-control-book-presentation:checked) #mf-tab-book-presentation,
+.modfarm-settings-shell:has(#mf-tab-control-page-layouts:checked) #mf-tab-page-layouts,
+.modfarm-settings-shell .mf-tab-panel.is-active {
+  display: block;
+}
+
 .mf-panel-inner {
   padding: 24px 24px 28px;
 }

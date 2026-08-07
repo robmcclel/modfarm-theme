@@ -436,13 +436,43 @@ function modfarm_add_color_field($id, $label, $section) {
     }, 'modfarm_theme_settings', $section);
 }
 
+/**
+ * Ensure the shared font catalog is available before rendering settings.
+ *
+ * The catalog normally loads from functions.php. Loading it defensively here
+ * prevents a partially deployed theme update from truncating the entire
+ * settings page. The small fallback keeps existing system-font values usable
+ * when the provider file itself is missing.
+ */
+function modfarm_settings_font_library() {
+    if (!function_exists('modfarm_font_library')) {
+        $library_path = get_template_directory() . '/inc/font-library.php';
+        if (file_exists($library_path)) {
+            require_once $library_path;
+        }
+    }
+
+    if (function_exists('modfarm_font_library')) {
+        return modfarm_font_library();
+    }
+
+    return [
+        'Arial' => ['label' => 'Arial'],
+        'Georgia' => ['label' => 'Georgia'],
+        'Times New Roman' => ['label' => 'Times New Roman'],
+        'Verdana' => ['label' => 'Verdana'],
+    ];
+}
+
 function modfarm_font_dropdown($args) {
     $id = $args['id'];
     $options = get_option('modfarm_theme_settings');
     $value = $options[$id] ?? '';
 
-    $fonts = modfarm_font_library();
-    $selected_family = modfarm_font_family_from_setting($value);
+    $fonts = modfarm_settings_font_library();
+    $selected_family = function_exists('modfarm_font_family_from_setting')
+        ? modfarm_font_family_from_setting($value)
+        : trim(explode(',', (string) $value)[0], " \t\n\r\0\x0B\"'");
 
     echo '<select name="modfarm_theme_settings[' . esc_attr($id) . ']">';
     echo '<option value="" ' . selected($value, '', false) . '>Default</option>';
