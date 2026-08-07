@@ -1,5 +1,28 @@
 .modfarm-settings-wrap {
   max-width: 1100px;
+  overflow: visible;
+}
+
+.mf-settings-actions {
+  position: sticky;
+  z-index: 20;
+  top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0 0;
+  padding: 10px 12px 10px 16px;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  backdrop-filter: blur(8px);
+}
+
+.mf-settings-actions__context {
+  color: #646970;
+  font-size: 13px;
 }
 
 /* Shell layout */
@@ -9,6 +32,7 @@
   background: #f8f8f8;
   padding: 0;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  overflow: visible;
 }
 
 /* Top tabs */
@@ -561,6 +585,7 @@
   background: #fff;
   overflow: auto;
   transform-origin: 0 0;
+  pointer-events: none;
 }
 
 .mf-ppb-visualizer__feedback {
@@ -869,6 +894,9 @@
 }
 
 @media (max-width: 960px) {
+	.mf-settings-actions {
+		top: 46px;
+	}
   .mf-ppb-visualizer {
     position: static;
   }

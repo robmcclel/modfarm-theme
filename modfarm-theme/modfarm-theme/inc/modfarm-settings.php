@@ -2466,6 +2466,11 @@ function modfarm_render_settings_page() {
         <form method="post" action="options.php" class="modfarm-settings-form">
             <?php settings_fields($option_group); ?>
 
+			<div class="mf-settings-actions" role="region" aria-label="Settings actions">
+				<span class="mf-settings-actions__context">Changes apply to this site.</span>
+				<?php submit_button(__('Save Changes', 'modfarm'), 'primary', 'submit', false); ?>
+			</div>
+
             <div class="modfarm-settings-shell">
 
                 <!-- Top-level tabs -->
@@ -3496,6 +3501,27 @@ function modfarm_render_settings_page() {
 
             <?php submit_button(__('Save Changes', 'modfarm')); ?>
         </form>
+        <?php
+        // Some admin asset optimizers have been observed to retain the settings
+        // stylesheet while omitting or delaying its paired script. Recover only
+        // when the normal enqueued initializer did not run; the marker also
+        // protects against duplicate handlers.
+        $settings_js_path = get_template_directory() . '/assets/js/modfarm-settings-ui.js';
+        $settings_js_url  = add_query_arg(
+            'ver',
+            file_exists($settings_js_path) ? filemtime($settings_js_path) : '1.0.0',
+            get_template_directory_uri() . '/assets/js/modfarm-settings-ui.js'
+        );
+        ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.modfarmSettingsUiLoaded) return;
+            var script = document.createElement('script');
+            script.src = <?php echo wp_json_encode(esc_url($settings_js_url)); ?>;
+            script.dataset.modfarmSettingsRecovery = 'true';
+            document.head.appendChild(script);
+        });
+        </script>
     </div>
     <?php
 }

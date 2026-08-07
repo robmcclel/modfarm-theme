@@ -1,6 +1,7 @@
 (function() {
   const root = document.querySelector('.modfarm-settings-shell');
   if (!root) return;
+  window.modfarmSettingsUiLoaded = true;
 
   const tabs = root.querySelectorAll('.mf-tab');
   const panels = root.querySelectorAll('.mf-tab-panel');
