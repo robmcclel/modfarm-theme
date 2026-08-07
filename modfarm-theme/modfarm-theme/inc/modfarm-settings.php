@@ -2474,35 +2474,43 @@ function modfarm_render_settings_page() {
             <div class="modfarm-settings-shell">
 
                 <!-- Top-level tabs -->
+				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-site-basics" value="site-basics" checked>
+				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-theme-fonts" value="theme-fonts">
+				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-book-presentation" value="book-presentation">
+				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-page-layouts" value="page-layouts">
                 <nav class="mf-tabs" role="tablist" aria-label="ModFarm settings sections">
-                    <button type="button"
+                    <label
                             class="mf-tab is-active"
+                            for="mf-tab-control-site-basics"
                             data-tab="site-basics"
                             role="tab"
                             aria-selected="true">
                         Site Basics
-                    </button>
-                    <button type="button"
+                    </label>
+                    <label
                             class="mf-tab"
+                            for="mf-tab-control-theme-fonts"
                             data-tab="theme-fonts"
                             role="tab"
                             aria-selected="false">
                         Theme &amp; Fonts
-                    </button>
-                    <button type="button"
+                    </label>
+                    <label
                             class="mf-tab"
+                            for="mf-tab-control-book-presentation"
                             data-tab="book-presentation"
                             role="tab"
                             aria-selected="false">
                         Book Presentation
-                    </button>
-                    <button type="button"
+                    </label>
+                    <label
                             class="mf-tab"
+                            for="mf-tab-control-page-layouts"
                             data-tab="page-layouts"
                             role="tab"
                             aria-selected="false">
                         Page Layouts
-                    </button>
+                    </label>
                 </nav>
 
                 <div class="mf-tab-panels">

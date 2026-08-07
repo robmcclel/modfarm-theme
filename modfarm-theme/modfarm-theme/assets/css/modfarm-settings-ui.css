@@ -36,6 +36,16 @@
 }
 
 /* Top tabs */
+.mf-tab-control {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .mf-tabs {
   display: flex;
   border-bottom: 1px solid #ddd;
@@ -43,6 +53,7 @@
 }
 
 .mf-tab {
+  display: block;
   border: none;
   background: transparent;
   padding: 12px 18px;
@@ -52,14 +63,16 @@
   margin: 0;
 }
 
-.mf-tab.is-active {
-  border-bottom-color: #2271b1;
-  font-weight: 600;
-  background: #fff;
-}
-
 .mf-tab:hover {
   background: #f3f4f5;
+}
+
+.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-site-basics"],
+.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-theme-fonts"],
+.mf-tab-control:focus-visible + .mf-tab-control + .mf-tabs label[for="mf-tab-control-book-presentation"],
+.mf-tab-control:focus-visible + .mf-tabs label[for="mf-tab-control-page-layouts"] {
+  outline: 2px solid #2271b1;
+  outline-offset: -2px;
 }
 
 /* Panels */
@@ -72,6 +85,27 @@
 }
 
 .mf-tab-panel.is-active {
+  display: block;
+}
+
+/* Primary tab navigation remains functional without JavaScript. */
+.modfarm-settings-shell .mf-tab-panel {
+  display: none;
+}
+
+#mf-tab-control-site-basics:checked ~ .mf-tabs label[for="mf-tab-control-site-basics"],
+#mf-tab-control-theme-fonts:checked ~ .mf-tabs label[for="mf-tab-control-theme-fonts"],
+#mf-tab-control-book-presentation:checked ~ .mf-tabs label[for="mf-tab-control-book-presentation"],
+#mf-tab-control-page-layouts:checked ~ .mf-tabs label[for="mf-tab-control-page-layouts"] {
+  border-bottom-color: #2271b1;
+  background: #fff;
+  font-weight: 600;
+}
+
+#mf-tab-control-site-basics:checked ~ .mf-tab-panels #mf-tab-site-basics,
+#mf-tab-control-theme-fonts:checked ~ .mf-tab-panels #mf-tab-theme-fonts,
+#mf-tab-control-book-presentation:checked ~ .mf-tab-panels #mf-tab-book-presentation,
+#mf-tab-control-page-layouts:checked ~ .mf-tab-panels #mf-tab-page-layouts {
   display: block;
 }
 

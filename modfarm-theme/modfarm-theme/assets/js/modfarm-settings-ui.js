@@ -8,6 +8,9 @@
   const storageKey = 'modfarm-settings-active-tab';
 
   function activate(tabId) {
+	const control = document.getElementById(`mf-tab-control-${tabId}`);
+	if (control) control.checked = true;
+
     tabs.forEach(btn => {
       const isActive = btn.dataset.tab === tabId;
       btn.classList.toggle('is-active', isActive);
