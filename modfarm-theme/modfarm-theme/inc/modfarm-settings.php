@@ -3505,7 +3505,11 @@ function modfarm_render_settings_page() {
  * Enqueue admin assets for the settings UI.
  */
 function modfarm_admin_enqueue_scripts($hook) {
-    if ($hook !== 'appearance_page_modfarm_theme_settings') {
+    // Menu-management plugins may relocate this page and therefore change the
+    // hook suffix (for example, from appearance_page_* to settings_page_*).
+    // The page slug is the stable identity and must remain the asset gate.
+    $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+    if ($page !== 'modfarm_theme_settings') {
         return;
     }
 
