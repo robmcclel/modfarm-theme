@@ -1,5 +1,7 @@
 /* navigation-toggle.js (ES5-safe) */
 document.addEventListener("DOMContentLoaded", function () {
+  var mobileBreakpoint = 1024;
+
   // Loop through every nav block individually
   var navBlocks = document.querySelectorAll(".mfs-nav");
   if (!navBlocks || !navBlocks.length) return;
@@ -51,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // MOBILE: Tap-to-toggle submenus inside the overlay (event delegation)
       overlay.addEventListener("click", function (e) {
-        var isMobile = window.innerWidth <= 768;
+        var isMobile = window.innerWidth <= mobileBreakpoint;
 
         // If a parent item (has children) was tapped
         var trigger = e.target.closest
@@ -96,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // On resize to desktop, clear mobile-open states
       window.addEventListener("resize", function () {
-        if (window.innerWidth > 768) {
+        if (window.innerWidth > mobileBreakpoint) {
           var openLis3 = overlay.querySelectorAll(".menu-item-has-children.open");
           for (var n = 0; n < openLis3.length; n++) {
             openLis3[n].classList.remove("open");
