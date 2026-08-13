@@ -139,7 +139,7 @@
 
 /* Meta */
 .mfb-taxgrid-meta { display:flex; align-items:center; gap:.5rem; }
-.mfb-taxgrid-title { text-decoration:none; font-weight:600; color:#222; text-align: center}
+.mfb-taxgrid-title { text-decoration:none; font-weight:600; color:var(--mfb-taxgrid-label, #222); text-align: center}
 .mfb-taxgrid-count { font-size:.85rem; color:#666; }
 
 /* Pagination (your standard markup) */

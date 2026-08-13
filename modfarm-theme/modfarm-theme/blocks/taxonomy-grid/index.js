@@ -15,8 +15,13 @@
     ToggleControl,
     RangeControl,
     TextControl,
-    TreeSelect
+    TreeSelect,
+    ColorPalette,
+    Button
   } = wp.components;
+
+  // Theme color palette (same pattern used by Creator Credit).
+  const THEME_COLORS = wp.data.select('core/block-editor')?.getSettings()?.colors || [];
 
   // Server-side renderer (global)
   const ServerSideRender = wp.serverSideRender;
@@ -100,6 +105,7 @@
       const taxonomies = useAllPublicTaxonomies();
       const terms = useTermsForTaxonomy(attributes.taxonomy);
       const termTree = useMemo(() => buildTermTree(terms), [terms]);
+      const clearLabelColor = () => setAttributes({ labelColor: '' });
       // Options
       const taxonomyOptions = useMemo(() => {
         const allowed = ['book-series', 'book-author', 'book-genre', 'book-format', 'book-language', 'book-tags'];
@@ -220,6 +226,24 @@
               checked: !!attributes.showCounts,
               onChange: (v) => setAttributes({ showCounts: !!v })
             })
+          ),
+
+          el(
+            PanelBody,
+            { title: 'Colors', initialOpen: false },
+            el('div', {},
+              el('label', { style: { display: 'block', marginBottom: '6px' } }, 'Taxonomy label color'),
+              el(ColorPalette, {
+                colors: THEME_COLORS,
+                value: attributes.labelColor || undefined,
+                onChange: (v) => setAttributes({ labelColor: v || '' })
+              }),
+              el(Button, {
+                isSecondary: true,
+                onClick: clearLabelColor,
+                style: { marginTop: '6px' }
+              }, 'Use theme default')
+            )
           ),
 
           el(

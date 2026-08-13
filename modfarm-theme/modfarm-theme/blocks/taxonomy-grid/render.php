@@ -27,6 +27,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       'sectionPromptText'  => __('Click on the cover art to see all books in the series', 'modfarm'),
       'sectionPromptAlign' => 'center',
       'sectionPromptSize'  => 26,
+      'labelColor'         => '',
       'primaryImageSource' => 'archive_default_image',  // archive_default_image | first_cover_in_series | archive_hero_image | initials
       'fallbackImageSource'=> 'first_cover_in_series',
       'bookCoverSource'    => 'cover_ebook',
@@ -355,6 +356,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     $toc_columns = max(1, min(3, (int)$a['tocColumns']));
     $toc_align = in_array($a['tocAlign'], ['left','center','right'], true) ? $a['tocAlign'] : 'left';
     $toc_collapse_mobile = !empty($a['tocCollapseMobile']);
+    $label_color = trim((string)$a['labelColor']);
+    $label_style_attr = $label_color !== '' ? ' style="--mfb-taxgrid-label:' . esc_attr($label_color) . ';"' : '';
     $section_heading_style = 'text-align:' . esc_attr($section_heading_align) . ';font-size:' . esc_attr((string)$section_heading_size) . 'px;';
     $section_prompt_style = 'text-align:' . esc_attr($section_prompt_align) . ';font-size:' . esc_attr((string)$section_prompt_size) . 'px;';
     $section_id = function($prefix, $label) {
@@ -443,7 +446,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       }
 
       ob_start(); ?>
-      <div class="mfb-taxgrid-wrapper mfb-taxgrid-wrapper--grouped<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
+      <div class="mfb-taxgrid-wrapper mfb-taxgrid-wrapper--grouped<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?><?php echo $label_style_attr; ?>>
         <?php if (!empty($a['showTOC'])) $render_section_toc($toc_items); ?>
         <?php $series_position = 0; ?>
         <?php foreach ($groups as $group_key => $group): ?>
@@ -495,7 +498,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       }
 
       ob_start(); ?>
-      <div class="mfb-wrapper mfb-taxgrid-wrapper mfb-taxgrid-wrapper--series-books<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
+      <div class="mfb-wrapper mfb-taxgrid-wrapper mfb-taxgrid-wrapper--series-books<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?><?php echo $label_style_attr; ?>>
         <?php if (!empty($a['showTOC'])) $render_section_toc($toc_items); ?>
         <?php foreach ($terms_for_paging as $series_loop_index => $term): ?>
           <?php
@@ -566,7 +569,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     }
 
     ob_start(); ?>
-    <div class="mfb-taxgrid-wrapper<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?>>
+    <div class="mfb-taxgrid-wrapper<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?><?php echo $label_style_attr; ?>>
 
       <?php if (!empty($a['showTOC']) && !empty($toc)): ?>
         <nav class="mfb-taxgrid-toc" aria-label="<?php echo esc_attr(get_taxonomy($tax)->labels->name); ?> index">
