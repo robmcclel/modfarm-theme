@@ -106,6 +106,7 @@
       const cardButtonFg         = attributes.cardButtonFg   || '';
       const cardSampleBg         = attributes.cardSampleBg   || '';
       const cardSampleFg         = attributes.cardSampleFg   || '';
+      const cardSampleBorder     = attributes.cardSampleBorder || '';
 
       // Taxonomy mapping
       const taxonomyMap = {
@@ -396,6 +397,11 @@
                     __('Sample Button Text', 'modfarm'),
                     'cardSampleFg',
                     cardSampleFg
+                  ),
+                  renderColorOverrideControl(
+                    __('Sample Button Border', 'modfarm'),
+                    'cardSampleBorder',
+                    cardSampleBorder
                   )
                 )
           ),

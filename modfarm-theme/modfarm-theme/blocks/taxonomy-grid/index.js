@@ -8,7 +8,7 @@
 
   // Editor + components
   const be = wp.blockEditor || wp.editor;
-  const { InspectorControls, useBlockProps } = be;
+  const { InspectorControls, useBlockProps, ColorPalette } = be;
   const {
     PanelBody,
     SelectControl,
@@ -357,6 +357,16 @@
                 checked: attributes.tocCollapseMobile !== false,
                 onChange: (v) => setAttributes({ tocCollapseMobile: !!v })
               })
+          ),
+
+          el(
+            PanelBody,
+            { title: 'Colors', initialOpen: false },
+            el('p', { className: 'components-base-control__label' }, 'Text color'),
+            el(ColorPalette, {
+              value: attributes.textColor || '',
+              onChange: (v) => setAttributes({ textColor: v || '' })
+            })
           ),
 
           el(
