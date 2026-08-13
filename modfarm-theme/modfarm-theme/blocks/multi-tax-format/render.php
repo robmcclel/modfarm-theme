@@ -115,7 +115,6 @@ function modfarm_render_multi_tax_format_block( $attributes ) {
     $card_btn_fg    = $attributes['cardButtonFg']   ?? '';
     $card_sample_bg = $attributes['cardSampleBg']   ?? '';
     $card_sample_fg = $attributes['cardSampleFg']   ?? '';
-    $card_sample_border = $attributes['cardSampleBorder'] ?? '';
 
     $custom_vars = [];
 
@@ -128,15 +127,10 @@ function modfarm_render_multi_tax_format_block( $attributes ) {
     }
     if ( $card_sample_bg ) {
         $custom_vars[] = '--mfb-sample-bg:' . $card_sample_bg;
-        if ( ! $card_sample_border ) {
-            $custom_vars[] = '--mfb-sample-border:' . $card_sample_bg;
-        }
+        $custom_vars[] = '--mfb-sample-border:' . $card_sample_bg;
     }
     if ( $card_sample_fg ) {
         $custom_vars[] = '--mfb-sample-fg:' . $card_sample_fg;
-    }
-    if ( $card_sample_border ) {
-        $custom_vars[] = '--mfb-sample-border:' . $card_sample_border;
     }
 
     // CTA spacing

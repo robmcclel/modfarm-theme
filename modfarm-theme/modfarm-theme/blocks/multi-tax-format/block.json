@@ -61,8 +61,7 @@
     "cardButtonBg":           { "type": "string",  "default": "" },
     "cardButtonFg":           { "type": "string",  "default": "" },
     "cardSampleBg":           { "type": "string",  "default": "" },
-    "cardSampleFg":           { "type": "string",  "default": "" },
-    "cardSampleBorder":       { "type": "string",  "default": "" }
+    "cardSampleFg":           { "type": "string",  "default": "" }
   },
   "editorScript": "modfarm-multi-tax-format-editor",
   "style": "file:./assets/css/book-cards.css",

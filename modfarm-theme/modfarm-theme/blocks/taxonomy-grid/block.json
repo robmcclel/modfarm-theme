@@ -32,8 +32,6 @@
     "sectionPromptText": { "type": "string", "default": "Click on the cover art to see all books in the series" },
     "sectionPromptAlign": { "type": "string", "default": "center" },
     "sectionPromptSize": { "type": "number", "default": 26 },
-    "textColor":        { "type": "string", "default": "" },
-
     "primaryImageSource":  { "type": "string", "default": "archive_default_image" },
     "fallbackImageSource": { "type": "string", "default": "first_cover_in_series" },
     "bookCoverSource":     { "type": "string", "default": "cover_ebook" },
