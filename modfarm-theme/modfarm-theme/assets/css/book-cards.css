@@ -664,9 +664,12 @@ body.mfb-hide-sample-button {
     --mfb-cols: 2 !important;
   }
   
-  /* Center rows so the last orphan sits centered */
-  .mfb-grid{ justify-content: center; }
-  .block-editor-page .editor-styles-wrapper .mfb-grid{ justify-content: center; }
+  /* Center wrapped rows without centering overflow in horizontal rails. */
+  .mfb-grid:not(.mfb-grid--horizontal){ justify-content:center; }
+  .block-editor-page .editor-styles-wrapper .mfb-grid:not(.mfb-grid--horizontal){ justify-content:center; }
+
+  .mfb-grid--horizontal,
+  .block-editor-page .editor-styles-wrapper .mfb-grid--horizontal{ justify-content:flex-start; }
 }
 @media (max-width:520px){
   .block-editor-page .editor-styles-wrapper .mfb-grid{
