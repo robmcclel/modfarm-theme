@@ -8,15 +8,20 @@
 
   // Editor + components
   const be = wp.blockEditor || wp.editor;
-  const { InspectorControls, useBlockProps, ColorPalette } = be;
+  const { InspectorControls, useBlockProps } = be;
   const {
     PanelBody,
     SelectControl,
     ToggleControl,
     RangeControl,
     TextControl,
-    TreeSelect
+    TreeSelect,
+    ColorPalette,
+    Button
   } = wp.components;
+
+  // Theme color palette (same established control pattern as Taxonomy Description).
+  const THEME_COLORS = wp.data.select('core/block-editor')?.getSettings()?.colors || [];
 
   // Server-side renderer (global)
   const ServerSideRender = wp.serverSideRender;
@@ -362,11 +367,19 @@
           el(
             PanelBody,
             { title: 'Colors', initialOpen: false },
-            el('p', { className: 'components-base-control__label' }, 'Text color'),
-            el(ColorPalette, {
-              value: attributes.textColor || '',
-              onChange: (v) => setAttributes({ textColor: v || '' })
-            })
+            el('div', { style: { marginTop: '14px' } },
+              el('label', { style: { display: 'block', marginBottom: '6px' } }, 'Text color'),
+              el(ColorPalette, {
+                colors: THEME_COLORS,
+                value: attributes.textColor || undefined,
+                onChange: (v) => setAttributes({ textColor: v || '' })
+              }),
+              el(Button, {
+                isSecondary: true,
+                onClick: () => setAttributes({ textColor: '' }),
+                style: { marginTop: '6px' }
+              }, 'Use theme default')
+            )
           ),
 
           el(
