@@ -418,6 +418,7 @@ function modfarm_register_settings() {
     add_settings_field('archive_body_pattern_author',         'Author Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_author']);
     add_settings_field('archive_body_pattern_search',         'Search Results Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_search']);
     add_settings_field('archive_body_pattern_date',           'Date Archive Pattern',        'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_date']);
+    add_settings_field('archive_body_pattern_mf_offer',       'Offers Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_mf_offer']);
     add_settings_field('archive_body_pattern_book_series',    'Book Series Archive Pattern', 'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_series']);
     add_settings_field('archive_body_pattern_book_genre',     'Genre Archive Pattern',       'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_genre']);
     add_settings_field('archive_body_pattern_book_authors',   'Author Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_authors']);
@@ -560,6 +561,7 @@ function modfarm_ppb_pattern_category_map(): array {
         'archive_body_pattern_author'       => 'modfarm-archive-body',
         'archive_body_pattern_search'       => 'modfarm-archive-body',
         'archive_body_pattern_date'         => 'modfarm-archive-body',
+        'archive_body_pattern_mf_offer'     => 'modfarm-archive-body',
         'archive_body_pattern_book_series'  => 'modfarm-archive-body',
         'archive_body_pattern_book_genre'   => 'modfarm-archive-body',
         'archive_body_pattern_book_authors' => 'modfarm-archive-body',
@@ -2257,6 +2259,7 @@ function modfarm_sanitize_settings($settings) {
         'archive_body_pattern_author',
         'archive_body_pattern_search',
         'archive_body_pattern_date',
+        'archive_body_pattern_mf_offer',
         'archive_body_pattern_book_series',
         'archive_body_pattern_book_genre',
         'archive_body_pattern_book_authors',
@@ -2646,6 +2649,10 @@ function modfarm_render_settings_page() {
                                                  'archive_body_pattern_date' => [
                                                      'label' => 'Date Archives',
                                                      'help'  => 'Used for year, month, and day archives.',
+                                                 ],
+                                                 'archive_body_pattern_mf_offer' => [
+                                                     'label' => 'Offers Archive',
+                                                     'help'  => 'Used for the Store archive at /offers/.',
                                                  ],
                                              ];
                                              ?>
@@ -3271,6 +3278,10 @@ function modfarm_render_settings_page() {
                                             <tr>
                                                 <th scope="row"><label>Archive Body Pattern (Default)</label></th>
                                                 <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Offers Archive Pattern</label></th>
+                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_mf_offer']); ?></td>
                                             </tr>
                                             <tr>
                                                 <th scope="row"><label>Book Series Archive Pattern</label></th>

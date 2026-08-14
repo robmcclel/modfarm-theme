@@ -682,6 +682,7 @@ function modfarm_ppb_canonical_defaults(): array {
         'archive_body_pattern_author'       => 'modfarm/post-archive-layout',
         'archive_body_pattern_search'       => 'modfarm/search-results-layout',
         'archive_body_pattern_date'         => 'modfarm/post-archive-layout',
+        'archive_body_pattern_mf_offer'     => 'modfarm-store/offers-archive',
         'archive_body_pattern_book_series'  => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_genre'   => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_authors' => 'modfarm/basic-archive-layout',
@@ -1166,6 +1167,8 @@ function modfarm_resolve_archive_body_pattern_slug(?array $opts = null): string 
 
     if (is_home()) {
         $key = 'archive_body_pattern_post_index';
+    } elseif (is_post_type_archive('mf_offer')) {
+        $key = 'archive_body_pattern_mf_offer';
     } elseif (is_category()) {
         $key = 'archive_body_pattern_category';
     } elseif (is_tag()) {
