@@ -43,6 +43,10 @@ function modfarm_render_offer_price_block($attributes = [], $content = '', $bloc
 
     $price = get_post_meta($offer_id, 'mf_offer_price', true);
     $formatted = modfarm_store_block_format_price($price);
+    $offer = class_exists('ModFarm_Store_Offer_Helpers') ? ModFarm_Store_Offer_Helpers::get_offer($offer_id) : [];
+    $is_on_sale = !empty($offer['is_on_sale']);
+    $regular_formatted = $is_on_sale ? (string) ($offer['regular_price_formatted'] ?? '') : '';
+    $sale_formatted = $is_on_sale ? (string) ($offer['price_formatted'] ?? '') : '';
 
     if ($formatted === '') {
         $attr_args['class'] .= ' mfs-offer-price--empty';
@@ -51,6 +55,10 @@ function modfarm_render_offer_price_block($attributes = [], $content = '', $bloc
     }
 
     $wrapper_attributes = get_block_wrapper_attributes($attr_args);
+
+    if ($is_on_sale && $sale_formatted !== '') {
+        return '<div ' . $wrapper_attributes . '><span class="mfs-offer-price__sale-badge">' . esc_html($offer['sale_badge_label'] ?? __('Sale', 'modfarm')) . '</span>' . ($regular_formatted !== '' ? '<del class="mfs-offer-price__regular">' . esc_html($regular_formatted) . '</del>' : '') . '<strong class="mfs-offer-price__sale">' . esc_html($sale_formatted) . '</strong></div>';
+    }
 
     return '<div ' . $wrapper_attributes . '>' . esc_html($formatted) . '</div>';
 }

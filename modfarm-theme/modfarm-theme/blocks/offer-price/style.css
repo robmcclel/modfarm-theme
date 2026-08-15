@@ -1,18 +1,38 @@
 .mfs-offer-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .55rem;
   font-size: var(--mfs-offer-price-size, inherit);
   font-weight: var(--mfs-offer-price-weight, 700);
   line-height: 1.2;
 }
+
+.mfs-offer-price__sale-badge {
+  padding: .3rem .5rem;
+  border-radius: 4px;
+  background: #d63638;
+  color: #fff;
+  font-size: .65em;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.mfs-offer-price__regular { opacity: .7; }
+.mfs-offer-price__sale { font-weight: inherit; }
 
 .mfs-offer-price.mfs-align-left {
   text-align: left;
 }
 
 .mfs-offer-price.mfs-align-center {
+  justify-content: center;
   text-align: center;
 }
 
 .mfs-offer-price.mfs-align-right {
+  justify-content: flex-end;
   text-align: right;
 }
 
