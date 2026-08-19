@@ -683,6 +683,8 @@ function modfarm_ppb_canonical_defaults(): array {
         'archive_body_pattern_search'       => 'modfarm/search-results-layout',
         'archive_body_pattern_date'         => 'modfarm/post-archive-layout',
         'archive_body_pattern_mf_offer'     => 'modfarm-store/offers-archive',
+        'archive_body_pattern_mf_update'    => 'modfarm/post-archive-layout',
+        'archive_body_pattern_modfarm_event'=> 'modfarm/post-archive-layout',
         'archive_body_pattern_book_series'  => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_genre'   => 'modfarm/basic-archive-layout',
         'archive_body_pattern_book_authors' => 'modfarm/basic-archive-layout',
@@ -695,6 +697,12 @@ function modfarm_ppb_canonical_defaults(): array {
         'post_header_pattern'               => 'modfarm/post-header-basic-left',
         'post_body_pattern'                 => 'modfarm/post-body-basic',
         'post_footer_pattern'               => 'modfarm/post-footer-simple-comments',
+        'update_header_pattern'             => 'modfarm/post-header-basic-left',
+        'update_body_pattern'               => 'modfarm/post-body-basic',
+        'update_footer_pattern'             => 'modfarm/post-footer-simple-comments',
+        'event_header_pattern'              => 'modfarm/post-header-basic-left',
+        'event_body_pattern'                => 'modfarm/post-body-basic',
+        'event_footer_pattern'              => 'modfarm/post-footer-simple-comments',
         'offer_header_pattern'              => 'modfarm/offer-header-basic-left',
         'offer_body_pattern'                => 'modfarm/offer-body-basic',
         'offer_footer_pattern'              => 'modfarm/offer-footer-simple',
@@ -955,19 +963,19 @@ function modfarm_ppb_get_field_id_for_post_zone(string $post_type, string $slot)
             'footer' => 'post_footer_pattern',
         ],
         'mf_update' => [
-            'header' => 'post_header_pattern',
-            'body' => 'post_body_pattern',
-            'footer' => 'post_footer_pattern',
+            'header' => 'update_header_pattern',
+            'body' => 'update_body_pattern',
+            'footer' => 'update_footer_pattern',
         ],
         'mf_event' => [
-            'header' => 'post_header_pattern',
-            'body' => 'post_body_pattern',
-            'footer' => 'post_footer_pattern',
+            'header' => 'event_header_pattern',
+            'body' => 'event_body_pattern',
+            'footer' => 'event_footer_pattern',
         ],
         'modfarm_event' => [
-            'header' => 'post_header_pattern',
-            'body' => 'post_body_pattern',
-            'footer' => 'post_footer_pattern',
+            'header' => 'event_header_pattern',
+            'body' => 'event_body_pattern',
+            'footer' => 'event_footer_pattern',
         ],
         'book' => [
             'header' => 'book_header_pattern',
@@ -1025,11 +1033,17 @@ function modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post(int $post_id, st
             break;
 
         case 'mf_update':
+            $resolved = [
+                'header' => modfarm_ppb_resolve_pattern_slug('update_header_pattern', $options['update_header_pattern'] ?? null, $options),
+                'footer' => modfarm_ppb_resolve_pattern_slug('update_footer_pattern', $options['update_footer_pattern'] ?? null, $options),
+            ];
+            break;
+
         case 'mf_event':
         case 'modfarm_event':
             $resolved = [
-                'header' => modfarm_ppb_resolve_pattern_slug('post_header_pattern', $options['post_header_pattern'] ?? null, $options),
-                'footer' => modfarm_ppb_resolve_pattern_slug('post_footer_pattern', $options['post_footer_pattern'] ?? null, $options),
+                'header' => modfarm_ppb_resolve_pattern_slug('event_header_pattern', $options['event_header_pattern'] ?? null, $options),
+                'footer' => modfarm_ppb_resolve_pattern_slug('event_footer_pattern', $options['event_footer_pattern'] ?? null, $options),
             ];
             break;
 
@@ -1169,6 +1183,10 @@ function modfarm_resolve_archive_body_pattern_slug(?array $opts = null): string 
         $key = 'archive_body_pattern_post_index';
     } elseif (is_post_type_archive('mf_offer')) {
         $key = 'archive_body_pattern_mf_offer';
+    } elseif (is_post_type_archive('mf_update')) {
+        $key = 'archive_body_pattern_mf_update';
+    } elseif (is_post_type_archive(['modfarm_event', 'mf_event'])) {
+        $key = 'archive_body_pattern_modfarm_event';
     } elseif (is_category()) {
         $key = 'archive_body_pattern_category';
     } elseif (is_tag()) {

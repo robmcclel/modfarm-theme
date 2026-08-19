@@ -214,6 +214,13 @@ Current visible scope:
 - Books
 - Posts
 - Offers, if the `offer` post type exists on the site
+- Compose Updates (`mf_update`)
+- Compose Events (`modfarm_event`, with legacy `mf_event` compatibility)
+
+Updates and Events have independent Header, Body, and Footer defaults while
+reusing the established post pattern lanes. Their archives also have dedicated
+body selectors. Compose continues to create these items in Hybrid mode, so the
+authored body remains intact unless an item is explicitly converted to Zoned PPB.
 
 Current visible fields:
 

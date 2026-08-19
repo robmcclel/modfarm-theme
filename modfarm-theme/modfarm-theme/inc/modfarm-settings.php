@@ -404,6 +404,14 @@ function modfarm_register_settings() {
     add_settings_field('post_body_pattern',   'Post Body Pattern',    'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'post_body_pattern']);
     add_settings_field('post_footer_pattern', 'Post Footer Pattern',  'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'post_footer_pattern']);
 
+    add_settings_field('update_header_pattern', 'Update Header Pattern', 'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'update_header_pattern']);
+    add_settings_field('update_body_pattern',   'Update Body Pattern',   'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'update_body_pattern']);
+    add_settings_field('update_footer_pattern', 'Update Footer Pattern', 'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'update_footer_pattern']);
+
+    add_settings_field('event_header_pattern', 'Event Header Pattern', 'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'event_header_pattern']);
+    add_settings_field('event_body_pattern',   'Event Body Pattern',   'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'event_body_pattern']);
+    add_settings_field('event_footer_pattern', 'Event Footer Pattern', 'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'event_footer_pattern']);
+
     // OFFER Layout
     add_settings_field('offer_header_pattern', 'Offer Header Pattern',  'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'offer_header_pattern']);
     add_settings_field('offer_body_pattern',   'Offer Body Pattern',    'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'offer_body_pattern']);
@@ -419,6 +427,8 @@ function modfarm_register_settings() {
     add_settings_field('archive_body_pattern_search',         'Search Results Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_search']);
     add_settings_field('archive_body_pattern_date',           'Date Archive Pattern',        'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_date']);
     add_settings_field('archive_body_pattern_mf_offer',       'Offers Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_mf_offer']);
+    add_settings_field('archive_body_pattern_mf_update',      'Updates Archive Pattern',     'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_mf_update']);
+    add_settings_field('archive_body_pattern_modfarm_event',  'Events Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_modfarm_event']);
     add_settings_field('archive_body_pattern_book_series',    'Book Series Archive Pattern', 'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_series']);
     add_settings_field('archive_body_pattern_book_genre',     'Genre Archive Pattern',       'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_genre']);
     add_settings_field('archive_body_pattern_book_authors',   'Author Archive Pattern',      'modfarm_pattern_dropdown', 'modfarm_theme_settings', 'modfarm_section_templates', ['id' => 'archive_body_pattern_book_authors']);
@@ -544,6 +554,14 @@ function modfarm_ppb_pattern_category_map(): array {
         'post_body_pattern'   => 'modfarm-post-body',
         'post_footer_pattern' => 'modfarm-post-footer',
 
+        'update_header_pattern' => 'modfarm-post-header',
+        'update_body_pattern'   => 'modfarm-post-body',
+        'update_footer_pattern' => 'modfarm-post-footer',
+
+        'event_header_pattern' => 'modfarm-post-header',
+        'event_body_pattern'   => 'modfarm-post-body',
+        'event_footer_pattern' => 'modfarm-post-footer',
+
         // Offer Layout
         'offer_header_pattern' => 'modfarm-offer-header',
         'offer_body_pattern'   => 'modfarm-offer-body',
@@ -562,6 +580,8 @@ function modfarm_ppb_pattern_category_map(): array {
         'archive_body_pattern_search'       => 'modfarm-archive-body',
         'archive_body_pattern_date'         => 'modfarm-archive-body',
         'archive_body_pattern_mf_offer'     => 'modfarm-archive-body',
+        'archive_body_pattern_mf_update'    => 'modfarm-archive-body',
+        'archive_body_pattern_modfarm_event'=> 'modfarm-archive-body',
         'archive_body_pattern_book_series'  => 'modfarm-archive-body',
         'archive_body_pattern_book_genre'   => 'modfarm-archive-body',
         'archive_body_pattern_book_authors' => 'modfarm-archive-body',
@@ -837,6 +857,16 @@ function modfarm_get_ppb_apply_all_content_types(): array {
         $types['mf_offer'] = 'Offers';
     }
 
+    if (post_type_exists('mf_update')) {
+        $types['mf_update'] = 'Updates';
+    }
+
+    if (post_type_exists('modfarm_event')) {
+        $types['modfarm_event'] = 'Events';
+    } elseif (post_type_exists('mf_event')) {
+        $types['mf_event'] = 'Events';
+    }
+
     foreach (modfarm_get_collection_type_defs_for_settings() as $slug => $def) {
         $types[$slug] = modfarm_get_collection_type_label_for_settings($slug, $def);
     }
@@ -925,6 +955,31 @@ function modfarm_get_ppb_visualizer_content_types(): array {
                 'header' => 'offer_header_pattern',
                 'body' => 'offer_body_pattern',
                 'footer' => 'offer_footer_pattern',
+            ],
+        ];
+    }
+
+    if (post_type_exists('mf_update')) {
+        $types['mf_update'] = [
+            'label' => __('Update', 'modfarm'),
+            'sample_label' => __('Sample Update', 'modfarm'),
+            'fields' => [
+                'header' => 'update_header_pattern',
+                'body' => 'update_body_pattern',
+                'footer' => 'update_footer_pattern',
+            ],
+        ];
+    }
+
+    $event_post_type = post_type_exists('modfarm_event') ? 'modfarm_event' : (post_type_exists('mf_event') ? 'mf_event' : '');
+    if ($event_post_type !== '') {
+        $types[$event_post_type] = [
+            'label' => __('Event', 'modfarm'),
+            'sample_label' => __('Sample Event', 'modfarm'),
+            'fields' => [
+                'header' => 'event_header_pattern',
+                'body' => 'event_body_pattern',
+                'footer' => 'event_footer_pattern',
             ],
         ];
     }
@@ -2248,6 +2303,12 @@ function modfarm_sanitize_settings($settings) {
         'post_header_pattern',
         'post_body_pattern',
         'post_footer_pattern',
+        'update_header_pattern',
+        'update_body_pattern',
+        'update_footer_pattern',
+        'event_header_pattern',
+        'event_body_pattern',
+        'event_footer_pattern',
         'offer_header_pattern',
         'offer_body_pattern',
         'offer_footer_pattern',
@@ -2260,6 +2321,8 @@ function modfarm_sanitize_settings($settings) {
         'archive_body_pattern_search',
         'archive_body_pattern_date',
         'archive_body_pattern_mf_offer',
+        'archive_body_pattern_mf_update',
+        'archive_body_pattern_modfarm_event',
         'archive_body_pattern_book_series',
         'archive_body_pattern_book_genre',
         'archive_body_pattern_book_authors',
@@ -3247,6 +3310,53 @@ function modfarm_render_settings_page() {
                                         </table>
                                     </div>
 
+                                    <?php if (post_type_exists('mf_update')) : ?>
+                                        <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="mf_update">
+                                            <h3 class="mf-group-title">Update Layout</h3>
+                                            <p class="description">Compose Updates use Hybrid by default, so Header and Footer are applied dynamically while authored Body content remains intact.</p>
+                                            <table class="form-table mf-form-table">
+                                                <tbody>
+                                                <tr>
+                                                    <th scope="row"><label>Update Header Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'update_header_pattern']); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row"><label>Update Body Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'update_body_pattern']); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row"><label>Update Footer Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'update_footer_pattern']); ?></td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php $mf_event_layout_type = post_type_exists('modfarm_event') ? 'modfarm_event' : (post_type_exists('mf_event') ? 'mf_event' : ''); ?>
+                                    <?php if ($mf_event_layout_type !== '') : ?>
+                                        <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="<?php echo esc_attr($mf_event_layout_type); ?>">
+                                            <h3 class="mf-group-title">Event Layout</h3>
+                                            <p class="description">Compose Events use Hybrid by default, so Header and Footer are applied dynamically while authored Body content remains intact.</p>
+                                            <table class="form-table mf-form-table">
+                                                <tbody>
+                                                <tr>
+                                                    <th scope="row"><label>Event Header Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'event_header_pattern']); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row"><label>Event Body Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'event_body_pattern']); ?></td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row"><label>Event Footer Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'event_footer_pattern']); ?></td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    <?php endif; ?>
+
                                     <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="<?php echo post_type_exists('offer') ? 'offer' : 'mf_offer'; ?>">
                                         <h3 class="mf-group-title">Offer Layout</h3>
                                         <table class="form-table mf-form-table">
@@ -3283,6 +3393,18 @@ function modfarm_render_settings_page() {
                                                 <th scope="row"><label>Offers Archive Pattern</label></th>
                                                 <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_mf_offer']); ?></td>
                                             </tr>
+                                            <?php if (post_type_exists('mf_update')) : ?>
+                                                <tr>
+                                                    <th scope="row"><label>Updates Archive Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_mf_update']); ?></td>
+                                                </tr>
+                                            <?php endif; ?>
+                                            <?php if (post_type_exists('modfarm_event') || post_type_exists('mf_event')) : ?>
+                                                <tr>
+                                                    <th scope="row"><label>Events Archive Pattern</label></th>
+                                                    <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_modfarm_event']); ?></td>
+                                                </tr>
+                                            <?php endif; ?>
                                             <tr>
                                                 <th scope="row"><label>Book Series Archive Pattern</label></th>
                                                 <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_book_series']); ?></td>

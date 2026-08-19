@@ -107,7 +107,7 @@ if (!function_exists('modfarm_get_collection_type_label')) {
 
 if (!function_exists('modfarm_get_ppb_supported_post_types')) {
     function modfarm_get_ppb_supported_post_types(): array {
-        $types = ['page', 'book', 'post', 'offer', 'mf_offer'];
+        $types = ['page', 'book', 'post', 'offer', 'mf_offer', 'mf_update', 'mf_event', 'modfarm_event'];
         $types = array_merge($types, modfarm_get_collection_post_types());
 
         return array_values(array_unique(array_filter(array_map('sanitize_key', $types))));

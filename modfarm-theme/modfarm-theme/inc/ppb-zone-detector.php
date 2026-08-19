@@ -533,7 +533,7 @@ function modfarm_get_ppb_layout_mode_for_post(int $post_id, string $post_type, a
         return 'Hybrid: No Sidebar';
     }
 
-    if ($post_type === 'post') {
+    if (in_array($post_type, ['post', 'mf_update', 'mf_event', 'modfarm_event'], true)) {
         if (!empty($detected['is_zoned'])) {
             return 'Full PPB';
         }
@@ -648,7 +648,7 @@ function modfarm_get_local_ppb_manager_config_for_post(int $post_id, string $pos
         );
     }
 
-    $convert_supported_post_type = in_array($post_type, ['page', 'post', 'book', 'modfarm_book', 'offer', 'mf_offer'], true)
+    $convert_supported_post_type = in_array($post_type, ['page', 'post', 'book', 'modfarm_book', 'offer', 'mf_offer', 'mf_update', 'mf_event', 'modfarm_event'], true)
         || (function_exists('modfarm_is_collection_type') && modfarm_is_collection_type($post_type));
     if (!$is_zoned && $convert_supported_post_type && function_exists('modfarm_ppb_get_pattern_content_by_slug') && function_exists('modfarm_ppb_resolve_pattern_slug')) {
         $header_field = function_exists('modfarm_ppb_get_field_id_for_post_zone')
