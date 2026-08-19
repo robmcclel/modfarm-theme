@@ -56,7 +56,21 @@ foreach (
         </p>
 
         <div class="mf-not-found__search">
-            <?php get_search_form(); ?>
+            <form class="mf-not-found__search-form" role="search" method="get" action="<?php echo esc_url(home_url('/')); ?>">
+                <label class="screen-reader-text" for="mf-not-found-search">
+                    <?php esc_html_e('Search the site', 'modfarm-author'); ?>
+                </label>
+                <input
+                    id="mf-not-found-search"
+                    class="mf-not-found__search-field"
+                    type="search"
+                    name="s"
+                    value="<?php echo esc_attr(get_search_query()); ?>"
+                    placeholder="<?php esc_attr_e('Search the site…', 'modfarm-author'); ?>">
+                <button class="mf-not-found__search-submit" type="submit">
+                    <?php esc_html_e('Search', 'modfarm-author'); ?>
+                </button>
+            </form>
         </div>
 
         <nav class="mf-not-found__links" aria-label="<?php esc_attr_e('Helpful destinations', 'modfarm-author'); ?>">

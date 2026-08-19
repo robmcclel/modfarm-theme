@@ -4,7 +4,7 @@ Theme URI: https://modfarmdesign.com
 Author: ModFarm
 Author URI: https://modfarmdesign.com
 Description: Clean, block-forward author theme scaffold.
-Version: 1.2.4
+Version: 1.2.6
 Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 7.4
@@ -232,7 +232,7 @@ img,
   padding: clamp(3rem, 9vw, 7rem) 1rem;
 }
 
-.mf-not-found__panel {
+.site-main.mf-not-found > .mf-not-found__panel {
   background: var(--mf-secondary, #eeeeee);
   background: color-mix(in srgb, var(--mf-secondary, #eeeeee) 42%, var(--mf-background, #ffffff));
   border: 1px solid rgba(0, 0, 0, 0.14);
@@ -240,7 +240,7 @@ img,
   border-radius: 24px;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.08);
   color: var(--mf-body-text, #111111);
-  max-width: 760px;
+  max-width: 980px;
   overflow: hidden;
   padding: clamp(2rem, 6vw, 4.5rem);
   position: relative;
@@ -249,18 +249,19 @@ img,
 }
 
 .mf-not-found__code {
-  color: color-mix(in srgb, var(--mf-primary, #336699) 13%, transparent);
+  color: var(--mf-primary, #336699);
   font-family: var(--mf-heading-font, inherit);
-  font-size: clamp(8rem, 25vw, 15rem);
+  font-size: clamp(6rem, 18vw, 11rem);
   font-weight: 800;
-  inset: 50% auto auto 50%;
+  inset: 1.25rem 1.75rem auto auto;
   letter-spacing: -0.09em;
-  line-height: 0.75;
+  line-height: 1;
   margin: 0;
+  opacity: 0.07;
   pointer-events: none;
   position: absolute;
-  transform: translate(-50%, -50%);
   user-select: none;
+  z-index: 0;
 }
 
 .mf-not-found__eyebrow,
@@ -269,6 +270,7 @@ img,
 .mf-not-found__search,
 .mf-not-found__links {
   position: relative;
+  z-index: 1;
 }
 
 .mf-not-found__eyebrow {
@@ -298,27 +300,25 @@ img,
   max-width: 560px;
 }
 
-.mf-not-found__search .search-form {
+.mf-not-found__search-form {
   display: flex;
   gap: 0.65rem;
 }
 
-.mf-not-found__search label {
-  flex: 1;
-}
-
-.mf-not-found__search .search-field {
+.mf-not-found__search-field {
   background: var(--mf-background, #ffffff);
   border: 1px solid color-mix(in srgb, var(--mf-body-text, #111111) 28%, transparent);
   border-radius: 999px;
   color: inherit;
+  flex: 1;
   font: inherit;
   min-height: 50px;
+  min-width: 0;
   padding: 0.55rem 1.1rem;
   width: 100%;
 }
 
-.mf-not-found__search .search-submit,
+.mf-not-found__search-submit,
 .mf-not-found__link {
   align-items: center;
   border: 1px solid var(--mf-primary, #336699);
@@ -331,7 +331,7 @@ img,
   padding: 0.55rem 1.15rem;
 }
 
-.mf-not-found__search .search-submit,
+.mf-not-found__search-submit,
 .mf-not-found__link.is-primary {
   background: var(--mf-button-bg, var(--mf-primary, #336699));
   color: var(--mf-button-text, #ffffff);
@@ -353,14 +353,14 @@ img,
 
 .mf-not-found__link:hover,
 .mf-not-found__link:focus-visible,
-.mf-not-found__search .search-submit:hover,
-.mf-not-found__search .search-submit:focus-visible {
+.mf-not-found__search-submit:hover,
+.mf-not-found__search-submit:focus-visible {
   filter: brightness(0.92);
   transform: translateY(-1px);
 }
 
 @media (max-width: 560px) {
-  .mf-not-found__search .search-form {
+  .mf-not-found__search-form {
     display: grid;
   }
 
