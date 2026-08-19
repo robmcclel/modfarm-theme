@@ -1641,6 +1641,35 @@ function modfarm_footer_login_shortcode() {
 }
 add_shortcode('modfarm_footer_login', 'modfarm_footer_login_shortcode');
 
+/**
+ * Render a cache-safe footer copyright using the current site identity.
+ */
+function modfarm_footer_copyright_shortcode(): string {
+    return sprintf(
+        '&copy; %1$s %2$s. %3$s',
+        esc_html(wp_date('Y')),
+        esc_html(get_bloginfo('name')),
+        esc_html__('All rights reserved.', 'modfarm-author')
+    );
+}
+add_shortcode('modfarm_footer_copyright', 'modfarm_footer_copyright_shortcode');
+
+// Existing sites may have the old file-based footer copied into a database
+// template-part override. Upgrade that exact placeholder at render time too.
+add_filter('render_block_core/paragraph', function (string $block_content): string {
+    if (stripos($block_content, 'YourSiteName') === false) {
+        return $block_content;
+    }
+
+    $copyright = wp_kses_post(modfarm_footer_copyright_shortcode());
+
+    return (string) preg_replace(
+        '/(?:Â)?©\s*2025\s*YourSiteName\.\s*All rights reserved\./i',
+        $copyright,
+        $block_content
+    );
+});
+
 add_action('wp_head', function () {
     $settings = get_option('modfarm_theme_settings', []);
     $vars = [
