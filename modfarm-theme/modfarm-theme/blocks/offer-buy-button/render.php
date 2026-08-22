@@ -83,14 +83,13 @@ function modfarm_render_offer_buy_button_block($attributes = [], $content = '', 
         $buy_url = add_query_arg('mf_buy_offer', $offer_id, home_url('/'));
         if (modfarm_offer_buy_button_supports_discount($offer_id)) {
             $notice = modfarm_offer_buy_button_checkout_notice();
-            $form = '<form class="mfs-offer-buy-button__checkout-form" method="get" action="' . esc_url(home_url('/')) . '"' . $style_attr . '>';
-            $form .= '<input type="hidden" name="mf_buy_offer" value="' . esc_attr($offer_id) . '">';
-            $form .= '<label class="screen-reader-text" for="mfs_discount_' . esc_attr($offer_id) . '">' . esc_html__('Discount code', 'modfarm') . '</label>';
-            $form .= '<input id="mfs_discount_' . esc_attr($offer_id) . '" class="mfs-offer-buy-button__discount" name="mf_discount" type="text" value="" placeholder="' . esc_attr__('Discount code', 'modfarm') . '" autocomplete="off">';
-            $form .= '<button class="' . esc_attr(implode(' ', $button_classes)) . '" type="submit">' . esc_html($label) . '</button>';
-            $form .= '</form>';
+            $controls = '<div class="mfs-offer-buy-button__checkout-controls"' . $style_attr . '>';
+            $controls .= '<label class="screen-reader-text" for="mfs_discount_' . esc_attr($offer_id) . '">' . esc_html__('Discount code', 'modfarm') . '</label>';
+            $controls .= '<input id="mfs_discount_' . esc_attr($offer_id) . '" class="mfs-offer-buy-button__discount" name="mf_discount" type="text" value="" placeholder="' . esc_attr__('Discount code', 'modfarm') . '" autocomplete="off" data-mf-offer-discount>';
+            $controls .= '<a class="' . esc_attr(implode(' ', $button_classes)) . '" href="' . esc_url($buy_url) . '" data-mf-offer-buy-url="' . esc_url($buy_url) . '">' . esc_html($label) . '</a>';
+            $controls .= '</div>';
 
-            return '<div ' . $wrapper_attributes . '>' . $notice . $form . '</div>';
+            return '<div ' . $wrapper_attributes . '>' . $notice . $controls . '</div>';
         }
 
         return '<div ' . $wrapper_attributes . '>' . modfarm_offer_buy_button_checkout_notice() . '<a class="' . esc_attr(implode(' ', $button_classes)) . '" href="' . esc_url($buy_url) . '"' . $style_attr . '>' . esc_html($label) . '</a></div>';

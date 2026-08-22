@@ -55,7 +55,7 @@
   outline-offset: 2px;
 }
 
-.mfs-offer-buy-button__checkout-form {
+.mfs-offer-buy-button__checkout-controls {
   align-items: center;
   display: inline-flex;
   flex-wrap: wrap;
@@ -72,7 +72,7 @@
   padding: 8px 10px;
 }
 
-.mfs-offer-buy-button__checkout-form .book-page-button {
+.mfs-offer-buy-button__checkout-controls .book-page-button {
   cursor: pointer;
 }
 
