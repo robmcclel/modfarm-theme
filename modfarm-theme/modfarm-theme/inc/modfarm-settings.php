@@ -756,7 +756,9 @@ function modfarm_get_collection_type_defs_for_settings(): array {
         $clean[$slug] = $def;
     }
 
-    return $clean;
+    $clean = apply_filters('modfarm_collection_type_defs', $clean);
+
+    return is_array($clean) ? $clean : [];
 }
 
 function modfarm_get_collection_type_label_for_settings(string $slug, array $def): string {
@@ -2470,12 +2472,20 @@ function modfarm_save_collection_ppb_settings_from_request(): void {
     }
 
     $defs['types'] = isset($defs['types']) && is_array($defs['types']) ? $defs['types'] : [];
+    $available_defs = modfarm_get_collection_type_defs_for_settings();
     $raw = isset($_POST['mfc_collection_ppb']) && is_array($_POST['mfc_collection_ppb'])
         ? wp_unslash($_POST['mfc_collection_ppb'])
+        : [];
+    $raw_modes = isset($_POST['mfc_collection_layout_mode']) && is_array($_POST['mfc_collection_layout_mode'])
+        ? wp_unslash($_POST['mfc_collection_layout_mode'])
         : [];
 
     foreach ($raw as $type => $contexts) {
         $type = sanitize_key((string) $type);
+        if ($type !== '' && empty($defs['types'][$type]) && !empty($available_defs[$type]) && is_array($available_defs[$type])) {
+            do_action('modfarm_save_external_collection_ppb_settings', $type, $contexts, $raw_modes[$type] ?? null);
+            continue;
+        }
         if ($type === '' || empty($defs['types'][$type]) || !is_array($defs['types'][$type]) || !is_array($contexts)) {
             continue;
         }
@@ -2507,12 +2517,15 @@ function modfarm_save_collection_ppb_settings_from_request(): void {
         }
     }
 
-    $raw_modes = isset($_POST['mfc_collection_layout_mode']) && is_array($_POST['mfc_collection_layout_mode'])
-        ? wp_unslash($_POST['mfc_collection_layout_mode'])
-        : [];
-
     foreach ($raw_modes as $type => $mode) {
         $type = sanitize_key((string) $type);
+        if ($type !== '' && empty($defs['types'][$type]) && !empty($available_defs[$type]) && is_array($available_defs[$type])) {
+            // Types represented in $raw were saved by the external hook above.
+            if (!array_key_exists($type, $raw)) {
+                do_action('modfarm_save_external_collection_ppb_settings', $type, [], $mode);
+            }
+            continue;
+        }
         if ($type === '' || empty($defs['types'][$type]) || !is_array($defs['types'][$type])) {
             continue;
         }

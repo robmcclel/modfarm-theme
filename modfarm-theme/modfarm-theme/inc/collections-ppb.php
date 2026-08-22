@@ -22,7 +22,16 @@ if (!function_exists('modfarm_get_collection_type_defs')) {
             }
         }
 
-        return $clean;
+        /**
+         * Allow domain plugins with an existing post type to participate in
+         * the same PPB control surface as ModFarm-managed Collection Types.
+         *
+         * External definitions are presentation metadata only. The owning
+         * plugin remains responsible for registering and managing its type.
+         */
+        $clean = apply_filters('modfarm_collection_type_defs', $clean);
+
+        return is_array($clean) ? $clean : [];
     }
 }
 

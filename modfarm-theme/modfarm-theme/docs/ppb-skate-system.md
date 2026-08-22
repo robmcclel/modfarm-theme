@@ -317,6 +317,17 @@ For hybrid singular rendering, the template-part fallback slugs are:
 
 The current canonical fallback model includes usable body defaults for page, post, book, and archive PPB rendering.
 
+## Externally Owned Collection Types
+
+Domain plugins can expose an existing post type to the Collection PPB surface
+through `modfarm_collection_type_defs`, `modfarm_is_collection_type`, and
+`modfarm_collection_patterns`. This lets PPB control presentation without
+transferring post-type registration or domain data ownership to ModFarm Content.
+
+Webcomic Series uses this contract: new Series items receive zoned PPB content,
+the Series body is rendered by a Webcomics-owned dynamic block, and existing
+unzoned Series items retain the legacy renderer until they are converted.
+
 In the ModFarm Settings UI, the intended user-facing fallback choice is `Default`.
 
 Legacy blank values and older `none`-style placeholders should be treated the same as `Default` and resolve to the canonical PPB defaults above.
