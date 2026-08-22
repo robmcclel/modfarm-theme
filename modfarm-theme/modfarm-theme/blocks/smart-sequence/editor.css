@@ -1,0 +1,13 @@
+.mf-smart-sequence {
+  border: 1px dashed #8c8f94;
+  padding: 16px;
+}
+
+.mf-smart-sequence__editor-note {
+  background: #f0f6fc;
+  border-left: 4px solid #3858c8;
+  color: #1e1e1e;
+  font-size: 13px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+}

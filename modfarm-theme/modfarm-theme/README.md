@@ -23,7 +23,7 @@ This README documents only behavior that is visible in the repository today. Unk
 The repo contains:
 
 - theme bootstrap and runtime logic in `functions.php`
-- 37 block directories under `blocks/`
+- 39 block directories under `blocks/`
 - 116 PHP pattern files under `inc/patterns/`
 - block-style templates under `templates/` and `parts/`
 - classic templates at the theme root

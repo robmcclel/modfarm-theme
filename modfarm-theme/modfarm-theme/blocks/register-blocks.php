@@ -55,6 +55,8 @@ add_action('init', function () {
         'zone'                       => 'modfarm_render_zone_block',
         'simple-tabs'                => 'modfarm_render_simple_tabs_block',
         'tab-panel'                  => 'modfarm_render_tab_panel',
+        'smart-sequence'             => 'modfarm_render_smart_sequence_block',
+        'smart-step'                 => 'modfarm_render_smart_step_block',
         'featured-book'              => 'modfarm_render_featured_book_block',
         'creator-credit'             => 'modfarm_render_creator_credit_block',
         'site-background'            => 'modfarm_render_site_background_block',

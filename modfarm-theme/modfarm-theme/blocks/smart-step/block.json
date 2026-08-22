@@ -1,0 +1,23 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/smart-step",
+  "title": "Smart Step",
+  "category": "modfarm-theme",
+  "icon": "excerpt-view",
+  "description": "An editable step with server-side unlock and completion rules.",
+  "parent": ["modfarm/smart-sequence"],
+  "supports": {
+    "html": false,
+    "reusable": false
+  },
+  "attributes": {
+    "stepNumber": { "type": "number", "default": 1 },
+    "title": { "type": "string", "default": "Step" },
+    "unlockCondition": { "type": "string", "default": "always" },
+    "completionCondition": { "type": "string", "default": "never" },
+    "lockedMessage": { "type": "string", "default": "Complete the previous step to continue." }
+  },
+  "editorScript": "modfarm-smart-step-editor",
+  "style": "file:./style.css",
+  "editorStyle": "file:./editor.css"
+}

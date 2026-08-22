@@ -1,0 +1,74 @@
+.mf-smart-sequence {
+  counter-reset: mf-smart-sequence-step;
+  display: grid;
+  gap: 16px;
+  margin: 24px auto;
+  width: 100%;
+}
+
+.mf-smart-sequence__progress {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.mf-smart-sequence__progress li {
+  align-items: center;
+  border-bottom: 3px solid color-mix(in srgb, currentColor 20%, transparent);
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+  opacity: .58;
+  padding: 10px 0;
+}
+
+.mf-smart-sequence__progress li.is-active,
+.mf-smart-sequence__progress li.is-complete {
+  border-bottom-color: #3858c8;
+  opacity: 1;
+}
+
+.mf-smart-sequence__progress span {
+  align-items: center;
+  background: #3858c8;
+  border-radius: 50%;
+  color: #fff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-weight: 800;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.mf-smart-sequence__progress li.is-complete span::after {
+  content: "✓";
+}
+
+.mf-smart-sequence__progress li.is-complete span {
+  font-size: 0;
+}
+
+.mf-smart-sequence__progress li.is-complete span::after {
+  font-size: 15px;
+}
+
+.mf-smart-sequence__progress strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+  .mf-smart-sequence__progress {
+    gap: 8px;
+  }
+
+  .mf-smart-sequence__progress li {
+    align-items: flex-start;
+    flex-direction: column;
+    font-size: 12px;
+  }
+}

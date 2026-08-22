@@ -12,7 +12,7 @@ Primary registrar:
 
 ## Summary
 
-- Block directories found: 37
+- Block directories found: 39
 - Common block shape: `block.json` + `index.js` + `render.php` + styles
 - Shared helper directory present: `blocks/shared`
 
@@ -49,6 +49,8 @@ Primary registrar:
 - `simple-gallery`
 - `simple-tab`
 - `simple-tabs`
+- `smart-sequence`
+- `smart-step`
 - `site-background`
 - `tab-panel`
 - `table-of-contents`
@@ -107,6 +109,12 @@ These block directories do not visibly contain `style.css`:
 ### PPB-Related Utility
 
 - [blocks/content-slot](/C:/Users/robmc/Documents/Codex/2026-04-29/can-you-see-the-repositories-in/modfarm-theme/modfarm-theme/modfarm-theme/blocks/content-slot)
+
+### Stateful Content Flow
+
+- `blocks/smart-sequence` is an editorial container for ordered `smart-step` children.
+- `blocks/smart-step` keeps its InnerBlocks editable while controlling frontend locked, active, and complete presentation from WordPress login and checkout-return state.
+- These blocks orchestrate existing content blocks; they do not replace forms, offers, or checkout implementations.
 
 ### Replacement / Consolidation Notes
 
