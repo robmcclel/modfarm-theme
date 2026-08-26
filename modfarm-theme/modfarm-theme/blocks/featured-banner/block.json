@@ -41,6 +41,7 @@
 
     "kicker": { "type": "string", "default": "" },
     "subhead": { "type": "string", "default": "" },
+    "textColor": { "type": "string", "default": "" },
 
     "textAlign": { "type": "string", "default": "left" },
     "buttonAlign": { "type": "string", "default": "center" },

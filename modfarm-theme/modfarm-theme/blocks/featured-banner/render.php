@@ -340,6 +340,10 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
     // IMPORTANT: background-image must be on the root element style
     $style  = 'min-height:' . (int)$min_height . 'px;';
     $style .= '--mfbb-media-width:' . (int)$media_width . 'px;';
+    $text_color = trim((string)($a['textColor'] ?? ''));
+    if ($text_color !== '') {
+      $style .= '--mfbb-text-color:' . $text_color . ';';
+    }
     if ($hero_url) {
       $style .= 'background-image:url(' . esc_url($hero_url) . ');';
       $style .= 'background-size:cover;';

@@ -527,6 +527,13 @@
               label: 'Subhead (optional)',
               value: attributes.subhead || '',
               onChange: (v) => setAttributes({ subhead: v })
+            }),
+
+            el(ColorField, {
+              label: 'Banner Text Color',
+              value: attributes.textColor || '',
+              onChange: (v) => setAttributes({ textColor: v || '' }),
+              help: 'Applies to the kicker, headline, subhead, and description. Clear to use the existing white default.'
             })
           ),
 

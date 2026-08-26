@@ -1,6 +1,6 @@
 /* Keep editor preview looking like frontend */
 .block-editor-page .editor-styles-wrapper .mfbn{
-  margin: 20px 0;
+  margin: 0;
 }
 /* Featured Banner (mfbb-*) */
 
@@ -10,7 +10,7 @@
   width: 100%;
   overflow: hidden;
   border-radius: 0; /* square-first */
-  margin: 20px 0;
+  margin: 0;
 
   background-size: cover;
   background-position: 50% 50%;
@@ -56,7 +56,7 @@
 /* body */
 .mfbb__body{
   flex: 1 1 auto;
-  color: #fff;
+  color: var(--mfbb-text-color, #fff);
   max-width: 600px;
 }
 
@@ -221,5 +221,13 @@
   .mfbb__media .modfarm-book-card{
     width: min(360px, 90vw);
     margin: 0 auto;
+  }
+}
+
+/* Match Featured Book: stack actions at full width on narrow screens. */
+@media (max-width: 560px){
+  .mfbb .mfbb__actions > a.book-page-button{
+    flex: 1 1 100%;
+    width: 100% !important;
   }
 }
