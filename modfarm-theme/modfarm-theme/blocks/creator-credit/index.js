@@ -4,7 +4,7 @@
   const { useBlockProps, InspectorControls } = wp.blockEditor || wp.editor;
   const {
     PanelBody, SelectControl, TextControl, RangeControl,
-    ToggleControl, ColorPalette, Button, Spinner, Notice
+    ToggleControl, ColorPalette, Button, Spinner, Notice, ComboboxControl
   } = wp.components;
   const { Fragment, createElement: el, useEffect, useState, useMemo } = wp.element;
   const { select, subscribe } = wp.data;
@@ -61,7 +61,9 @@
       /* Attached terms for this post  */
       /* ----------------------------- */
       const [attachedTerms, setAttachedTerms] = useState([]);
-      const [allTerms, setAllTerms] = useState(null);
+      const [creatorTerms, setCreatorTerms] = useState([]);
+      const [creatorSearch, setCreatorSearch] = useState('');
+      const [isSearchingCreators, setIsSearchingCreators] = useState(false);
       useEffect(() => {
         if (!attributes.taxonomy || attributes.taxonomy === '__custom__') {
           setAttachedTerms([]);
@@ -88,17 +90,50 @@
 
       useEffect(() => {
         if (!effectiveTax) {
-          setAllTerms([]);
+          setCreatorTerms([]);
           return;
         }
 
-        setAllTerms(null);
-        wp.apiFetch({
-          path: `/wp/v2/${effectiveTax}?per_page=100&orderby=name&order=asc&_fields=id,name`,
-        })
-          .then(terms => setAllTerms(Array.isArray(terms) ? terms : []))
-          .catch(() => setAllTerms([]));
-      }, [effectiveTax]);
+        let active = true;
+        const selectedId = parseInt(attributes.termId, 10) || 0;
+        const search = creatorSearch.trim();
+        const searchArg = search ? `&search=${encodeURIComponent(search)}` : '';
+
+        setIsSearchingCreators(true);
+        const timer = setTimeout(() => {
+          const requests = [wp.apiFetch({
+            path: `/wp/v2/${effectiveTax}?per_page=20&orderby=name&order=asc&_fields=id,name${searchArg}`,
+          })];
+
+          // Keep the saved selection visible even when it is outside the current search page.
+          if (selectedId) {
+            requests.push(wp.apiFetch({
+              path: `/wp/v2/${effectiveTax}?include=${selectedId}&_fields=id,name`,
+            }));
+          }
+
+          Promise.all(requests)
+            .then(results => {
+              if (!active) return;
+              const byId = new Map();
+              results.forEach(terms => {
+                (Array.isArray(terms) ? terms : []).forEach(term => byId.set(term.id, term));
+              });
+              setCreatorTerms(Array.from(byId.values()));
+            })
+            .catch(() => {
+              if (active) setCreatorTerms([]);
+            })
+            .finally(() => {
+              if (active) setIsSearchingCreators(false);
+            });
+        }, 250);
+
+        return () => {
+          active = false;
+          clearTimeout(timer);
+        };
+      }, [effectiveTax, creatorSearch, attributes.termId]);
 
       const clearAccent = () => setAttributes({ accentColor: '' });
       const clearText = () => setAttributes({ textColor: '' });
@@ -145,21 +180,18 @@
               onChange: v => setAttributes({ customTax: v })
             }),
 
-            allTerms === null
-              ? el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-                  el(Spinner, {}),
-                  el('span', {}, __('Loading terms...', 'modfarm'))
-                )
-              : el(SelectControl, {
-                  label: __('Creator term', 'modfarm'),
-                  help: __('Use Auto on book pages; choose a term for about pages, home pages, or posts.', 'modfarm'),
-                  value: parseInt(attributes.termId, 10) || 0,
-                  options: [
-                    { label: __('Auto: first term attached to current post', 'modfarm'), value: 0 },
-                    ...(allTerms || []).map(t => ({ label: t.name, value: t.id }))
-                  ],
-                  onChange: v => setAttributes({ termId: parseInt(v, 10) })
-                }),
+            el(ComboboxControl, {
+              label: __('Creator term', 'modfarm'),
+              help: __('Search all creators, or use Auto on book pages.', 'modfarm'),
+              value: String(parseInt(attributes.termId, 10) || 0),
+              options: [
+                { label: __('Auto: first term attached to current post', 'modfarm'), value: '0' },
+                ...creatorTerms.map(term => ({ label: term.name, value: String(term.id) }))
+              ],
+              onFilterValueChange: value => setCreatorSearch(value || ''),
+              onChange: value => setAttributes({ termId: parseInt(value, 10) || 0 }),
+              isLoading: isSearchingCreators
+            }),
 
             attachedTerms.length > 1 && parseInt(attributes.termId, 10) === 0 && el(Notice, { status: 'info', isDismissible: false },
               __('Auto mode will show the first attached term. Pick a creator term above for a specific person.', 'modfarm')
