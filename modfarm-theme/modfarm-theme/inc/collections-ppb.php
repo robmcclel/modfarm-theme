@@ -293,12 +293,23 @@ if (!function_exists('modfarm_render_collection_archive_page')) {
         $header_content = modfarm_get_pattern_content_by_slug($header_slug);
         $body_content = modfarm_get_pattern_content_by_slug($patterns['body']);
 
-        echo do_blocks($header_content);
+        $header_output = do_blocks($header_content);
+        echo function_exists('maf_render_region')
+            ? maf_render_region('header', $header_output)
+            : $header_output; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        if ($post_type === 'webcomic_series' && class_exists('MAF_App_Context') && MAF_App_Context::is_active()) {
+            echo '<div class="modfarm-app-collection-intro"><h1>'
+                . esc_html__('Webcomic Series', 'modfarm-author')
+                . '</h1></div>';
+        }
         if (strpos($header_content, 'modfarm/archive-description') === false && strpos($body_content, 'modfarm/archive-description') === false) {
             echo modfarm_render_collection_archive_description($post_type);
         }
         echo do_blocks($body_content);
-        echo do_blocks(modfarm_get_pattern_content_by_slug($footer_slug));
+        $footer_output = do_blocks(modfarm_get_pattern_content_by_slug($footer_slug));
+        echo function_exists('maf_render_region')
+            ? maf_render_region('footer', $footer_output)
+            : $footer_output; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
         return true;
     }
