@@ -1,6 +1,54 @@
 <?php
 require_once get_template_directory() . '/blocks/shared/book-options.php';
 
+/** Resolve the taxonomy-grid term set once for both rendering and CIR. */
+if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
+  function modfarm_taxonomy_grid_resolve_terms(array $attributes, $requested_page = 1) {
+    $group_mode = in_array(($attributes['groupMode'] ?? 'terms'), ['terms','series_by_genre','books_by_series'], true) ? $attributes['groupMode'] : 'terms';
+    $taxonomy = sanitize_key($attributes['taxonomy'] ?? 'book-series');
+    if (in_array($group_mode, ['series_by_genre','books_by_series'], true)) $taxonomy = 'book-series';
+    if (!taxonomy_exists($taxonomy)) return new WP_Error('taxonomy-grid-taxonomy-missing', sprintf(__('Taxonomy %s does not exist.', 'modfarm'), $taxonomy));
+
+    $args = ['taxonomy' => $taxonomy, 'hide_empty' => !empty($attributes['hideEmpty']), 'fields' => 'all'];
+    if (($attributes['displayMode'] ?? 'all') === 'top') $args['parent'] = 0;
+    elseif (($attributes['displayMode'] ?? 'all') === 'children') $args['parent'] = max(0, absint($attributes['parentId'] ?? 0));
+    switch ($attributes['orderBy'] ?? 'name_asc') {
+      case 'name_desc': $args['orderby'] = 'name'; $args['order'] = 'DESC'; break;
+      case 'count_desc': $args['orderby'] = 'count'; $args['order'] = 'DESC'; break;
+      default: $args['orderby'] = 'name'; $args['order'] = 'ASC';
+    }
+    $terms = get_terms($args);
+    if (is_wp_error($terms)) return $terms;
+
+    if (!empty($attributes['hideParents']) && is_taxonomy_hierarchical($taxonomy)) {
+      $parents = [];
+      foreach ($terms as $term) if (!empty($term->parent)) $parents[(int)$term->parent] = true;
+      $terms = array_values(array_filter($terms, static function($term) use ($parents) { return empty($parents[(int)$term->term_id]); }));
+    }
+    $genre_slug = sanitize_title($attributes['seriesGenreSlug'] ?? '');
+    if ('book-series' === $taxonomy && '' !== $genre_slug && function_exists('modfarm_get_series_genre_profile')) {
+      $terms = array_values(array_filter($terms, static function($term) use ($genre_slug) {
+        $profile = modfarm_get_series_genre_profile((int)$term->term_id);
+        return $genre_slug === sanitize_title($profile['primary_genre_slug'] ?? '');
+      }));
+    }
+	// This mode renders book sections and skips series with no published books.
+	// Filter them here so its TOC, visible set, and CIR describe the same page.
+	if ('books_by_series' === $group_mode) {
+	  $terms = array_values(array_filter($terms, static function($term) { return (int)$term->count > 0; }));
+	}
+
+    $per_page = max(1, absint($attributes['perPage'] ?? 24));
+	$pagination = 'terms' === $group_mode && !empty($attributes['enablePagination']);
+    $pages = $pagination ? max(1, (int)ceil(count($terms) / $per_page)) : 1;
+    $page = min($pages, max(1, absint($requested_page)));
+	$visible = 'terms' === $group_mode
+	  ? array_slice($terms, $pagination ? (($page - 1) * $per_page) : 0, $per_page)
+	  : $terms;
+    return compact('taxonomy', 'group_mode', 'terms', 'visible', 'per_page', 'pagination', 'pages', 'page', 'genre_slug');
+  }
+}
+
 if (!function_exists('modfarm_render_taxonomy_grid_block')) {
   function modfarm_render_taxonomy_grid_block($attributes, $content = '', $block = null) {
 
@@ -47,68 +95,17 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       'trackEvent'         => 'taxonomy_click', // swap to your Core standard if needed
     ]);
 
-    $group_mode = in_array($a['groupMode'], ['terms','series_by_genre','books_by_series'], true) ? $a['groupMode'] : 'terms';
-    $tax = sanitize_key($a['taxonomy']);
-    if (in_array($group_mode, ['series_by_genre','books_by_series'], true)) {
-      $tax = 'book-series';
-    }
-    if (!taxonomy_exists($tax)) {
+    $resolved_terms = modfarm_taxonomy_grid_resolve_terms($a, isset($_GET['pg']) ? absint($_GET['pg']) : 1);
+    $group_mode = is_wp_error($resolved_terms) ? 'terms' : $resolved_terms['group_mode'];
+    $tax = is_wp_error($resolved_terms) ? sanitize_key($a['taxonomy']) : $resolved_terms['taxonomy'];
+    if (is_wp_error($resolved_terms)) {
       return current_user_can('edit_posts')
         ? '<div class="mfb-taxgrid mfb-warn">Taxonomy “'.esc_html($tax).'” does not exist.</div>'
         : '';
     }
 
-    // --- Build base args (UNPAGED) so we can filter THEN paginate ----------
-    $base = [
-      'taxonomy'   => $tax,
-      'hide_empty' => !empty($a['hideEmpty']),
-      'fields'     => 'all',
-    ];
-    if ($a['displayMode'] === 'top') {
-      $base['parent'] = 0;
-    } elseif ($a['displayMode'] === 'children') {
-      $base['parent'] = max(0, intval($a['parentId']));
-    }
-
-    // Sorting to apply on the full set (stable pagination)
-    $orderby = 'name'; $order = 'ASC';
-    switch ($a['orderBy']) {
-      case 'name_desc':  $orderby = 'name';  $order = 'DESC'; break;
-      case 'count_desc': $orderby = 'count'; $order = 'DESC'; break;
-      default:           $orderby = 'name';  $order = 'ASC';  break;
-    }
-    $base['orderby'] = $orderby;
-    $base['order']   = $order;
-
-    // Fetch ALL matching terms (unpaged)
-    $all_terms = get_terms($base);
-    if (is_wp_error($all_terms)) $all_terms = [];
-
-    // Optionally filter out parents first (so pagination slices a clean list)
-    $terms_for_paging = $all_terms;
-    if ($a['hideParents'] && is_taxonomy_hierarchical($tax) && !empty($all_terms)) {
-      $has_children = [];
-      foreach ($all_terms as $t) {
-        if (!empty($t->parent) && $t->parent > 0) {
-          $has_children[$t->parent] = true;
-        }
-      }
-      $terms_for_paging = array_values(array_filter($all_terms, function($t) use ($has_children) {
-        return empty($has_children[$t->term_id]); // keep leaves only
-      }));
-    }
-
-    $series_genre_slug = sanitize_title($a['seriesGenreSlug']);
-    if ('book-series' === $tax && $series_genre_slug !== '' && function_exists('modfarm_get_series_genre_profile')) {
-      $terms_for_paging = array_values(array_filter($terms_for_paging, function($t) use ($series_genre_slug) {
-        if (!($t instanceof WP_Term)) {
-          return false;
-        }
-
-        $profile = modfarm_get_series_genre_profile((int)$t->term_id);
-        return $series_genre_slug === sanitize_title((string)($profile['primary_genre_slug'] ?? ''));
-      }));
-    }
+    $terms_for_paging = $resolved_terms['terms'];
+    $series_genre_slug = $resolved_terms['genre_slug'];
 
     // --- Build TOC across the FINAL list (so letters reflect what users can reach)
     $toc = [];
@@ -122,19 +119,11 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     }
 
     // --- Pagination over the final list -----------------------------------
-    $per_page   = max(1, intval($a['perPage']));
-    $total_terms= count($terms_for_paging);
-    $total_pages= !empty($a['enablePagination']) ? max(1, (int)ceil($total_terms / $per_page)) : 1;
-    $paged      = isset($_GET['pg']) ? max(1, intval($_GET['pg'])) : 1;
-    if (empty($a['enablePagination'])) $paged = 1;
-    if ($paged > $total_pages) $paged = $total_pages;
-
-    if (!empty($a['enablePagination'])) {
-      $offset = ($paged - 1) * $per_page;
-      $terms  = array_slice($terms_for_paging, $offset, $per_page);
-    } else {
-      $terms  = array_slice($terms_for_paging, 0, $per_page);
-    }
+    $per_page = $resolved_terms['per_page'];
+    $total_terms = count($terms_for_paging);
+    $total_pages = $resolved_terms['pages'];
+    $paged = $resolved_terms['page'];
+    $terms = $resolved_terms['visible'];
 
     // --- Image resolver (primary + fallback) -------------------------------
     $emit_id = function($id, $alt = '') {

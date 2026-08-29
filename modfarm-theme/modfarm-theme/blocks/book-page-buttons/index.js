@@ -28,7 +28,7 @@
     'bam_paper', 'bam_hard',
     'indigo', 'waterstones', 'brokenbinding',
     'librofm', 'downpour', 'target', 'walmart',
-    'audiobooks_com', 'spotify'
+    'audiobooks_com', 'spotify', 'custom1', 'custom2', 'custom3', 'custom4', 'custom5', 'custom6'
   ];
 
   const TYPE_OPTIONS = [
