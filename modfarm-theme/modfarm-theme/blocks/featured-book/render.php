@@ -7,14 +7,8 @@ if (!function_exists('modfarm_render_featured_book_block')) {
     $a = is_array($attrs) ? $attrs : [];
 
     // ---- Mode / selection
-    $mode      = isset($a['mode']) ? $a['mode'] : 'manual';
-    $date_keys = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
-    $date_type = in_array($a['dateType'] ?? '', $date_keys, true) ? $a['dateType'] : 'publication_date';
-    $pinned_id = (int)($a['pinnedId'] ?? 0);
-
-    $book_id = ($mode === 'auto')
-      ? mfb_pick_latest_by_date($date_type, $pinned_id)
-      : (int)($a['bookId'] ?? 0);
+    $selection = mfb_resolve_featured_book_selection($a);
+    $book_id = (int)($selection['book_id'] ?? 0);
 
     if ($book_id <= 0 || get_post_type($book_id) !== 'book') {
       return '<div class="mftb mftb--notice"><p>Pick a book (or switch to Auto mode). Invalid/missing Book ID.</p></div>';
@@ -237,6 +231,23 @@ if (!function_exists('mfb_pick_latest_by_date')) {
     $id = $q2->have_posts() ? (int)$q2->posts[0]->ID : 0;
     wp_reset_postdata();
     return $id;
+  }
+}
+
+/** Shared deterministic selection used by both the renderer and CIR provider. */
+if (!function_exists('mfb_resolve_featured_book_selection')) {
+  function mfb_resolve_featured_book_selection(array $attributes) {
+    $mode = ($attributes['mode'] ?? 'manual') === 'auto' ? 'auto' : 'manual';
+    $date_keys = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
+    $date_type = in_array($attributes['dateType'] ?? '', $date_keys, true) ? $attributes['dateType'] : 'publication_date';
+    $pinned_id = absint($attributes['pinnedId'] ?? 0);
+    $book_id = $mode === 'auto' ? mfb_pick_latest_by_date($date_type, $pinned_id) : absint($attributes['bookId'] ?? 0);
+    return [
+      'book_id' => $book_id,
+      'selection_method' => $mode === 'auto' ? ($pinned_id ? 'pinned' : 'latest-published') : 'manual',
+      'query_scope' => $mode === 'auto' ? [ 'post_type' => 'book', 'date_field' => $date_type, 'not_after' => current_time('Y-m-d') ] : [],
+      'dependencies' => $mode === 'auto' && !$pinned_id ? [ 'query:publication:latest:' . $date_type ] : [],
+    ];
   }
 }
 

@@ -5,14 +5,13 @@
   const {
     PanelBody,
     SelectControl,
+    ComboboxControl,
     RangeControl,
     ToggleControl,
     ColorPalette,
-    Button,
-    Spinner
+    Button
   } = wp.components;
-  const { Fragment, createElement: el } = wp.element;
-  const { useSelect } = wp.data;
+  const { Fragment, createElement: el, useEffect, useState } = wp.element;
   const ServerSideRender = wp.serverSideRender;
 
   const THEME_COLORS = wp.data.select('core/block-editor')?.getSettings()?.colors || [];
@@ -28,20 +27,56 @@
       const blockProps = useBlockProps();
       const authorId = parseInt(attributes.authorId, 10) || 0;
 
-      const authors = useSelect((select) => {
-        return select('core').getEntityRecords('taxonomy', 'book-author', {
-          per_page: -1,
-          orderby: 'name',
-          order: 'asc',
-          _fields: 'id,name'
-        });
-      }, []);
+      const [authors, setAuthors] = useState([]);
+      const [authorSearch, setAuthorSearch] = useState('');
+      const [isSearchingAuthors, setIsSearchingAuthors] = useState(false);
+
+      useEffect(() => {
+        let active = true;
+        const search = authorSearch.trim();
+        const searchArg = search ? `&search=${encodeURIComponent(search)}` : '';
+
+        setIsSearchingAuthors(true);
+        const timer = setTimeout(() => {
+          const requests = [wp.apiFetch({
+            path: `/wp/v2/book-author?per_page=20&orderby=name&order=asc&_fields=id,name${searchArg}`
+          })];
+
+          // Keep the saved author visible even when it is outside the current search page.
+          if (authorId) {
+            requests.push(wp.apiFetch({
+              path: `/wp/v2/book-author?include=${authorId}&_fields=id,name`
+            }));
+          }
+
+          Promise.all(requests)
+            .then(results => {
+              if (!active) return;
+              const byId = new Map();
+              results.forEach(terms => {
+                (Array.isArray(terms) ? terms : []).forEach(term => byId.set(term.id, term));
+              });
+              setAuthors(Array.from(byId.values()));
+            })
+            .catch(() => {
+              if (active) setAuthors([]);
+            })
+            .finally(() => {
+              if (active) setIsSearchingAuthors(false);
+            });
+        }, 250);
+
+        return () => {
+          active = false;
+          clearTimeout(timer);
+        };
+      }, [authorSearch, authorId]);
 
       const authorOptions = [
-        { label: __('Current author archive', 'modfarm'), value: 0 }
+        { label: __('Current author archive', 'modfarm'), value: '0' }
       ].concat((authors || []).map((term) => ({
         label: term.name,
-        value: term.id
+        value: String(term.id)
       })));
 
       const clearMonoColor = () => setAttributes({ monotoneColor: '' });
@@ -57,17 +92,15 @@
         ),
         el(InspectorControls, {},
           el(PanelBody, { title: __('Author Source', 'modfarm'), initialOpen: true },
-            authors === null
-              ? el('div', { className: 'mfas-editor-loading' },
-                  el(Spinner, {}),
-                  el('span', {}, __('Loading authors...', 'modfarm'))
-                )
-              : el(SelectControl, {
-                  label: __('Author', 'modfarm'),
-                  value: authorId,
-                  options: authorOptions,
-                  onChange: (value) => setAttributes({ authorId: parseInt(value, 10) || 0 })
-                }),
+            el(ComboboxControl, {
+              label: __('Author', 'modfarm'),
+              help: __('Search all authors, or use the current author archive.', 'modfarm'),
+              value: String(authorId),
+              options: authorOptions,
+              onFilterValueChange: value => setAuthorSearch(value || ''),
+              onChange: value => setAttributes({ authorId: parseInt(value, 10) || 0 }),
+              isLoading: isSearchingAuthors
+            }),
             el(ToggleControl, {
               label: __('Use current author archive when no author is selected', 'modfarm'),
               checked: attributes.useArchiveAuthor !== false,
