@@ -128,10 +128,42 @@ function modfarm_theme_resolve_taxonomy_grid_presentation( array $attributes, ar
 	);
 }
 
+function modfarm_theme_resolve_coming_soon_presentation( array $attributes, array $context = array() ) {
+	if ( ! function_exists( 'modfarm_data_layer_block_contribution' ) ) { return new WP_Error( 'coming-soon-resolver-unavailable' ); }
+	$contribution = modfarm_data_layer_block_contribution( array( 'blockName' => 'modfarm/coming-soon-list', 'attrs' => $attributes ), absint( $context['post_id'] ?? 0 ) );
+	$ids = array_values( array_unique( array_filter( array_map( 'absint', (array) ( $contribution['entity_ids'] ?? array() ) ) ) ) );
+	$references = array_map( function ( $id ) { return modfarm_theme_cir_entity_reference( 'book', $id ); }, $ids );
+	$date_keys = array( 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' );
+	$date_key = in_array( $attributes['pubDateKey'] ?? '', $date_keys, true ) ? $attributes['pubDateKey'] : 'publication_date';
+	$list_type = sanitize_key( $attributes['listType'] ?? 'coming-soon' );
+	$dependencies = array(
+		array( 'key' => 'site:' . get_current_blog_id() . ':query:post-type:book', 'type' => 'query' ),
+		array( 'key' => 'site:' . get_current_blog_id() . ':query:publication:latest:' . $date_key, 'type' => 'query' ),
+	);
+	foreach ( (array) ( $contribution['query_scope'] ?? array() ) as $scope ) {
+		if ( empty( $scope['taxonomy'] ) ) { continue; }
+		$taxonomy = sanitize_key( $scope['taxonomy'] );
+		$dependencies[] = array( 'key' => 'site:' . get_current_blog_id() . ':query:taxonomy:' . $taxonomy, 'type' => 'query' );
+		if ( ! empty( $scope['term_id'] ) ) {
+			$reference = modfarm_theme_cir_entity_reference( modfarm_theme_taxonomy_grid_entity_type( $taxonomy ), absint( $scope['term_id'] ) );
+			$dependencies[] = array( 'key' => $reference['local_key'], 'type' => 'entity' );
+		}
+	}
+	foreach ( $references as $reference ) $dependencies[] = array( 'key' => $reference['local_key'], 'type' => 'entity' );
+	return array(
+		'presented_entities' => $references,
+		'selection_method' => 'dynamic-publication-query',
+		'query_scope' => array( 'post_type' => 'book', 'list_type' => $list_type, 'date_field' => $date_key, 'filters' => $contribution['query_scope'] ?? array() ),
+		'collection' => array( 'entity_type' => 'book', 'selection_method' => 'dynamic-publication-query', 'members' => $references, 'member_count' => count( $references ), 'displayed_count' => count( $references ), 'complete' => false, 'pagination' => ! empty( $attributes['show-pagination'] ), 'ordering' => sanitize_key( $attributes['display-order'] ?? ( 'coming-soon' === $list_type ? 'asc' : 'desc' ) ) ),
+		'dependencies' => $dependencies,
+	);
+}
+
 add_action( 'init', function () {
 	if ( ! function_exists( 'modfarm_cir_register_block_provider' ) ) { return; }
 	modfarm_cir_register_block_provider( 'modfarm/creator-credit', array( 'provider' => 'modfarm-theme', 'version' => '1', 'resolve' => 'modfarm_theme_resolve_creator_credit_presentation' ) );
 	modfarm_cir_register_block_provider( 'modfarm/handpicked-books', array( 'provider' => 'modfarm-theme', 'version' => '1', 'resolve' => 'modfarm_theme_resolve_handpicked_books_presentation' ) );
 	modfarm_cir_register_block_provider( 'modfarm/featured-book', array( 'provider' => 'modfarm-theme', 'version' => '1', 'resolve' => 'modfarm_theme_resolve_featured_book_presentation' ) );
 	modfarm_cir_register_block_provider( 'modfarm/taxonomy-grid', array( 'provider' => 'modfarm-theme', 'version' => '2', 'resolve' => 'modfarm_theme_resolve_taxonomy_grid_presentation' ) );
+	modfarm_cir_register_block_provider( 'modfarm/coming-soon-list', array( 'provider' => 'modfarm-theme', 'version' => '1', 'resolve' => 'modfarm_theme_resolve_coming_soon_presentation' ) );
 }, 30 );

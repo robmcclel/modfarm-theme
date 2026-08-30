@@ -245,7 +245,7 @@ if (!function_exists('mfb_resolve_featured_book_selection')) {
     return [
       'book_id' => $book_id,
       'selection_method' => $mode === 'auto' ? ($pinned_id ? 'pinned' : 'latest-published') : 'manual',
-      'query_scope' => $mode === 'auto' ? [ 'post_type' => 'book', 'date_field' => $date_type, 'not_after' => current_time('Y-m-d') ] : [],
+	  'query_scope' => $mode === 'auto' && !$pinned_id ? [ 'post_type' => 'book', 'date_field' => $date_type, 'not_after' => current_time('Y-m-d') ] : [],
       'dependencies' => $mode === 'auto' && !$pinned_id ? [ 'query:publication:latest:' . $date_type ] : [],
     ];
   }
