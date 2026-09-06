@@ -67,10 +67,11 @@
   background: #f3f4f5;
 }
 
-.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-site-basics"],
-.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-theme-fonts"],
-.mf-tab-control:focus-visible + .mf-tab-control + .mf-tabs label[for="mf-tab-control-book-presentation"],
-.mf-tab-control:focus-visible + .mf-tabs label[for="mf-tab-control-page-layouts"] {
+.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-site-basics"],
+.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-theme-fonts"],
+.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-book-presentation"],
+.mf-tab-control:focus-visible + .mf-tab-control + .mf-tabs label[for="mf-tab-control-page-layouts"],
+.mf-tab-control:focus-visible + .mf-tabs label[for="mf-tab-control-marketing"] {
   outline: 2px solid #2271b1;
   outline-offset: -2px;
 }
@@ -96,7 +97,8 @@
 #mf-tab-control-site-basics:checked ~ .mf-tabs label[for="mf-tab-control-site-basics"],
 #mf-tab-control-theme-fonts:checked ~ .mf-tabs label[for="mf-tab-control-theme-fonts"],
 #mf-tab-control-book-presentation:checked ~ .mf-tabs label[for="mf-tab-control-book-presentation"],
-#mf-tab-control-page-layouts:checked ~ .mf-tabs label[for="mf-tab-control-page-layouts"] {
+#mf-tab-control-page-layouts:checked ~ .mf-tabs label[for="mf-tab-control-page-layouts"],
+#mf-tab-control-marketing:checked ~ .mf-tabs label[for="mf-tab-control-marketing"] {
   border-bottom-color: #2271b1;
   background: #fff;
   font-weight: 600;
@@ -105,7 +107,8 @@
 #mf-tab-control-site-basics:checked ~ .mf-tab-panels #mf-tab-site-basics,
 #mf-tab-control-theme-fonts:checked ~ .mf-tab-panels #mf-tab-theme-fonts,
 #mf-tab-control-book-presentation:checked ~ .mf-tab-panels #mf-tab-book-presentation,
-#mf-tab-control-page-layouts:checked ~ .mf-tab-panels #mf-tab-page-layouts {
+#mf-tab-control-page-layouts:checked ~ .mf-tab-panels #mf-tab-page-layouts,
+#mf-tab-control-marketing:checked ~ .mf-tab-panels #mf-tab-marketing {
   display: block;
 }
 
@@ -115,6 +118,7 @@
 .modfarm-settings-shell:has(#mf-tab-control-theme-fonts:checked) #mf-tab-theme-fonts,
 .modfarm-settings-shell:has(#mf-tab-control-book-presentation:checked) #mf-tab-book-presentation,
 .modfarm-settings-shell:has(#mf-tab-control-page-layouts:checked) #mf-tab-page-layouts,
+.modfarm-settings-shell:has(#mf-tab-control-marketing:checked) #mf-tab-marketing,
 .modfarm-settings-shell .mf-tab-panel.is-active {
   display: block;
 }

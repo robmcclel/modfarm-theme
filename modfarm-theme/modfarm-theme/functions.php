@@ -30,6 +30,16 @@ function modfarm_author_setup() {
 }
 add_action('after_setup_theme', 'modfarm_author_setup');
 
+/**
+ * ModFarm Settings is the single typography control surface for this theme.
+ * WordPress' Font Library would otherwise offer a second, conflicting place
+ * to upload and activate fonts without updating ModFarm's font settings.
+ */
+add_filter('block_editor_settings_all', function (array $settings): array {
+    $settings['fontLibraryEnabled'] = false;
+    return $settings;
+});
+
 require_once get_template_directory() . '/inc/content-slot-payloads.php';
 
 add_action('after_setup_theme', function() {
@@ -1697,7 +1707,17 @@ add_action('wp_head', function () {
         echo "$var: " . esc_attr($value) . ";\n";
     }
     echo '}</style>';
-});
+
+    // Global Styles can be printed after linked theme styles. Emit the actual
+    // typography rules here as well so saved ModFarm choices win on every
+    // classic, hybrid, and block-template frontend path.
+    echo '<style id="modfarm-global-typography">';
+    echo 'body{font-family:var(--mf-body-font,sans-serif);}';
+    echo 'body :where(h1,h2,h3,h4,h5,h6,.wp-block-post-title,.wp-block-query-title){font-family:var(--mf-heading-font,serif);}';
+    echo 'body :where(.wp-block-site-title,.wp-block-site-title a,.mfs-brand__text,.site-title,.site-title a){font-family:var(--mf-site-title-font,var(--mf-body-font,sans-serif));}';
+    echo 'body :where(.wp-block-navigation,.modfarm-menu){font-family:var(--mf-nav-font,var(--mf-body-font,sans-serif));}';
+    echo '</style>';
+}, 99);
 
 add_action('wp_enqueue_scripts', 'modfarm_enqueue_google_fonts');
 add_action('admin_enqueue_scripts', 'modfarm_enqueue_google_fonts');

@@ -122,7 +122,9 @@ function modfarm_font_family_from_setting(string $value): string {
 function modfarm_font_css_value(string $family): string {
     $catalog = modfarm_font_library();
     if (!isset($catalog[$family])) {
-        return $family;
+        // Custom Font Library families are not part of the remote catalog.
+        // Quote them here so multi-word uploaded family names remain valid CSS.
+        return "'" . str_replace(["\\", "'"], ['', "\\'"], $family) . "', sans-serif";
     }
 
     return "'" . $family . "', " . $catalog[$family]['fallback'];
