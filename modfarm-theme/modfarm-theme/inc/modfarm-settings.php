@@ -488,14 +488,32 @@ function modfarm_settings_font_library() {
  * The native management UI stays disabled; ModFarm owns their presentation.
  */
 function modfarm_get_installed_custom_fonts(): array {
-    if (!post_type_exists('wp_font_family')) {
-        return [];
+    $families = [];
+
+    // ModFarm's registry is authoritative for fonts uploaded through its UI.
+    // Keeping it separate from Core's internal CPT query makes picker discovery
+    // resilient to WordPress changing Font Library visibility/query behavior.
+    $registry = get_option('modfarm_custom_fonts', []);
+    if (is_array($registry)) {
+        foreach ($registry as $family => $font) {
+            $family = trim(wp_strip_all_tags((string) $family), " \t\n\r\0\x0B\"'");
+            if ($family === '' || !is_array($font) || empty($font['faces']) || !is_array($font['faces'])) {
+                continue;
+            }
+            $families[$family] = [
+                'label' => sanitize_text_field((string) ($font['label'] ?? $family)),
+                'faces' => array_values(array_filter($font['faces'], 'is_array')),
+            ];
+        }
     }
 
-    $families = [];
+    if (!post_type_exists('wp_font_family')) {
+        return $families;
+    }
+
     $posts = get_posts([
         'post_type'              => 'wp_font_family',
-        'post_status'            => 'publish',
+        'post_status'            => 'any',
         'posts_per_page'         => -1,
         'orderby'                => 'title',
         'order'                  => 'ASC',
@@ -516,7 +534,7 @@ function modfarm_get_installed_custom_fonts(): array {
 
         $faces = get_posts([
             'post_type'              => 'wp_font_face',
-            'post_status'            => 'publish',
+            'post_status'            => 'any',
             'post_parent'            => (int) $family_post->ID,
             'posts_per_page'         => -1,
             'orderby'                => 'ID',
@@ -535,10 +553,19 @@ function modfarm_get_installed_custom_fonts(): array {
         }
 
         if ($face_settings) {
-            $families[$family] = [
-                'label' => (string) $family_post->post_title ?: $family,
-                'faces' => $face_settings,
-            ];
+            if (!isset($families[$family])) {
+                $families[$family] = [
+                    'label' => (string) $family_post->post_title ?: $family,
+                    'faces' => [],
+                ];
+            }
+            foreach ($face_settings as $face) {
+                $encoded_face = wp_json_encode($face);
+                $known_faces = array_map('wp_json_encode', $families[$family]['faces']);
+                if (!in_array($encoded_face, $known_faces, true)) {
+                    $families[$family]['faces'][] = $face;
+                }
+            }
         }
     }
 
@@ -2660,6 +2687,28 @@ function modfarm_custom_font_redirect(string $status, string $message = ''): voi
 }
 
 /**
+ * Verify font containers by their binary magic bytes before overriding a
+ * platform-specific MIME disagreement in WordPress' upload validation.
+ */
+function modfarm_font_file_has_valid_signature(string $file, string $extension): bool {
+    $handle = @fopen($file, 'rb');
+    if (!$handle) {
+        return false;
+    }
+    $signature = fread($handle, 4);
+    fclose($handle);
+
+    $signatures = [
+        'ttf'   => ["\x00\x01\x00\x00", 'true'],
+        'otf'   => ['OTTO'],
+        'woff'  => ['wOFF'],
+        'woff2' => ['wOF2'],
+    ];
+
+    return isset($signatures[$extension]) && in_array($signature, $signatures[$extension], true);
+}
+
+/**
  * Install one local font face through a tightly scoped ModFarm admin form.
  */
 function modfarm_handle_custom_font_upload(): void {
@@ -2692,7 +2741,41 @@ function modfarm_handle_custom_font_upload(): void {
         modfarm_custom_font_redirect('error', __('Choose a font file to upload.', 'modfarm'));
     }
 
+    $requested_extension = strtolower(pathinfo((string) $_FILES['font_file']['name'], PATHINFO_EXTENSION));
+    $temporary_file = (string) ($_FILES['font_file']['tmp_name'] ?? '');
+    if (!in_array($requested_extension, ['ttf', 'otf', 'woff', 'woff2'], true)
+        || !modfarm_font_file_has_valid_signature($temporary_file, $requested_extension)) {
+        modfarm_custom_font_redirect('error', __('The uploaded file is not a valid TTF, OTF, WOFF, or WOFF2 font.', 'modfarm'));
+    }
+
     require_once ABSPATH . 'wp-admin/includes/file.php';
+    $font_mimes = class_exists('WP_Font_Utils')
+        ? WP_Font_Utils::get_allowed_font_mime_types()
+        : [
+            'otf'   => 'application/vnd.ms-opentype',
+            'ttf'   => PHP_VERSION_ID >= 70400 ? 'font/sfnt' : (PHP_VERSION_ID >= 70300 ? 'application/font-sfnt' : 'application/x-font-ttf'),
+            'woff'  => PHP_VERSION_ID >= 80112 ? 'font/woff' : 'application/font-woff',
+            'woff2' => PHP_VERSION_ID >= 80112 ? 'font/woff2' : 'application/font-woff2',
+        ];
+    $font_mime_filter = static function (array $mimes) use ($font_mimes): array {
+        return array_merge($mimes, $font_mimes);
+    };
+    $font_type_filter = static function (array $data, string $file, string $filename) use ($temporary_file, $requested_extension, $font_mimes): array {
+        if (wp_normalize_path($file) !== wp_normalize_path($temporary_file)) {
+            return $data;
+        }
+        if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== $requested_extension) {
+            return $data;
+        }
+
+        // The container signature was validated immediately above. Normalize
+        // libmagic aliases such as application/x-font-ttf to Core's expected
+        // PHP-version-specific MIME value for this file only.
+        $data['ext'] = $requested_extension;
+        $data['type'] = $font_mimes[$requested_extension];
+        $data['proper_filename'] = false;
+        return $data;
+    };
     $font_dir_filter = static function (array $uploads): array {
         $uploads['path'] = untrailingslashit($uploads['basedir']) . '/fonts';
         $uploads['url'] = untrailingslashit($uploads['baseurl']) . '/fonts';
@@ -2702,20 +2785,22 @@ function modfarm_handle_custom_font_upload(): void {
         $uploads['error'] = false;
         return $uploads;
     };
+    // Multisite filters the normal upload list through Network Settings. Add
+    // only WordPress Core's font MIME map back for this nonce/capability-
+    // protected ModFarm request, after the network restriction has run.
+    add_filter('upload_mimes', $font_mime_filter, 999);
+    add_filter('wp_check_filetype_and_ext', $font_type_filter, 999, 3);
     add_filter('upload_dir', $font_dir_filter);
     $upload = wp_handle_upload(
         $_FILES['font_file'],
         [
             'test_form' => false,
-            'mimes' => [
-                'woff2' => 'font/woff2',
-                'woff'  => 'font/woff',
-                'ttf'   => 'font/ttf',
-                'otf'   => 'font/otf',
-            ],
+            'mimes' => $font_mimes,
         ]
     );
     remove_filter('upload_dir', $font_dir_filter);
+    remove_filter('wp_check_filetype_and_ext', $font_type_filter, 999);
+    remove_filter('upload_mimes', $font_mime_filter, 999);
 
     if (!empty($upload['error'])) {
         modfarm_custom_font_redirect('error', sanitize_text_field((string) $upload['error']));
@@ -2745,7 +2830,9 @@ function modfarm_handle_custom_font_upload(): void {
         'fontStyle'   => $style,
         'fontWeight'  => $weight,
         'fontDisplay' => 'swap',
-        'src'         => esc_url_raw((string) $upload['url']),
+        // Inherit the page scheme so multisite/reverse-proxy installations
+        // cannot persist an HTTP font URL that browsers block on HTTPS pages.
+        'src'         => set_url_scheme(esc_url_raw((string) $upload['url']), 'relative'),
     ];
     $face_id = wp_insert_post([
         'post_type'    => 'wp_font_face',
@@ -2765,6 +2852,20 @@ function modfarm_handle_custom_font_upload(): void {
     add_post_meta((int) $face_id, '_wp_font_face_file', $relative_file);
     add_post_meta((int) $face_id, '_modfarm_managed_font', '1');
 
+    $registry = get_option('modfarm_custom_fonts', []);
+    if (!is_array($registry)) {
+        $registry = [];
+    }
+    if (empty($registry[$family]) || !is_array($registry[$family])) {
+        $registry[$family] = ['label' => $family, 'faces' => []];
+    }
+    if (empty($registry[$family]['faces']) || !is_array($registry[$family]['faces'])) {
+        $registry[$family]['faces'] = [];
+    }
+    $registry[$family]['label'] = $family;
+    $registry[$family]['faces'][] = $face_settings;
+    update_option('modfarm_custom_fonts', $registry, false);
+
     modfarm_custom_font_redirect('success', sprintf(__('“%s” is now available in the ModFarm font pickers.', 'modfarm'), $family));
 }
 add_action('admin_post_modfarm_upload_custom_font', 'modfarm_handle_custom_font_upload');
@@ -2773,14 +2874,11 @@ add_action('admin_post_modfarm_upload_custom_font', 'modfarm_handle_custom_font_
  * Register installed local faces using WordPress' validated font-face printer.
  */
 function modfarm_print_installed_custom_font_faces(): void {
-    if (!function_exists('wp_print_font_faces')) {
-        return;
-    }
     if (is_admin() && sanitize_key(wp_unslash((string) ($_GET['page'] ?? ''))) !== 'modfarm_theme_settings') {
         return;
     }
 
-    $fonts = [];
+    $css = '';
     foreach (modfarm_get_installed_custom_fonts() as $family => $font) {
         foreach ($font['faces'] as $face) {
             $sources = is_array($face['src']) ? $face['src'] : [$face['src']];
@@ -2789,18 +2887,37 @@ function modfarm_print_installed_custom_font_faces(): void {
                 continue;
             }
 
-            $fonts[$family][] = [
-                'font-family' => $family,
-                'src'         => count($sources) === 1 ? $sources[0] : $sources,
-                'font-style'  => sanitize_key((string) ($face['fontStyle'] ?? 'normal')),
-                'font-weight' => sanitize_text_field((string) ($face['fontWeight'] ?? '400')),
-                'font-display'=> sanitize_key((string) ($face['fontDisplay'] ?? 'swap')),
-            ];
+            $family_css = str_replace(["\\", "'"], ['', "\\'"], $family);
+            $style = in_array(($face['fontStyle'] ?? 'normal'), ['normal', 'italic'], true)
+                ? (string) $face['fontStyle']
+                : 'normal';
+            $weight = preg_match('/^(?:[1-9]00|normal|bold)$/', (string) ($face['fontWeight'] ?? '400'))
+                ? (string) $face['fontWeight']
+                : '400';
+
+            foreach ($sources as $source) {
+                // Also repair fonts uploaded before scheme normalization was
+                // introduced. A // URL inherits HTTPS from the current page.
+                $source = set_url_scheme($source, 'relative');
+                $path = (string) wp_parse_url($source, PHP_URL_PATH);
+                $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                $formats = [
+                    'ttf' => 'truetype',
+                    'otf' => 'opentype',
+                    'woff' => 'woff',
+                    'woff2' => 'woff2',
+                ];
+                if (!isset($formats[$extension])) {
+                    continue;
+                }
+                $source_css = str_replace(["\\", "'", "\r", "\n"], ['', '%27', '', ''], $source);
+                $css .= "@font-face{font-family:'{$family_css}';src:url('{$source_css}') format('{$formats[$extension]}');font-style:{$style};font-weight:{$weight};font-display:swap;}";
+            }
         }
     }
 
-    if ($fonts) {
-        wp_print_font_faces($fonts);
+    if ($css !== '') {
+        echo '<style id="modfarm-custom-font-faces">' . wp_strip_all_tags($css) . '</style>';
     }
 }
 add_action('wp_head', 'modfarm_print_installed_custom_font_faces', 8);
@@ -3094,6 +3211,45 @@ function modfarm_render_settings_page() {
                                             <tr>
                                                 <th scope="row"><label>Navigation Font</label></th>
                                                 <td><?php modfarm_font_dropdown(['id' => 'nav_font']); ?></td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="mf-settings-group">
+                                        <h3 class="mf-group-title">Upload Custom Font</h3>
+                                        <p class="description">Install a local WOFF2, WOFF, TTF, or OTF face. It will appear in all four ModFarm font pickers above. Add each weight or italic face separately under the same family name.</p>
+                                        <table class="form-table mf-form-table">
+                                            <tbody>
+                                            <tr>
+                                                <th scope="row"><label for="modfarm-font-family">Family Name</label></th>
+                                                <td><input form="modfarm-font-upload-form" id="modfarm-font-family" name="font_family" type="text" class="regular-text" maxlength="100" required placeholder="Example Sans"></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label for="modfarm-font-weight">Weight</label></th>
+                                                <td>
+                                                    <select form="modfarm-font-upload-form" id="modfarm-font-weight" name="font_weight">
+                                                        <?php foreach (['100','200','300','400','500','600','700','800','900'] as $font_weight) : ?>
+                                                            <option value="<?php echo esc_attr($font_weight); ?>" <?php selected($font_weight, '400'); ?>><?php echo esc_html($font_weight); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label for="modfarm-font-style">Style</label></th>
+                                                <td>
+                                                    <select form="modfarm-font-upload-form" id="modfarm-font-style" name="font_style">
+                                                        <option value="normal">Normal</option>
+                                                        <option value="italic">Italic</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label for="modfarm-font-file">Font File</label></th>
+                                                <td>
+                                                    <input form="modfarm-font-upload-form" id="modfarm-font-file" name="font_file" type="file" accept=".woff2,.woff,.ttf,.otf" required>
+                                                    <p><button form="modfarm-font-upload-form" type="submit" class="button button-secondary">Upload Font Face</button></p>
+                                                </td>
                                             </tr>
                                             </tbody>
                                         </table>
@@ -3588,45 +3744,6 @@ function modfarm_render_settings_page() {
                                             <tr>
                                                 <th scope="row"><label>Post Footer Pattern</label></th>
                                                 <td><?php modfarm_pattern_dropdown(['id' => 'post_footer_pattern']); ?></td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div class="mf-settings-group">
-                                        <h3 class="mf-group-title">Upload Custom Font</h3>
-                                        <p class="description">Install a local WOFF2, WOFF, TTF, or OTF face. It will appear in all four ModFarm font pickers above. Add each weight or italic face separately under the same family name.</p>
-                                        <table class="form-table mf-form-table">
-                                            <tbody>
-                                            <tr>
-                                                <th scope="row"><label for="modfarm-font-family">Family Name</label></th>
-                                                <td><input form="modfarm-font-upload-form" id="modfarm-font-family" name="font_family" type="text" class="regular-text" maxlength="100" required placeholder="Example Sans"></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label for="modfarm-font-weight">Weight</label></th>
-                                                <td>
-                                                    <select form="modfarm-font-upload-form" id="modfarm-font-weight" name="font_weight">
-                                                        <?php foreach (['100','200','300','400','500','600','700','800','900'] as $font_weight) : ?>
-                                                            <option value="<?php echo esc_attr($font_weight); ?>" <?php selected($font_weight, '400'); ?>><?php echo esc_html($font_weight); ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label for="modfarm-font-style">Style</label></th>
-                                                <td>
-                                                    <select form="modfarm-font-upload-form" id="modfarm-font-style" name="font_style">
-                                                        <option value="normal">Normal</option>
-                                                        <option value="italic">Italic</option>
-                                                    </select>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label for="modfarm-font-file">Font File</label></th>
-                                                <td>
-                                                    <input form="modfarm-font-upload-form" id="modfarm-font-file" name="font_file" type="file" accept=".woff2,.woff,.ttf,.otf" required>
-                                                    <p><button form="modfarm-font-upload-form" type="submit" class="button button-secondary">Upload Font Face</button></p>
-                                                </td>
                                             </tr>
                                             </tbody>
                                         </table>
@@ -4145,17 +4262,25 @@ function modfarm_output_facebook_pixel(): void {
         return;
     }
     ?>
-    <!-- Meta Pixel Code -->
+    <!-- Facebook Pixel Code -->
     <script>
-    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-    (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window,document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
     fbq('init', <?php echo wp_json_encode($pixel_id); ?>);
     fbq('track', 'PageView');
     </script>
-    <!-- End Meta Pixel Code -->
+    <noscript>
+        <img height="1" width="1" style="display:none"
+             src="https://www.facebook.com/tr?id=<?php echo $pixel_id; ?>&ev=PageView&noscript=1"
+             alt="">
+    </noscript>
+    <!-- End Facebook Pixel Code -->
     <?php
 }
 add_action('wp_head', 'modfarm_output_facebook_pixel', 20);

@@ -40,6 +40,23 @@ add_filter('block_editor_settings_all', function (array $settings): array {
     return $settings;
 });
 
+// WordPress 7.0 added a separate Appearance > Fonts screen that is not
+// controlled by fontLibraryEnabled. Remove both the Core and Gutenberg slugs.
+add_action('admin_menu', function (): void {
+    remove_submenu_page('themes.php', 'font-library.php');
+    remove_submenu_page('themes.php', 'font-library-wp-admin');
+}, 999);
+
+function modfarm_block_native_font_library_screen(): void {
+    wp_die(
+        esc_html__('Fonts are managed in ModFarm Settings → Theme & Fonts.', 'modfarm-author'),
+        esc_html__('Font management moved', 'modfarm-author'),
+        ['response' => 403, 'back_link' => true]
+    );
+}
+add_action('load-appearance_page_font-library', 'modfarm_block_native_font_library_screen');
+add_action('load-appearance_page_font-library-wp-admin', 'modfarm_block_native_font_library_screen');
+
 require_once get_template_directory() . '/inc/content-slot-payloads.php';
 
 add_action('after_setup_theme', function() {
@@ -1712,10 +1729,14 @@ add_action('wp_head', function () {
     // typography rules here as well so saved ModFarm choices win on every
     // classic, hybrid, and block-template frontend path.
     echo '<style id="modfarm-global-typography">';
-    echo 'body{font-family:var(--mf-body-font,sans-serif);}';
-    echo 'body :where(h1,h2,h3,h4,h5,h6,.wp-block-post-title,.wp-block-query-title){font-family:var(--mf-heading-font,serif);}';
-    echo 'body :where(.wp-block-site-title,.wp-block-site-title a,.mfs-brand__text,.site-title,.site-title a){font-family:var(--mf-site-title-font,var(--mf-body-font,sans-serif));}';
-    echo 'body :where(.wp-block-navigation,.modfarm-menu){font-family:var(--mf-nav-font,var(--mf-body-font,sans-serif));}';
+    $typography_css = sprintf(
+        'body{font-family:%1$s!important;}body :where(h1,h2,h3,h4,h5,h6,.wp-block-post-title,.wp-block-query-title){font-family:%2$s!important;}body :where(.wp-block-site-title,.wp-block-site-title a,.mfs-brand__text,.site-title,.site-title a){font-family:%3$s!important;}body :where(.wp-block-navigation,.wp-block-navigation-item,.wp-block-navigation-item__content,.modfarm-menu,.modfarm-menu a){font-family:%4$s!important;}',
+        modfarm_font_css_value(modfarm_effective_font_family($settings['body_font'] ?? '')),
+        modfarm_font_css_value(modfarm_effective_font_family($settings['heading_font'] ?? '', 'Merriweather')),
+        modfarm_font_css_value(modfarm_effective_font_family($settings['site_title_font'] ?? '')),
+        modfarm_font_css_value(modfarm_effective_font_family($settings['nav_font'] ?? ''))
+    );
+    echo wp_strip_all_tags($typography_css);
     echo '</style>';
 }, 99);
 
