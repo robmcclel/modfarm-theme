@@ -1,8 +1,14 @@
 <?php
 
 function modfarm_render_book_page_sales_links_block($attributes, $content, $block) {
-    $post_id = get_the_ID();
-    if (get_post_type($post_id) !== 'book') {
+    $manual_source = ($attributes['sourceMode'] ?? 'current') === 'manual';
+    $post_id = $manual_source
+        ? absint($attributes['bookId'] ?? 0)
+        : absint($block->context['postId'] ?? get_the_ID());
+    if (!$post_id || get_post_type($post_id) !== 'book') {
+        return '';
+    }
+    if ($manual_source && get_post_status($post_id) !== 'publish' && !current_user_can('read_post', $post_id)) {
         return '';
     }
 
@@ -38,6 +44,30 @@ function modfarm_render_book_page_sales_links_block($attributes, $content, $bloc
         'spotify'          => 'Spotify',
     ];
 
+    // Several formats share a retailer logo. Missing artwork remains a text link.
+    $monochrome_icons = [
+        'kindle_url' => 'kindle',
+        'amazon_paper' => 'amazon', 'amazon_hard' => 'amazon', 'amazon_audio' => 'amazon',
+        'audible_url' => 'audible', 'nook' => 'nook',
+        'barnes_paper' => 'barnes', 'barnes_hard' => 'barnes', 'barnes_audio' => 'nook-audio',
+        'ibooks' => 'ibooks', 'itunes' => 'itunes',
+        'kobo' => 'kobo', 'kobo_audio' => 'kobo',
+        'googleplay' => 'google-play', 'googleplay_audio' => 'google-play',
+        'bookshop_ebook' => 'bookshop', 'bookshop_paper' => 'bookshop', 'bookshop_hard' => 'bookshop',
+        'bam_paper' => 'bam', 'bam_hard' => 'bam',
+        'indigo' => 'indigo', 'waterstones' => 'waterstones',
+    ];
+    $retailer_names = [
+        'kindle_url' => 'Kindle', 'amazon_paper' => 'Amazon Paperback',
+        'amazon_hard' => 'Amazon Hardcover', 'amazon_audio' => 'Amazon Audio',
+        'audible_url' => 'Audible', 'nook' => 'B&N Nook',
+        'barnes_paper' => 'B&N Paperback', 'barnes_hard' => 'B&N Hardcover', 'barnes_audio' => 'B&N Audio',
+        'ibooks' => 'Apple Books', 'itunes' => 'iTunes', 'kobo' => 'Kobo eBook', 'kobo_audio' => 'Kobo Audio',
+        'googleplay' => 'Google Play eBook', 'googleplay_audio' => 'Google Play Audio',
+        'bookshop_ebook' => 'Bookshop eBook', 'bookshop_paper' => 'Bookshop Paperback', 'bookshop_hard' => 'Bookshop Hardcover',
+        'bam_paper' => 'Books-A-Million Paperback', 'bam_hard' => 'Books-A-Million Hardcover',
+    ];
+
     // ===== Attributes =====
     $introText   = $attributes['introText']   ?? '';
     $textColor   = trim($attributes['textColor'] ?? '');
@@ -52,6 +82,8 @@ function modfarm_render_book_page_sales_links_block($attributes, $content, $bloc
     $radius      = (int)($attributes['borderRadius'] ?? 4);
     $autoDetect  = !empty($attributes['autoDetect']);
     $showLabels  = !empty($attributes['showLabels']);
+    $monochrome  = ($attributes['colorMode'] ?? 'native') === 'monotone';
+    $iconColor   = trim((string)($attributes['monotoneColor'] ?? ''));
     $buttonPath  = rtrim((string)($attributes['buttonPath'] ?? ''), '/') . '/';
 
     // Fallback to default icon path in theme
@@ -64,6 +96,7 @@ function modfarm_render_book_page_sales_links_block($attributes, $content, $bloc
         'mf-sales-links',
         'mfsales',
         'mfsales--align-' . $linksAlign,
+        $monochrome ? 'mfsales--monotone' : 'mfsales--native',
     ];
 
     printf(
@@ -119,13 +152,14 @@ function modfarm_render_book_page_sales_links_block($attributes, $content, $bloc
     }
 
     if (empty($buttons)) {
-        echo '<div></div>';
+        echo '</div>';
         return ob_get_clean();
     }
 
     echo '<div class="mf-retailer-icon-row mfsales__row">';
 
     foreach ($buttons as $btn) {
+        $accessible_label = $retailer_names[$btn['key']] ?? $btn['label'];
         $icon_filename    = $btn['key'] . '.jpg';
         $custom_icon_url  = $buttonPath . $icon_filename;
 
@@ -183,9 +217,24 @@ function modfarm_render_book_page_sales_links_block($attributes, $content, $bloc
             . ' data-mf-destination="' . esc_attr($destination) . '"'
             . ' href="' . esc_url($href) . '"'
             . ' target="_blank" rel="noopener noreferrer"'
-            . ' title="' . esc_attr($btn['label']) . '">';
+            . ' aria-label="' . esc_attr($accessible_label) . '"'
+            . ' title="' . esc_attr($accessible_label) . '">';
 
-        echo '<img src="' . esc_url($final_icon_url) . '" alt="' . esc_attr($btn['label']) . '" style="width:' . (int)$size . 'px; height:' . (int)$size . 'px; border-radius:' . (int)$radius . 'px;" />';
+        if ($monochrome) {
+            $icon_name = $monochrome_icons[$btn['key']] ?? $btn['key'];
+            $icon_relative = 'blocks/book-page-sales-links/cbg-images/' . $icon_name . '.png';
+            $color_style = $iconColor !== '' ? safecss_filter_attr('color:' . $iconColor) : '';
+            if (file_exists(trailingslashit(get_template_directory()) . $icon_relative)) {
+                $mask_url = esc_url(trailingslashit(get_template_directory_uri()) . $icon_relative);
+                $icon_style = '--mfsales-mask:url(' . wp_json_encode($mask_url) . ');width:' . $size . 'px;height:' . $size . 'px;' . $color_style;
+                echo '<span class="mfsales__monochrome-icon" aria-hidden="true" style="' . esc_attr($icon_style) . '"></span>';
+            } else {
+                echo '<span class="mfsales__text-icon" style="' . esc_attr($color_style) . '">' . esc_html($accessible_label) . '</span>';
+                $label_html = ''; // The fallback already identifies the retailer.
+            }
+        } else {
+            echo '<img src="' . esc_url($final_icon_url) . '" alt="' . esc_attr($accessible_label) . '" style="width:' . (int)$size . 'px; height:' . (int)$size . 'px; border-radius:' . (int)$radius . 'px;" />';
+        }
         echo $label_html;
         echo '</a>';
     }

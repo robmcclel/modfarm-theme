@@ -8,10 +8,13 @@
     SelectControl,
     TextControl,
     ToggleControl,
-    RangeControl
+    RangeControl,
+    ComboboxControl,
+    Notice,
+    Spinner
   } = wp.components;
 
-  const { Fragment, createElement: el } = wp.element;
+  const { Fragment, createElement: el, useState, useEffect } = wp.element;
   const { addFilter } = wp.hooks;
   const ServerSideRender = wp.serverSideRender;
 
@@ -88,6 +91,45 @@
     edit: (props) => {
       const blockProps = useBlockProps();
       const { attributes, setAttributes, isSelected } = props;
+      const [bookSearch, setBookSearch] = useState('');
+      const [books, setBooks] = useState([]);
+      const [loadingBooks, setLoadingBooks] = useState(false);
+      const [bookError, setBookError] = useState('');
+      const manualSource = attributes.sourceMode === 'manual';
+      const contextPostId = props.context && props.context.postId;
+
+      useEffect(() => {
+        if (!manualSource) return;
+        let active = true;
+        setLoadingBooks(true);
+        setBookError('');
+        const timer = setTimeout(() => {
+          const requests = [wp.apiFetch({
+            path: `/wp/v2/book?status=publish&per_page=20&orderby=title&order=asc&_fields=id,title&search=${encodeURIComponent(bookSearch.trim())}`
+          })];
+          if (attributes.bookId) requests.push(wp.apiFetch({
+            path: `/wp/v2/book?include=${attributes.bookId}&_fields=id,title`
+          }));
+          Promise.all(requests).then(results => {
+            if (!active) return;
+            const byId = new Map();
+            results.forEach(list => list.forEach(book => byId.set(book.id, book)));
+            setBooks(Array.from(byId.values()));
+          }).catch(() => {
+            if (active) {
+              setBooks([]);
+              setBookError('Unable to load books. Try searching again.');
+            }
+          }).finally(() => { if (active) setLoadingBooks(false); });
+        }, 250);
+        return () => { active = false; clearTimeout(timer); };
+      }, [manualSource, bookSearch, attributes.bookId]);
+
+      const bookOptions = books.map(book => {
+        const title = document.createElement('div');
+        title.innerHTML = book.title.rendered || '';
+        return { value: String(book.id), label: `${title.textContent || 'Untitled'} (#${book.id})` };
+      });
 
       const renderRetailerSelects = () => {
         // Manual UI should be "closed" unless block is selected (simple-gallery behavior)
@@ -115,6 +157,28 @@
         el(
           InspectorControls,
           {},
+          el(PanelBody, { title: __('Book Source', 'modfarm'), initialOpen: true },
+            el(SelectControl, {
+              label: __('Source', 'modfarm'),
+              value: attributes.sourceMode || 'current',
+              options: [
+                { label: 'Current book', value: 'current' },
+                { label: 'Select a book', value: 'manual' }
+              ],
+              onChange: value => setAttributes({ sourceMode: value }),
+              help: 'Select a book to use these purchase links on a landing page, home page, or other page.'
+            }),
+            manualSource && el(ComboboxControl, {
+              label: __('Book', 'modfarm'),
+              value: attributes.bookId ? String(attributes.bookId) : null,
+              options: bookOptions,
+              onFilterValueChange: setBookSearch,
+              onChange: value => setAttributes({ bookId: parseInt(value, 10) || 0 }),
+              help: 'Search published books by title.'
+            }),
+            manualSource && loadingBooks && el(Spinner),
+            manualSource && bookError && el(Notice, { status: 'warning', isDismissible: false }, bookError)
+          ),
           el(
             PanelBody,
             { title: "Settings", initialOpen: true },
@@ -166,8 +230,28 @@
                 onChange: (val) => setAttributes({ textColor: val || '' })
               }]
             }),
+            el(SelectControl, {
+              label: __('Icon color mode', 'modfarm'),
+              value: attributes.colorMode || 'native',
+              options: [
+                { label: 'Native colors', value: 'native' },
+                { label: 'Monochrome', value: 'monotone' }
+              ],
+              onChange: value => setAttributes({ colorMode: value }),
+              help: attributes.colorMode === 'monotone' ? 'Retailers without a transparent icon appear as text links.' : undefined
+            }),
+            attributes.colorMode === 'monotone' && el(wp.blockEditor.PanelColorSettings, {
+              title: __('Icon Color', 'modfarm'),
+              colorSettings: [{
+                label: 'Monochrome color (clear to inherit)',
+                value: attributes.monotoneColor || '',
+                onChange: value => setAttributes({ monotoneColor: value || '' })
+              }]
+            }),
             el(TextControl, {
               label: "Custom Icon Path",
+              disabled: attributes.colorMode === 'monotone',
+              help: 'Applies to native color icons. Monochrome uses the bundled transparent icons.',
               value: attributes.buttonPath || '',
               onChange: (val) => setAttributes({ buttonPath: val })
             }),
@@ -191,9 +275,14 @@
           'div',
           blockProps,
           renderRetailerSelects(),
+          manualSource && !attributes.bookId && el(Notice, { status: 'info', isDismissible: false }, 'Select a book in Book Source to display its purchase links.'),
           el(ServerSideRender, {
             block: "modfarm/book-page-sales-links",
-            attributes: attributes
+            attributes: attributes,
+            urlQueryArgs: contextPostId ? { post_id: contextPostId } : undefined,
+            EmptyResponsePlaceholder: () => el('p', {}, manualSource
+              ? 'Choose a valid book with retailer links in Book Source.'
+              : 'Use this block on a book, or select a book in Book Source.')
           })
         )
       );
