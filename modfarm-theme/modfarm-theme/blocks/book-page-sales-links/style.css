@@ -2,7 +2,16 @@
 
 .mfsales .mfsales__monochrome-icon {
   display: block;
+  position: relative;
+  overflow: hidden;
   background-color: currentColor;
+}
+
+.mfsales .mfsales__monochrome-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: #fff;
   -webkit-mask: var(--mfsales-mask) center / contain no-repeat;
   mask: var(--mfsales-mask) center / contain no-repeat;
 }

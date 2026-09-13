@@ -238,12 +238,12 @@
                 { label: 'Monochrome', value: 'monotone' }
               ],
               onChange: value => setAttributes({ colorMode: value }),
-              help: attributes.colorMode === 'monotone' ? 'Retailers without a transparent icon appear as text links.' : undefined
+              help: attributes.colorMode === 'monotone' ? 'White icons on a shared colored background. Retailers without artwork appear as text links.' : undefined
             }),
             attributes.colorMode === 'monotone' && el(wp.blockEditor.PanelColorSettings, {
-              title: __('Icon Color', 'modfarm'),
+              title: __('Icon Background Color', 'modfarm'),
               colorSettings: [{
-                label: 'Monochrome color (clear to inherit)',
+                label: 'Background color (clear to use surrounding text color)',
                 value: attributes.monotoneColor || '',
                 onChange: value => setAttributes({ monotoneColor: value || '' })
               }]

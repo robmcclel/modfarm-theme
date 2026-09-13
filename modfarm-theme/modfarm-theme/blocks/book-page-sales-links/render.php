@@ -83,7 +83,7 @@ function modfarm_render_book_page_sales_links_block($attributes, $content, $bloc
     $autoDetect  = !empty($attributes['autoDetect']);
     $showLabels  = !empty($attributes['showLabels']);
     $monochrome  = ($attributes['colorMode'] ?? 'native') === 'monotone';
-    $iconColor   = trim((string)($attributes['monotoneColor'] ?? ''));
+    $backgroundColor = trim((string)($attributes['monotoneColor'] ?? ''));
     $buttonPath  = rtrim((string)($attributes['buttonPath'] ?? ''), '/') . '/';
 
     // Fallback to default icon path in theme
@@ -223,10 +223,11 @@ function modfarm_render_book_page_sales_links_block($attributes, $content, $bloc
         if ($monochrome) {
             $icon_name = $monochrome_icons[$btn['key']] ?? $btn['key'];
             $icon_relative = 'blocks/book-page-sales-links/cbg-images/' . $icon_name . '.png';
-            $color_style = $iconColor !== '' ? safecss_filter_attr('color:' . $iconColor) : '';
+            // currentColor paints the tile; the logo mask stays white in CSS.
+            $color_style = $backgroundColor !== '' ? safecss_filter_attr('color:' . $backgroundColor) : '';
             if (file_exists(trailingslashit(get_template_directory()) . $icon_relative)) {
                 $mask_url = esc_url(trailingslashit(get_template_directory_uri()) . $icon_relative);
-                $icon_style = '--mfsales-mask:url(' . wp_json_encode($mask_url) . ');width:' . $size . 'px;height:' . $size . 'px;' . $color_style;
+                $icon_style = '--mfsales-mask:url(' . wp_json_encode($mask_url) . ');width:' . $size . 'px;height:' . $size . 'px;border-radius:' . max(0, $radius) . 'px;' . $color_style;
                 echo '<span class="mfsales__monochrome-icon" aria-hidden="true" style="' . esc_attr($icon_style) . '"></span>';
             } else {
                 echo '<span class="mfsales__text-icon" style="' . esc_attr($color_style) . '">' . esc_html($accessible_label) . '</span>';

@@ -11,13 +11,15 @@ up to six retailers in order. An empty or invalid manual selection does not fall
 back to the current book. Unpublished selections are hidden from visitors without
 permission to read the book.
 
-Choose **Icon color mode > Monochrome** to use transparent PNG masks from
-`cbg-images`. Set **Icon Color** or clear it to inherit the surrounding text color.
+Choose **Icon color mode > Monochrome** for white logos on colored square tiles,
+using the transparent PNG artwork from `cbg-images`. Set **Icon Background Color**
+or clear it to use the surrounding text color for the tile background. Logos stay
+white. Button size and icon border radius apply to the tiles.
 The custom icon path applies only to native artwork. Shared retailer logos cover
 multiple formats; enable retailer labels to identify formats visually.
 
 Transparent assets are present for all supported retailers. Retailer filenames
 are recognized automatically, with shared logos mapped to multiple formats.
 If an asset is removed, its link falls back to a readable retailer name.
-Keep the background transparent; the mask uses the image alpha channel, so white
-artwork works with any chosen color.
+Keep the artwork background transparent; the mask uses the image alpha channel
+to draw a white logo over the chosen tile color.
