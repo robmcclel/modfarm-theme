@@ -289,6 +289,7 @@
 .mf-theme-visualizer__site-title {
   overflow: hidden;
   font-family: var(--mf-preview-site-title-font, inherit);
+  font-size: var(--mf-preview-site-title-size, inherit);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

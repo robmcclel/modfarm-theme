@@ -299,6 +299,7 @@ function modfarm_register_settings() {
     add_settings_field('heading_font',     'Heading Font',     'modfarm_font_dropdown',  'modfarm_theme_settings', 'modfarm_section_fonts',      ['id' => 'heading_font']);
     add_settings_field('body_font',        'Body Font',        'modfarm_font_dropdown',  'modfarm_theme_settings', 'modfarm_section_fonts',      ['id' => 'body_font']);
     add_settings_field('site_title_font',  'Site Title Font',  'modfarm_font_dropdown',  'modfarm_theme_settings', 'modfarm_section_fonts',      ['id' => 'site_title_font']);
+    add_settings_field('site_title_font_size', 'Site Title Font Size', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_fonts', ['id' => 'site_title_font_size']);
     add_settings_field('nav_font',         'Navigation Font',  'modfarm_font_dropdown',  'modfarm_theme_settings', 'modfarm_section_fonts',      ['id' => 'nav_font']);
 
     // === Navigation (existing) ===
@@ -2370,6 +2371,7 @@ function modfarm_sanitize_settings($settings) {
         'heading_font',
         'body_font',
         'site_title_font',
+        'site_title_font_size',
         'nav_font',
         'facebook_pixel_id',
         'nav_font_size',
@@ -2506,6 +2508,7 @@ function modfarm_sanitize_settings($settings) {
             case 'nav_icon_max_height':
             case 'nav_brand_gap':
             case 'nav_font_size':
+            case 'site_title_font_size':
             case 'book_page_button_border_width':
             case 'book_page_button_radius':
                 $num = intval($val);
@@ -2874,8 +2877,13 @@ add_action('admin_post_modfarm_upload_custom_font', 'modfarm_handle_custom_font_
  * Register installed local faces using WordPress' validated font-face printer.
  */
 function modfarm_print_installed_custom_font_faces(): void {
-    if (is_admin() && sanitize_key(wp_unslash((string) ($_GET['page'] ?? ''))) !== 'modfarm_theme_settings') {
-        return;
+    if (is_admin()) {
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        $is_block_editor = $screen && method_exists($screen, 'is_block_editor') && $screen->is_block_editor();
+        $is_settings_page = sanitize_key(wp_unslash((string) ($_GET['page'] ?? ''))) === 'modfarm_theme_settings';
+        if (!$is_block_editor && !$is_settings_page) {
+            return;
+        }
     }
 
     $css = '';
@@ -2922,6 +2930,33 @@ function modfarm_print_installed_custom_font_faces(): void {
 }
 add_action('wp_head', 'modfarm_print_installed_custom_font_faces', 8);
 add_action('admin_head', 'modfarm_print_installed_custom_font_faces', 8);
+
+// Gutenberg's canvas is an iframe, so admin_head alone cannot make uploaded
+// faces available to block typography previews. Attach the same validated CSS
+// to an editor stylesheet that WordPress loads inside the canvas.
+function modfarm_enqueue_custom_font_faces_for_block_editor(): void {
+    if (!is_admin()) {
+        return;
+    }
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || !method_exists($screen, 'is_block_editor') || !$screen->is_block_editor()) {
+        return;
+    }
+
+    ob_start();
+    modfarm_print_installed_custom_font_faces();
+    $style_tag = (string) ob_get_clean();
+    if ($style_tag === '') {
+        return;
+    }
+    $css = preg_replace('/^<style[^>]*>|<\/style>$/', '', $style_tag);
+    if (!is_string($css) || $css === '') {
+        return;
+    }
+    wp_enqueue_style('wp-block-library');
+    wp_add_inline_style('wp-block-library', $css);
+}
+add_action('enqueue_block_assets', 'modfarm_enqueue_custom_font_faces_for_block_editor', 9);
 
 
 /**
@@ -3209,6 +3244,13 @@ function modfarm_render_settings_page() {
                                                 <td><?php modfarm_font_dropdown(['id' => 'site_title_font']); ?></td>
                                             </tr>
                                             <tr>
+                                                <th scope="row"><label>Site Title Font Size</label></th>
+                                                <td>
+                                                    <?php modfarm_text_field(['id' => 'site_title_font_size']); ?>
+                                                    <p class="description">Optional; numeric pixels (e.g. <code>32</code>).</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
                                                 <th scope="row"><label>Navigation Font</label></th>
                                                 <td><?php modfarm_font_dropdown(['id' => 'nav_font']); ?></td>
                                             </tr>
@@ -3218,7 +3260,7 @@ function modfarm_render_settings_page() {
 
                                     <div class="mf-settings-group">
                                         <h3 class="mf-group-title">Upload Custom Font</h3>
-                                        <p class="description">Install a local WOFF2, WOFF, TTF, or OTF face. It will appear in all four ModFarm font pickers above. Add each weight or italic face separately under the same family name.</p>
+                                        <p class="description">Install a local WOFF2, WOFF, TTF, or OTF face. It will appear in the ModFarm font pickers above and in block typography controls. Add each weight or italic face separately under the same family name.</p>
                                         <table class="form-table mf-form-table">
                                             <tbody>
                                             <tr>

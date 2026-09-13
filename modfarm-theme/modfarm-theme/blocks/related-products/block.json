@@ -13,6 +13,7 @@
     "showHeading": { "type": "boolean", "default": true },
     "taxonomy": { "type": "string", "default": "" },
     "manualIds": { "type": "array", "default": [] },
+    "sourceMode": { "type": "string", "default": "" },
     "productsPerPage": { "type": "number", "default": 3 },
     "columns": { "type": "number", "default": 3 },
     "displayLayout": { "type": "string", "default": "grid" },

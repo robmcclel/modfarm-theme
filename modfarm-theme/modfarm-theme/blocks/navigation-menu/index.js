@@ -11,14 +11,11 @@
   } = wp.components;
   const { useState, useEffect } = wp.element;
 
-  const FONT_OPTIONS = [
-    { label: 'Inherit', value: 'inherit' },
-    { label: 'Inter', value: 'Inter' },
-    { label: 'Merriweather', value: 'Merriweather' },
-    { label: 'Roboto', value: 'Roboto' },
-    { label: 'Georgia', value: 'Georgia' },
-    { label: 'Lora', value: 'Lora' }
-  ];
+  const FONT_OPTIONS = [{ label: 'Inherit', value: 'inherit' }].concat(
+    window.modfarmNavigationFonts && Array.isArray(window.modfarmNavigationFonts.fonts)
+      ? window.modfarmNavigationFonts.fonts
+      : []
+  );
 
   // Register (or override) the block with the new attribute.
   wp.blocks.registerBlockType('modfarm/navigation-menu', {

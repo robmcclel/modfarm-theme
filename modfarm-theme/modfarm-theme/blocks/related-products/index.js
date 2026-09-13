@@ -245,6 +245,7 @@
       const { attributes, setAttributes } = props;
       const blockProps = useBlockProps();
       const manualIds = sanitizeIds(attributes.manualIds);
+      const sourceMode = attributes.sourceMode || (manualIds.length ? 'manual' : 'automatic');
       const displayLayout = attributes.displayLayout || 'grid';
       const isHorizontal = displayLayout === 'horizontal';
       const [taxonomies, setTaxonomies] = useState([]);
@@ -296,33 +297,34 @@
             })
           ),
           el(PanelBody, { title: __('Source', 'modfarm'), initialOpen: true },
-            el(Notice, { status: 'info', isDismissible: false },
-              __('Manual Offers are used first, followed by matching Core Promotions. The selected taxonomy fallback is used only when neither source finds Offers.', 'modfarm')
-            ),
-            el(OfferSearch, {
-              label: __('Current Offer fallback', 'modfarm'),
-              help: __('Optional. Used only to avoid showing the current Offer in fallback results.', 'modfarm'),
-              onPick: function (id) { setAttributes({ offerId: id }); }
+            el(SelectControl, {
+              label: __('Recommendations', 'modfarm'),
+              value: sourceMode,
+              options: [
+                { label: __('Automatic for this Book or Offer', 'modfarm'), value: 'automatic' },
+                { label: __('Choose Offers manually', 'modfarm'), value: 'manual' }
+              ],
+              onChange: function (value) { setAttributes({ sourceMode: value }); }
             }),
-            attributes.offerId ? el(Notice, { status: 'info', isDismissible: false }, __('Current Offer fallback selected: ', 'modfarm') + `#${attributes.offerId}`) : null,
-            attributes.offerId ? el(Button, {
-              variant: 'secondary',
-              onClick: function () { setAttributes({ offerId: 0 }); }
-            }, __('Clear current Offer fallback', 'modfarm')) : null,
-            el('hr', null),
-            el(OfferSearch, {
-              label: __('Manual Offers override', 'modfarm'),
-              help: __('Optional. Pick Offers only when this block should ignore Core Promotions.', 'modfarm'),
+            el(Notice, { status: 'info', isDismissible: false },
+              sourceMode === 'manual'
+                ? __('Only your selected Offers appear, in the order below. These selections belong to this block.', 'modfarm')
+                : __('On a Book: show Offers promoted by that Book and applicable Series or Author relationships. On an Offer: use direct cross-promotions first, then its related Book. The current Offer is excluded. Set relationships in the recommended Offer’s Promoted By panel.', 'modfarm')
+            ),
+            sourceMode === 'manual' && el(OfferSearch, {
+              label: __('Find an Offer to recommend', 'modfarm'),
+              help: __('Type at least 3 characters of an Offer title, then select a search result. Repeat to add more.', 'modfarm'),
               onPick: addOffer
             }),
-            el(PickedOffers, {
+            sourceMode === 'manual' && el(PickedOffers, {
               ids: manualIds,
               onRemove: function (id) { setAttributes({ manualIds: manualIds.filter(function (x) { return x !== id; }) }); },
               onClear: function () { setAttributes({ manualIds: [] }); },
               onMove: moveOffer
             }),
-            el(ComboboxControl, {
-              label: __('Fallback taxonomy', 'modfarm'),
+            sourceMode === 'automatic' && el(ComboboxControl, {
+              label: __('If no promotions match', 'modfarm'),
+              help: __('On Offer pages, match terms from the current Offer in this taxonomy. On Book pages, use promotions or Any published Offers. Fallbacks do not fill unused spaces after a promotion match.', 'modfarm'),
               value: attributes.taxonomy || '__none__',
               options: taxonomyOptions,
               onChange: function (value) {
@@ -343,6 +345,18 @@
               max: 6,
               onChange: function (value) { setAttributes({ columns: value || 3 }); }
             })
+          ),
+          el(PanelBody, { title: __('Advanced source override', 'modfarm'), initialOpen: false },
+            el(OfferSearch, {
+              label: __('Use a different Offer as the source', 'modfarm'),
+              help: __('Normally leave blank: the current Book or Offer is detected automatically. Type 3+ title characters to override it. This Offer supplies promotion context and taxonomy terms, and is excluded from results.', 'modfarm'),
+              onPick: function (id) { setAttributes({ offerId: id }); }
+            }),
+            attributes.offerId ? el(Notice, { status: 'info', isDismissible: false }, __('Source Offer override: ', 'modfarm') + `#${attributes.offerId}`) : null,
+            attributes.offerId ? el(Button, {
+              variant: 'secondary',
+              onClick: function () { setAttributes({ offerId: 0 }); }
+            }, __('Use the current Book or Offer', 'modfarm')) : null
           ),
           el(PanelBody, { title: __('Display', 'modfarm'), initialOpen: false },
             el(ToggleControl, {

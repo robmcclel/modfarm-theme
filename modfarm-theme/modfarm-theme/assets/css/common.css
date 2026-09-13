@@ -12,6 +12,8 @@
   --mf-button-text: #ffffff;
   --mf-heading-font: 'Merriweather', serif;
   --mf-body-font: 'Inter', sans-serif;
+  --mf-nav-font: var(--mf-body-font, 'Inter', sans-serif);
+  --mf-nav-font-size: 16px;
   --mf-content-width: 1200px;
   --mf-background: #ffffff;
   --mf-spacing-sm: 0.5rem;

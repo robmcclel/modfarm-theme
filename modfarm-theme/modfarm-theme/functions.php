@@ -388,6 +388,26 @@ add_filter('wp_theme_json_data_theme', function ($theme_json) {
     $data['settings']['color']['defaultPalette'] = false;
     $data['settings']['color']['palette'] = $palette;
 
+    // Make the ModFarm-managed catalog available in native block typography
+    // controls without enabling WordPress' separate font upload interface.
+    $font_families = [];
+    if (function_exists('modfarm_settings_font_library')) {
+        foreach (modfarm_settings_font_library() as $family => $font) {
+            $font_families[] = [
+                'slug'       => 'mf-' . sanitize_title($family),
+                'fontFamily' => modfarm_font_css_value((string) $family),
+                'name'       => (string) ($font['label'] ?? $family),
+            ];
+        }
+    }
+    if ($font_families) {
+        $data['settings']['typography']['fontFamilies'] = $font_families;
+    }
+    if (!empty($opts['site_title_font_size'])) {
+        $data['styles']['blocks']['core/site-title']['typography']['fontSize'] =
+            max(1, intval($opts['site_title_font_size'])) . 'px';
+    }
+
     return new WP_Theme_JSON_Data($data, 'theme');
 }, 100);
 
@@ -506,16 +526,11 @@ add_action('wp_enqueue_scripts', function() {
 });
 
 function modfarm_output_nav_custom_properties() {
-    $options = get_option('modfarm_theme_settings');
+    $options = get_option('modfarm_theme_settings', []);
 
     $styles = ':root {';
-
-    if (!empty($options['nav_font'])) {
-        $styles .= '--mf-nav-font: ' . esc_attr($options['nav_font']) . ';';
-    }
-    if (!empty($options['nav_font_size'])) {
-        $styles .= '--mf-nav-font-size: ' . intval($options['nav_font_size']) . 'px;';
-    }
+    $styles .= '--mf-nav-font: ' . esc_attr(modfarm_font_css_value(modfarm_effective_font_family($options['nav_font'] ?? ''))) . ';';
+    $styles .= '--mf-nav-font-size: ' . max(1, intval($options['nav_font_size'] ?? 16)) . 'px;';
     if (!empty($options['nav_text_color'])) {
         $styles .= '--mf-nav-color: ' . esc_attr($options['nav_text_color']) . ';';
     }
@@ -1712,7 +1727,11 @@ add_action('wp_head', function () {
         '--mf-heading-font'    => modfarm_font_css_value(modfarm_effective_font_family($settings['heading_font'] ?? '')),
         '--mf-body-font'       => modfarm_font_css_value(modfarm_effective_font_family($settings['body_font'] ?? '')),
         '--mf-site-title-font' => modfarm_font_css_value(modfarm_effective_font_family($settings['site_title_font'] ?? '')),
+        '--mf-site-title-font-size' => !empty($settings['site_title_font_size'])
+            ? max(1, intval($settings['site_title_font_size'])) . 'px'
+            : 'inherit',
         '--mf-nav-font'        => modfarm_font_css_value(modfarm_effective_font_family($settings['nav_font'] ?? '')),
+        '--mf-nav-font-size'   => max(1, intval($settings['nav_font_size'] ?? 16)) . 'px',
 		'--modfarm-font-heading' => modfarm_font_css_value(modfarm_effective_font_family($settings['heading_font'] ?? '')),
 		'--modfarm-font-body'    => modfarm_font_css_value(modfarm_effective_font_family($settings['body_font'] ?? '')),
         '--mf-content-width'   => $settings['content_width'] ?? '1200px',
@@ -1737,6 +1756,9 @@ add_action('wp_head', function () {
         modfarm_font_css_value(modfarm_effective_font_family($settings['nav_font'] ?? ''))
     );
     echo wp_strip_all_tags($typography_css);
+    if (!empty($settings['site_title_font_size'])) {
+        echo 'body :where(.wp-block-site-title,.wp-block-site-title a,.mfs-brand__text,.site-title,.site-title a){font-size:var(--mf-site-title-font-size)!important;}';
+    }
     echo '</style>';
 }, 99);
 
@@ -1754,6 +1776,43 @@ function modfarm_enqueue_google_fonts() {
         }
     }
 
+    $screen = is_admin() && function_exists('get_current_screen') ? get_current_screen() : null;
+    if ($screen && method_exists($screen, 'is_block_editor') && $screen->is_block_editor()) {
+        foreach ($catalog as $family => $font) {
+            $families[$family] = modfarm_google_font_family_query($font);
+        }
+    } elseif (!is_admin() && function_exists('parse_blocks')) {
+        global $wp_query;
+        $slug_map = [];
+        foreach ($catalog as $family => $font) {
+            $slug_map['mf-' . sanitize_title($family)] = $family;
+        }
+        $walk_blocks = static function (array $blocks) use (&$walk_blocks, &$families, $catalog, $slug_map): void {
+            foreach ($blocks as $block) {
+                $attrs = is_array($block['attrs'] ?? null) ? $block['attrs'] : [];
+                $values = [
+                    $attrs['fontFamily'] ?? '',
+                    $attrs['style']['typography']['fontFamily'] ?? '',
+                ];
+                foreach ($values as $value) {
+                    $slug = is_string($value) ? preg_replace('/^var:preset\|font-family\|/', '', $value) : '';
+                    if ($slug !== '' && isset($slug_map[$slug])) {
+                        $family = $slug_map[$slug];
+                        $families[$family] = modfarm_google_font_family_query($catalog[$family]);
+                    }
+                }
+                if (!empty($block['innerBlocks']) && is_array($block['innerBlocks'])) {
+                    $walk_blocks($block['innerBlocks']);
+                }
+            }
+        };
+        foreach ((array) ($wp_query->posts ?? []) as $queried_post) {
+            if (isset($queried_post->post_content)) {
+                $walk_blocks(parse_blocks((string) $queried_post->post_content));
+            }
+        }
+    }
+
     if ($families) {
 		$encoded_families = array_map(
 			static function ($family) {
@@ -1764,7 +1823,9 @@ function modfarm_enqueue_google_fonts() {
 			},
 			$families
 		);
-		$fonts_url = 'https://fonts.googleapis.com/css2?family=' . implode('&family=', $encoded_families) . '&display=swap';
-        wp_enqueue_style('modfarm-google-fonts', $fonts_url, [], null);
+        foreach (array_chunk($encoded_families, 8) as $index => $font_group) {
+            $fonts_url = 'https://fonts.googleapis.com/css2?family=' . implode('&family=', $font_group) . '&display=swap';
+            wp_enqueue_style('modfarm-google-fonts-' . ($index + 1), $fonts_url, [], null);
+        }
     }
 }

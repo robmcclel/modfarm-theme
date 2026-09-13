@@ -96,6 +96,7 @@
       'heading_font',
       'body_font',
       'site_title_font',
+      'site_title_font_size',
       'nav_font',
       'nav_bg_color',
       'nav_text_color',
@@ -196,6 +197,7 @@
       setStyleVar(themePreview, '--mf-preview-heading-font', settingValue('heading_font', 'inherit'));
       setStyleVar(themePreview, '--mf-preview-body-font', settingValue('body_font', 'inherit'));
       setStyleVar(themePreview, '--mf-preview-site-title-font', settingValue('site_title_font', 'inherit'));
+      setStyleVar(themePreview, '--mf-preview-site-title-size', pxValue(settingValue('site_title_font_size'), 'inherit'));
       setStyleVar(themePreview, '--mf-preview-nav-font', settingValue('nav_font', 'inherit'));
       setStyleVar(themePreview, '--mf-preview-nav-bg', navBg);
       setStyleVar(themePreview, '--mf-preview-nav-text', navText);

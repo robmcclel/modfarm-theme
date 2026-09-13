@@ -14,6 +14,8 @@ function modfarm_font_library(): array {
     $fonts = [
         'Source Sans Pro'       => ['400', '400i', '600', '700'],
         'Abril Fatface'         => ['400'],
+        'Alegreya SC'           => ['400', '400i', '700', '700i'],
+        'Alegreya Sans SC'      => ['400', '400i', '700', '700i'],
         'Arima Madurai'         => ['400', '700'],
         'Arimo'                 => ['400', '400i', '700', '700i'],
         'Arvo'                  => ['400', '400i', '700', '700i'],
@@ -68,6 +70,7 @@ function modfarm_font_library(): array {
         'PT Serif'              => ['400', '700'],
         'PT Sans'               => ['400', '400i', '700', '700i'],
         'PT Sans Narrow'        => ['400', '700'],
+        'Quattrocento'          => ['400', '700'],
         'Racing Sans One'       => ['400'],
         'Raleway'               => ['400', '700'],
         'Roboto'                => ['400', '400i', '700', '700i'],
@@ -85,10 +88,10 @@ function modfarm_font_library(): array {
     ];
 
     $serif_fonts = [
-        'Arvo', 'Averia Serif Libre', 'Besley', 'Cinzel Decorative', 'Corben',
+        'Alegreya SC', 'Arvo', 'Averia Serif Libre', 'Besley', 'Cinzel Decorative', 'Corben',
         'Crimson Text', 'Droid Serif', 'EB Garamond', 'Libre Baskerville',
         'Lora', 'Martel', 'Merriweather', 'Noto Serif', 'Playfair Display',
-        'PT Serif', 'Roboto Slab', 'Uncial Antiqua', 'Zilla Slab',
+        'PT Serif', 'Quattrocento', 'Roboto Slab', 'Uncial Antiqua', 'Zilla Slab',
     ];
 
     $catalog = [];

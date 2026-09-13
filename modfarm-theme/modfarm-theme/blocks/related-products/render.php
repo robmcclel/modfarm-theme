@@ -9,14 +9,16 @@ function modfarm_related_products_offer_ids(int $current_offer_id, array $args =
         'manualIds' => [],
         'contextType' => '',
         'contextId' => 0,
+        'sourceMode' => '',
     ]);
     $limit = max(1, min(24, (int) $args['limit']));
 
-    // 1. An explicit manual list always wins.
+    // 1. Preserve legacy manual lists, unless Automatic was explicitly selected.
     $manual_ids = array_values(array_filter(array_map('absint', (array) $args['manualIds']), static function ($id) use ($current_offer_id) {
         return $id !== $current_offer_id && get_post_type($id) === 'mf_offer' && get_post_status($id) === 'publish';
     }));
-    if (!empty($manual_ids)) {
+    $mode = (string) $args['sourceMode'];
+    if ($mode === 'manual' || ($mode !== 'automatic' && !empty($manual_ids))) {
         return array_slice($manual_ids, 0, $limit);
     }
 
@@ -24,9 +26,17 @@ function modfarm_related_products_offer_ids(int $current_offer_id, array $args =
     // family relationships that Core explicitly marks with family scope).
     $context_type = sanitize_key((string) $args['contextType']);
     $context_id = absint($args['contextId']);
-    if ($context_type !== '' && $context_id > 0 && function_exists('modfarm_get_promoted_display_ids')) {
+    $contexts = [[$context_type, $context_id]];
+    if ($context_type === 'mf_offer' && $context_id > 0) {
+        $book_id = absint(get_post_meta($context_id, 'mf_offer_related_book_id', true));
+        if ($book_id && in_array(get_post_type($book_id), ['book', 'modfarm_book'], true)) {
+            $contexts[] = ['book', $book_id];
+        }
+    }
+    foreach ($contexts as [$context_type, $context_id]) {
+        if ($context_type === '' || $context_id <= 0 || !function_exists('modfarm_get_promoted_display_ids')) continue;
         $promoted_ids = modfarm_get_promoted_display_ids($context_type, $context_id, 'mf_offer', 'promotes', [
-            'limit' => $limit,
+            'limit' => $limit + 1,
         ]);
         $promoted_ids = array_values(array_filter(array_map('absint', $promoted_ids), static function ($id) use ($current_offer_id) {
             return $id !== $current_offer_id && get_post_type($id) === 'mf_offer' && get_post_status($id) === 'publish';
@@ -76,6 +86,8 @@ if (!function_exists('modfarm_render_related_products_block')) {
 function modfarm_render_related_products_block($attributes = [], $content = '', $block = null) {
     $offer_id = modfarm_store_block_get_offer_id($attributes, $block);
     $context = modfarm_store_block_get_relationship_context($attributes, $block);
+    // This block's explicit source override controls both promotions and taxonomy matching.
+    if (!empty($attributes['offerId']) && $offer_id > 0) $context = ['type' => 'mf_offer', 'id' => $offer_id];
     $limit = max(1, min(24, (int) ($attributes['productsPerPage'] ?? 3)));
     $columns = max(1, min(6, (int) ($attributes['columns'] ?? 3)));
     $display_layout = in_array(($attributes['displayLayout'] ?? 'grid'), ['grid', 'horizontal'], true)
@@ -85,6 +97,7 @@ function modfarm_render_related_products_block($attributes = [], $content = '', 
         'limit' => $limit,
         'taxonomy' => $attributes['taxonomy'] ?? '',
         'manualIds' => $attributes['manualIds'] ?? [],
+        'sourceMode' => $attributes['sourceMode'] ?? '',
         'contextType' => $context['type'] ?? '',
         'contextId' => $context['id'] ?? 0,
     ]);

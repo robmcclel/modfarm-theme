@@ -99,6 +99,19 @@ add_action('init', function () {
                 filemtime($editor_script),
                 true
             );
+
+            if ($slug === 'navigation-menu' && function_exists('modfarm_settings_font_library')) {
+                $font_options = [];
+                foreach (modfarm_settings_font_library() as $family => $font) {
+                    $font_options[] = [
+                        'label' => (string) ($font['label'] ?? $family),
+                        'value' => (string) $family,
+                    ];
+                }
+                wp_localize_script($script_handle, 'modfarmNavigationFonts', [
+                    'fonts' => $font_options,
+                ]);
+            }
         }
 
         // Check if render is declared in block.json

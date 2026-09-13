@@ -15,8 +15,12 @@ function modfarm_render_navigation_menu_block($attributes) {
     $hover     = $attributes['navHover']      ?? ($options['nav_hover_color']     ?? '#ffffff');
     $submenuBg = $attributes['submenuBg']     ?? ($options['submenu_bg_color']    ?? '#222222');
     $submenuTx = $attributes['submenuColor']  ?? ($options['submenu_text_color']  ?? '#ffffff');
-    $font      = $attributes['fontFamily']    ?? ($options['nav_font']            ?? 'inherit');
-    $font_size = $attributes['fontSize']      ?? ($options['nav_font_size']       ?? '');
+    $font      = $override
+        ? ($attributes['fontFamily'] ?? ($options['nav_font'] ?? 'inherit'))
+        : ($options['nav_font'] ?? 'inherit');
+    $font_size = $override
+        ? ($attributes['fontSize'] ?? ($options['nav_font_size'] ?? ''))
+        : ($options['nav_font_size'] ?? '');
     $padding   = $attributes['navPadding']    ?? ($options['nav_padding']         ?? 'regular');
     $transparent = $override ? !empty($attributes['transparent']) : !empty($options['nav_transparent']);
 
@@ -109,15 +113,20 @@ function modfarm_render_navigation_menu_block($attributes) {
     if ($no_collapse)          $class .= ' mfs-nav--no-collapse'; // NEW
 
     // Inline styles (nav bar container)
-    $styles = [];
+    $resolved_font = $font === 'inherit'
+        ? 'inherit'
+        : modfarm_font_css_value(modfarm_effective_font_family((string) $font));
+    $resolved_font_size = max(1, intval($font_size ?: 16));
+    $styles = [
+        "--mf-nav-font: {$resolved_font}",
+        "--mf-nav-font-size: {$resolved_font_size}px",
+    ];
     if ($override) {
         if (!$transparent)       $styles[] = "background-color: {$bg}";
         $styles[] = "color: {$text}";
         $styles[] = "--submenu-bg: {$submenuBg}";
         $styles[] = "--submenu-color: {$submenuTx}";
         $styles[] = "--mf-nav-hover-color: {$hover}";
-        if ($font !== 'inherit') $styles[] = "font-family: {$font}";
-        if ($font_size)          $styles[] = "font-size: {$font_size}px";
     }
     $inline_style = !empty($styles) ? implode('; ', $styles) . ';' : '';
 
