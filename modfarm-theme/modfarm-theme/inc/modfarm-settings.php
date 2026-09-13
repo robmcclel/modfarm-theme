@@ -303,6 +303,8 @@ function modfarm_register_settings() {
     add_settings_field('nav_font',         'Navigation Font',  'modfarm_font_dropdown',  'modfarm_theme_settings', 'modfarm_section_fonts',      ['id' => 'nav_font']);
 
     // === Navigation (existing) ===
+    add_settings_field('mobile_nav_bg_color', 'Mobile Menu Background Color', 'modfarm_color_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id' => 'mobile_nav_bg_color']);
+    add_settings_field('mobile_nav_text_color', 'Mobile Menu Text Color', 'modfarm_color_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id' => 'mobile_nav_text_color']);
     add_settings_field('nav_bg_color',     'Nav Background Color',    'modfarm_color_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id' => 'nav_bg_color']);
     add_settings_field('nav_text_color',   'Nav Text Color',          'modfarm_color_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id' => 'nav_text_color']);
     add_settings_field('nav_hover_color',  'Nav Hover Color',         'modfarm_color_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id' => 'nav_hover_color']);
@@ -2375,6 +2377,8 @@ function modfarm_sanitize_settings($settings) {
         'nav_font',
         'facebook_pixel_id',
         'nav_font_size',
+        'mobile_nav_bg_color',
+        'mobile_nav_text_color',
         'nav_bg_color',
         'nav_text_color',
         'nav_hover_color',
@@ -3302,6 +3306,14 @@ function modfarm_render_settings_page() {
                                         <h3 class="mf-group-title">Navigation</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
+                                            <tr>
+                                                <th scope="row"><label>Mobile Menu Background Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'mobile_nav_bg_color']); ?><p class="description">Applies to mobile drawers, overlays, and below-header menus. Blank uses submenu colors.</p></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Mobile Menu Text Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'mobile_nav_text_color']); ?></td>
+                                            </tr>
                                             <tr>
                                                 <th scope="row"><label>Nav Background Color</label></th>
                                                 <td><?php modfarm_color_field(['id' => 'nav_bg_color']); ?></td>

@@ -99,6 +99,14 @@
     "dropdownWidth": {
       "type": "number",
       "default": 320
+    },
+    "mobileBg": {
+      "type": "string",
+      "default": ""
+    },
+    "mobileColor": {
+      "type": "string",
+      "default": ""
     }
   },
   "editorScript": "modfarm-navigation-menu-editor",

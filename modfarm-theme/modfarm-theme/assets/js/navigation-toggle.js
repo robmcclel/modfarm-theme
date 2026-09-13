@@ -48,7 +48,7 @@
           var computed = getComputedStyle(nav);
           overlay.style.fontFamily = computed.fontFamily;
           overlay.style.fontSize = computed.fontSize;
-          ['--submenu-bg','--submenu-color','--mf-nav-hover-color','--mf-nav-font','--mf-nav-font-size','--mfs-menu-icon-size','--mfs-menu-image-gap'].forEach(function (key) {
+          ['--mfs-mobile-bg','--mfs-mobile-color','--submenu-bg','--submenu-color','--mf-nav-hover-color','--mf-nav-font','--mf-nav-font-size','--mfs-menu-icon-size','--mfs-menu-image-gap'].forEach(function (key) {
             overlay.style.setProperty(key, computed.getPropertyValue(key));
           });
           overlay.classList.toggle('mfs-mobile-drawer', nav.classList.contains('mfs-nav--drawer'));

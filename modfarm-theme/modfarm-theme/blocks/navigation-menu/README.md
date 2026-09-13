@@ -13,7 +13,9 @@ Classes field and preserves other classes. Images default to Cover.
 
 - `menu-cover`: portrait image next to the label; hidden at mobile widths.
 - `menu-icon`: compact image beside the label on desktop and mobile.
-- Navigation labels always remain visible. Images use empty alt text to avoid
+- `menu-icon-only`: hides the visible label while preserving its accessible name.
+  If the image is missing, the visible label returns.
+- Images use empty alt text to avoid
   repeating the link name. Deleted/missing attachments leave the text link intact.
 - The native Description field supplies optional secondary text. Enable **Show
   descriptions** in the block to display it.
@@ -25,6 +27,17 @@ resolves temporary negative IDs. Discarded previews do not change saved images.
 Native Menus form saves use a per-item nonce and the menu-editing capability.
 
 ## Block presentation
+
+Image and Description editor fields start unchecked, including for users with
+older Screen Options. Explicit choices are remembered per user. Hiding a field
+does not delete existing menu content. Description output is also off by default.
+
+Set **Mobile Menu Background Color** and **Mobile Menu Text Color** in ModFarm
+Settings > Navigation. Blank values fall back to submenu colors. The block's
+**Enable Local Style Overrides > Color Overrides** has corresponding mobile
+overrides. These affect all three mobile panels without changing desktop colors.
+Desktop mouse navigation hides chevrons while retaining keyboard submenu access;
+mobile/touch navigation keeps visible expansion controls.
 
 **Mobile Navigation > Presentation** offers:
 

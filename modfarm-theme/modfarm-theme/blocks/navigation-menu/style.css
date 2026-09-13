@@ -47,10 +47,10 @@
 .mfs-nav-toggle { display:none; }
 .mfs-nav-toggle-label { font-size:1rem; margin-left:.5rem; }
 /* Panels share row styling regardless of their presentation. */
-.mfs-nav-overlay { display:none; position:fixed; inset:0; z-index:100000; background:#0006; color:var(--submenu-color,#222); font-family:var(--mf-nav-font,inherit); font-size:var(--mf-nav-font-size,16px); }
+.mfs-nav-overlay { display:none; position:fixed; inset:0; z-index:100000; background:#0006; color:var(--mfs-mobile-color,var(--submenu-color,#222)); font-family:var(--mf-nav-font,inherit); font-size:var(--mf-nav-font-size,16px); }
 .mfs-nav-overlay[hidden] { display:none!important; }
 .mfs-nav-overlay.active { display:flex; justify-content:flex-end; }
-.mfs-nav-panel { width:100%; height:100%; overflow-y:auto; overscroll-behavior:contain; background:var(--submenu-bg,#fff); color:var(--submenu-color,#222); padding:1rem 1.25rem; }
+.mfs-nav-panel { width:100%; height:100%; overflow-y:auto; overscroll-behavior:contain; background:var(--mfs-mobile-bg,var(--submenu-bg,#fff)); color:var(--mfs-mobile-color,var(--submenu-color,#222)); padding:1rem 1.25rem; }
 .admin-bar .mfs-nav-overlay:not([hidden]) { top:var(--wp-admin--admin-bar--height,32px); }
 .mfs-nav-panel-header { display:flex; align-items:center; justify-content:space-between; min-height:48px; margin-bottom:.75rem; font-weight:700; }
 .mfs-nav-close { position:static; display:inline-flex; justify-content:center; align-items:center; width:44px; height:44px; padding:0; border:0; background:none; color:inherit; font-size:2rem; cursor:pointer; }
@@ -89,3 +89,15 @@
 }
 @media (max-width:782px) { .admin-bar .mfs-nav-overlay:not([hidden]) { top:var(--wp-admin--admin-bar--height,46px); } }
 @media (prefers-reduced-motion:reduce) { .mfs-nav-panel,.mfs-submenu-toggle span { animation:none!important; transition:none!important; } }
+
+/* Icon-only links retain their accessible name, and recover text if media is missing. */
+.mfs-menu-copy--hidden { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
+/* Desktop hover menus have no visible chevrons; keyboard controls remain available. */
+@media (min-width:1025px) and (hover:hover) and (pointer:fine) {
+  .mfs-nav-menu .menu-item-has-children > a { padding-right:.5rem; }
+  .mfs-nav-menu .sub-menu .menu-item-has-children > a { padding-right:1rem; }
+  .mfs-nav-menu .mfs-submenu-toggle:not(:focus-visible) { width:1px; min-height:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  .mfs-nav-menu .mfs-submenu-toggle span { display:none; }
+  .mfs-nav-menu .mfs-submenu-toggle:focus-visible { background:var(--submenu-bg,#fff); color:var(--submenu-color,#222); }
+  .mfs-nav-menu .mfs-submenu-toggle:focus-visible::after { content:'Menu'; font-size:11px; }
+}

@@ -132,6 +132,11 @@ function modfarm_render_navigation_menu_block($attributes) {
         "--mf-nav-font: {$resolved_font}",
         "--mf-nav-font-size: {$resolved_font_size}px",
     ];
+    foreach (['mobileBg' => ['mobile_nav_bg_color', '--mfs-mobile-bg'], 'mobileColor' => ['mobile_nav_text_color', '--mfs-mobile-color']] as $attribute => $config) {
+        $color = $override && !empty($attributes[$attribute]) ? $attributes[$attribute] : ($options[$config[0]] ?? '');
+        $color = sanitize_hex_color($color);
+        if ($color) $styles[] = $config[1] . ':' . $color;
+    }
     foreach (['coverWidth' => [56, 32, 120, 'cover-width'], 'iconSize' => [24, 16, 64, 'icon-size'], 'imageGap' => [16, 4, 32, 'image-gap'], 'dropdownWidth' => [320, 220, 480, 'dropdown-width']] as $key => $limits) {
         $styles[] = '--mfs-menu-' . $limits[3] . ':' . max($limits[1], min($limits[2], (int)($attributes[$key] ?? $limits[0]))) . 'px';
     }

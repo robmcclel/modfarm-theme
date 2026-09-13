@@ -20,6 +20,8 @@
   // Register (or override) the block with the new attribute.
   wp.blocks.registerBlockType('modfarm/navigation-menu', {
     attributes: {
+      mobileBg: { type: 'string', default: '' },
+      mobileColor: { type: 'string', default: '' },
       mobilePresentation: {"type":"string","default":"overlay"},
       drawerSide: {"type":"string","default":"right"},
       showDescriptions: {"type":"boolean","default":false},
@@ -151,6 +153,8 @@
                   title: 'Color Overrides',
                   initialOpen: true,
                   colorSettings: [
+                    { label: 'Mobile Menu Background', value: attributes.mobileBg, onChange: (c) => setAttributes({ mobileBg: c || '' }) },
+                    { label: 'Mobile Menu Text', value: attributes.mobileColor, onChange: (c) => setAttributes({ mobileColor: c || '' }) },
                     { label: 'Nav Background', value: navBg, onChange: (c) => setAttributes({ navBg: c }) },
                     { label: 'Nav Text Color', value: navColor, onChange: (c) => setAttributes({ navColor: c }) },
                     { label: 'Nav Hover Color', value: navHover, onChange: (c) => setAttributes({ navHover: c }) },

@@ -9,7 +9,7 @@
       if (!value) return;
       var id = parseInt(value.mfs_image_id, 10) || 0;
       field.find('.mfs-menu-image-id').val(id);
-      field.find('.mfs-menu-image-style').val(/(^|\s)menu-icon(\s|$)/.test(value.classes || '') ? 'menu-icon' : 'menu-cover');
+      field.find('.mfs-menu-image-style').val(/(^|\s)menu-icon-only(\s|$)/.test(value.classes || '') ? 'menu-icon-only' : /(^|\s)menu-icon(\s|$)/.test(value.classes || '') ? 'menu-icon' : 'menu-cover');
       field.find('.mfs-menu-image-remove').toggle(!!id);
       if (id === currentId) return;
       currentId = id;
@@ -25,7 +25,7 @@
     function update(id, style) {
       var value = $.extend({}, read());
       value.mfs_image_id = id;
-      var classes = (value.classes || '').split(/\s+/).filter(function (c) { return c && c !== 'menu-cover' && c !== 'menu-icon'; });
+      var classes = (value.classes || '').split(/\s+/).filter(function (c) { return c && c !== 'menu-cover' && c !== 'menu-icon' && c !== 'menu-icon-only'; });
       if (id) classes.push(style);
       value.classes = classes.join(' ');
       write(value);

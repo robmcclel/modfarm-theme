@@ -31,9 +31,10 @@ function mfs_menu_image_fields($id = 0, $item = null) {
             <select class="mfs-menu-image-style">
                 <option value="menu-cover"><?php esc_html_e('Cover (hidden on mobile)', 'modfarm'); ?></option>
                 <option value="menu-icon"><?php esc_html_e('Icon (visible on mobile)', 'modfarm'); ?></option>
+                <option value="menu-icon-only"><?php esc_html_e('Icon (no text)', 'modfarm'); ?></option>
             </select>
         </label>
-        <p class="description"><?php esc_html_e('Uses the menu-cover or menu-icon CSS class. The navigation label stays visible.', 'modfarm'); ?></p>
+        <p class="description"><?php esc_html_e('Icon (no text) keeps the navigation label available to screen readers.', 'modfarm'); ?></p>
     </div>
     <?php
 }
@@ -103,9 +104,32 @@ add_filter('manage_nav-menus_columns', function ($columns) {
     return $columns;
 }, 20);
 add_filter('default_hidden_columns', function ($hidden, $screen) {
-    if ($screen->id === 'nav-menus') $hidden[] = 'mfs-image';
+    if ($screen->id === 'nav-menus') $hidden = array_unique(array_merge($hidden, ['mfs-image', 'description']));
     return $hidden;
 }, 10, 2);
+
+// Existing saved Screen Options omit newly introduced columns, which otherwise
+// makes them checked automatically. Require an explicit choice for these fields.
+add_filter('hidden_columns', function ($hidden, $screen) {
+    if ($screen->id !== 'nav-menus') return $hidden;
+    $choices = get_user_meta(get_current_user_id(), '_mfs_menu_optional_fields', true);
+    foreach (['mfs-image', 'description'] as $field) {
+        if (empty($choices[$field])) $hidden[] = $field;
+    }
+    return array_unique($hidden);
+}, 20, 2);
+function mfs_record_menu_field_choices($meta_id, $user_id, $key, $value) {
+    if ($key !== 'managenav-menuscolumnshidden' || !is_array($value)) return;
+    update_user_meta($user_id, '_mfs_menu_optional_fields', [
+        'mfs-image' => !in_array('mfs-image', $value, true),
+        'description' => !in_array('description', $value, true),
+    ]);
+}
+add_filter('update_user_metadata', function ($check, $user_id, $key, $value) {
+    // Runs even when the chosen hidden-column list equals a previously saved list.
+    if ($check === null) mfs_record_menu_field_choices(0, $user_id, $key, $value);
+    return $check;
+}, 10, 4);
 
 /** Only enhance menus explicitly rendered by our navigation block. */
 add_filter('nav_menu_item_title', function ($title, $item, $args, $depth) {
@@ -116,11 +140,13 @@ add_filter('nav_menu_item_title', function ($title, $item, $args, $depth) {
     ]) : '';
     $description = !empty($args->mfs_descriptions) && trim($item->description ?? '') !== ''
         ? '<span class="mfs-menu-description">' . esc_html(wp_strip_all_tags($item->description)) . '</span>' : '';
-    return $image . '<span class="mfs-menu-copy"><span class="mfs-menu-label">' . $title . '</span>' . $description . '</span>';
+    $icon_only = $image !== '' && in_array('menu-icon-only', (array)($item->classes ?? []), true);
+    return $image . '<span class="mfs-menu-copy' . ($icon_only ? ' mfs-menu-copy--hidden' : '') . '"><span class="mfs-menu-label">' . $title . '</span>' . ($icon_only ? '' : $description) . '</span>';
 }, 10, 4);
 add_filter('nav_menu_css_class', function ($classes, $item, $args) {
     if (!empty($args->mfs_enhanced) && !empty($item->mfs_image_id)) {
         $classes[] = 'mfs-has-menu-image';
+        if (in_array('menu-icon-only', $classes, true)) $classes[] = 'menu-icon';
         if (!in_array('menu-icon', $classes, true) && !in_array('menu-cover', $classes, true)) $classes[] = 'menu-cover';
     }
     return $classes;

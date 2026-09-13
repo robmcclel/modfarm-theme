@@ -54,6 +54,26 @@ const assert = require('assert/strict');
  console.log('PASS desktop cover images and nested flyouts');
  await fixture('no-collapse',412);assert.equal(await page.locator('.mfs-nav-menu').isVisible(),true);assert.equal(await page.locator('.mfs-nav-toggle').count(),0);
  console.log('PASS no-collapse menu');
+ for (const mode of ['drawer','overlay','below']) {
+   await fixture(mode);
+   await page.locator('.mfs-nav').evaluate(el => {
+     el.style.setProperty('--mfs-mobile-bg','#123456');
+     el.style.setProperty('--mfs-mobile-color','#fefefe');
+   });
+   await page.locator('.mfs-nav-toggle').click();
+   const colors=await page.locator('.mfs-nav-panel').evaluate(el=>[getComputedStyle(el).backgroundColor,getComputedStyle(el).color]);
+   assert.deepEqual(colors,['rgb(18, 52, 86)','rgb(254, 254, 254)']);
+   const iconLink=page.locator('.mfs-nav-overlay .menu-icon-only > a');
+   assert.equal(await iconLink.locator('.mfs-menu-copy').evaluate(el=>getComputedStyle(el).width),'1px');
+   assert.equal(await iconLink.locator('.mfs-menu-label').textContent(),'News');
+ }
+ console.log('PASS mobile colors across all presentations and accessible icon-only labels');
+ await fixture('overlay',1440);
+ assert.equal(await page.locator('.mfs-nav-menu .mfs-submenu-toggle span').first().evaluate(el=>getComputedStyle(el).display),'none');
+ await page.locator('.mfs-nav-menu .mfs-submenu-toggle').first().focus();
+ await page.keyboard.press('Enter');
+ assert.equal(await page.locator('.mfs-nav-menu > li > .sub-menu').isVisible(),true);
+ console.log('PASS desktop chevrons hidden with keyboard submenu access retained');
  assert.deepEqual(errors,[]);
  if(process.env.MFS_NAV_SCREENSHOT) {await fixture('drawer',768);await page.locator('.mfs-nav-toggle').click();await page.locator('.mfs-nav-overlay .mfs-submenu-toggle').first().click();await page.screenshot({path:process.env.MFS_NAV_SCREENSHOT});}
  await browser.close();
