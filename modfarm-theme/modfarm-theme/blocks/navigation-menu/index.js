@@ -20,6 +20,13 @@
   // Register (or override) the block with the new attribute.
   wp.blocks.registerBlockType('modfarm/navigation-menu', {
     attributes: {
+      mobilePresentation: {"type":"string","default":"overlay"},
+      drawerSide: {"type":"string","default":"right"},
+      showDescriptions: {"type":"boolean","default":false},
+      coverWidth: {"type":"number","default":56},
+      iconSize: {"type":"number","default":24},
+      imageGap: {"type":"number","default":16},
+      dropdownWidth: {"type":"number","default":320},
       layoutType:   { type: 'string',  default: 'simple' },
       leftMenu:     { type: 'number',  default: 0 },
       rightMenu:    { type: 'number',  default: 0 },
@@ -166,6 +173,26 @@
                   onChange: (value) => setAttributes({ fontSize: value })
                 })
               )
+          ),
+          el(PanelBody, { title: 'Mobile Navigation', initialOpen: false },
+            el(SelectControl, {
+              label: 'Presentation', value: attributes.mobilePresentation || 'overlay', disabled: !!noCollapse,
+              options: [{label:'Below header',value:'below'},{label:'Side drawer',value:'drawer'},{label:'Full-screen overlay',value:'overlay'}],
+              onChange: value => setAttributes({mobilePresentation:value})
+            }),
+            attributes.mobilePresentation === 'drawer' && el(SelectControl, {
+              label:'Drawer side', value:attributes.drawerSide || 'right',
+              options:[{label:'Right',value:'right'},{label:'Left',value:'left'}],
+              onChange:value => setAttributes({drawerSide:value}),
+              help:'Full width on phones, half width on portrait tablets, and about a third on wider tablets (minimum 320px).'
+            })
+          ),
+          el(PanelBody, { title:'Menu Images and Descriptions', initialOpen:false },
+            el('p', {}, 'Choose images in Appearance → Menus or Customizer → Menus. Enable Image in advanced menu properties.'),
+            el(ToggleControl, {label:'Show descriptions',checked:!!attributes.showDescriptions,onChange:value=>setAttributes({showDescriptions:value})}),
+            ...[['coverWidth','Cover width',32,120],['iconSize','Icon size',16,64],['imageGap','Image / text gap',4,32],['dropdownWidth','Dropdown width',220,480]].map(([key,label,min,max])=>el(RangeControl, {
+              key, label:label+' (px)', value:attributes[key], min,max, onChange:value=>setAttributes({[key]:value})
+            }))
           ),
           el(
             PanelBody,

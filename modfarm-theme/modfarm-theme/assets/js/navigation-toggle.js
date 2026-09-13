@@ -1,197 +1,154 @@
-/* navigation-toggle.js (ES5-safe) */
-document.addEventListener("DOMContentLoaded", function () {
-  var mobileBreakpoint = 1024;
-
-  // Loop through every nav block individually
-  var navBlocks = document.querySelectorAll(".mfs-nav");
-  if (!navBlocks || !navBlocks.length) return;
-
-  for (var i = 0; i < navBlocks.length; i++) {
-    (function (nav) {
-      if (!nav || !nav.classList) return;
-
-      // Skip overlay wiring for "no-collapse" instances ONLY
-      if (nav.classList.contains("mfs-nav--no-collapse")) return;
-
-      var toggle = nav.querySelector(".mfs-nav-toggle");
-      var overlay = nav.querySelector(".mfs-nav-overlay");
-      var closeBtn = overlay ? overlay.querySelector(".mfs-nav-close") : null;
-
-      if (!toggle || !overlay) return;
-
-      function openOverlay() {
-        overlay.classList.add("active");
-        document.body.classList.add("overlay-open");
-      }
-
-      function closeOverlay() {
-        overlay.classList.remove("active");
-        document.body.classList.remove("overlay-open");
-
-        // Reset any open submenus
-        var openLis = overlay.querySelectorAll(".menu-item-has-children.open");
-        for (var j = 0; j < openLis.length; j++) {
-          openLis[j].classList.remove("open");
-        }
-      }
-
-      // Open / Close
-      toggle.addEventListener("click", openOverlay);
-      if (closeBtn) closeBtn.addEventListener("click", closeOverlay);
-
-      // ESC to close
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && overlay.classList.contains("active")) {
-          closeOverlay();
-        }
-      });
-
-      // Click backdrop to close (only if clicking the overlay itself)
-      overlay.addEventListener("click", function (e) {
-        if (e.target === overlay) closeOverlay();
-      });
-
-      // MOBILE: Tap-to-toggle submenus inside the overlay (event delegation)
-      overlay.addEventListener("click", function (e) {
-        var isMobile = window.innerWidth <= mobileBreakpoint;
-
-        // If a parent item (has children) was tapped
-        var trigger = e.target.closest
-          ? e.target.closest(".menu-item-has-children > a, .menu-item-has-children > button")
-          : null;
-
-        if (isMobile && trigger) {
-          e.preventDefault(); // do not navigate; toggle instead
-          var li = trigger.parentElement;
-          if (!li || !li.parentElement) return;
-
-          // Accordion: close siblings, open current
-          var nowOpen = !li.classList.contains("open");
-          var siblings = li.parentElement.children;
-
-          for (var k = 0; k < siblings.length; k++) {
-            if (siblings[k] !== li) siblings[k].classList.remove("open");
-          }
-          if (nowOpen) li.classList.add("open");
-          else li.classList.remove("open");
-
-          return; // keep overlay open
-        }
-
-        // If a leaf link (no submenu) was clicked, close overlay
-        var leafLink = e.target.closest ? e.target.closest("a") : null;
-        if (leafLink) {
-          var inParent = leafLink.closest ? leafLink.closest(".menu-item-has-children") : null;
-          if (!inParent) closeOverlay();
-        }
-      });
-
-      // Clear any lingering open classes after transition hides overlay
-      overlay.addEventListener("transitionend", function () {
-        if (!overlay.classList.contains("active")) {
-          var openLis2 = overlay.querySelectorAll(".menu-item-has-children.open");
-          for (var m = 0; m < openLis2.length; m++) {
-            openLis2[m].classList.remove("open");
-          }
-        }
-      });
-
-      // On resize to desktop, clear mobile-open states
-      window.addEventListener("resize", function () {
-        if (window.innerWidth > mobileBreakpoint) {
-          var openLis3 = overlay.querySelectorAll(".menu-item-has-children.open");
-          for (var n = 0; n < openLis3.length; n++) {
-            openLis3[n].classList.remove("open");
-          }
-        }
-      });
-    })(navBlocks[i]);
-  }
-
-  // Desktop overflow detection
-  var desktopMenus = document.querySelectorAll(".mfs-nav-menu li.menu-item-has-children");
-  for (var d = 0; d < desktopMenus.length; d++) {
-    (function (item) {
-      item.addEventListener("mouseenter", function () {
-        var submenu = item.querySelector(".sub-menu");
-        if (!submenu) return;
-
-        submenu.classList.remove("submenu-align-right");
-        var rect = submenu.getBoundingClientRect();
-        if (rect.right > window.innerWidth) {
-          submenu.classList.add("submenu-align-right");
-        }
-      });
-    })(desktopMenus[d]);
-  }
-});
-
-// Tablet / crossover detection (ES5-safe)
 (function () {
-  if (typeof window === "undefined" || typeof document === "undefined") return;
-
-  var hasTouch = ("ontouchstart" in window) || (navigator && navigator.maxTouchPoints > 0);
-  var anyHover = window.matchMedia ? window.matchMedia("(any-hover: hover)").matches : false;
-  var needsTapMenus = hasTouch && !anyHover;
-
-  if (!needsTapMenus) return; // laptops/desktops keep pure hover
-  if (window.__mfsTabletSubmenuBound) return;
-  window.__mfsTabletSubmenuBound = true;
-
-  function closeAll(nav) {
-    var openLis = nav.querySelectorAll(".mfs-nav-menu li.open");
-    for (var i = 0; i < openLis.length; i++) openLis[i].classList.remove("open");
-  }
-
-  document.addEventListener("click", function (e) {
-    var navs = document.querySelectorAll(".mfs-nav");
-    for (var i = 0; i < navs.length; i++) {
-      if (!navs[i].contains(e.target)) closeAll(navs[i]);
-    }
-  });
-
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") {
-      var navs = document.querySelectorAll(".mfs-nav");
-      for (var i = 0; i < navs.length; i++) closeAll(navs[i]);
-    }
-  });
-
-  var navs2 = document.querySelectorAll(".mfs-nav");
-  for (var n = 0; n < navs2.length; n++) {
-    (function (nav) {
-      var parents = nav.querySelectorAll(".mfs-nav-menu li.menu-item-has-children > a");
-      for (var p = 0; p < parents.length; p++) {
-        (function (anchor) {
-          anchor.addEventListener("click", function (e) {
-            // if overlay is active, let overlay logic handle it
-            var overlayActive = document.querySelector(".mfs-nav-overlay.active");
-            if (overlayActive) return;
-
-            var li = anchor.parentElement;
-            if (!li.classList.contains("open")) {
-              e.preventDefault();
-
-              // close siblings (no :scope for compatibility)
-              var siblings = li.parentElement ? li.parentElement.children : [];
-              for (var s = 0; s < siblings.length; s++) {
-                if (siblings[s] !== li) siblings[s].classList.remove("open");
-              }
-              li.classList.add("open");
+  'use strict';
+  var serial = 0;
+  var controllers = new Set();
+  function init(root) {
+    root.querySelectorAll('.mfs-nav').forEach(function (nav) {
+      if (nav.dataset.mfsReady) { if (nav.mfsEnhance) nav.mfsEnhance(); return; }
+      nav.dataset.mfsReady = 'true';
+      var toggle = nav.querySelector('.mfs-nav-toggle');
+      var overlay = nav.querySelector('.mfs-nav-overlay');
+      var panel = nav.querySelector('.mfs-nav-panel');
+      var below = nav.classList.contains('mfs-nav--below');
+      var placeholder = overlay ? document.createComment('mobile navigation') : null;
+      var isOpen = false, inertNodes = [], oldOverflow = '';
+      function direct(item, selector) {
+        return Array.from(item.children).find(function (child) { return child.matches(selector); });
+      }
+      function setExpanded(item, expanded) {
+        item.classList.toggle('open', expanded);
+        var button = direct(item, '.mfs-submenu-toggle');
+        if (button) button.setAttribute('aria-expanded', String(expanded));
+        if (!expanded) item.querySelectorAll('li.open').forEach(function (child) { setExpanded(child, false); });
+      }
+      function reset() {
+        nav.querySelectorAll('li.open').forEach(function (item) { setExpanded(item, false); });
+        if (overlay) overlay.querySelectorAll('li.open').forEach(function (item) { setExpanded(item, false); });
+      }
+      function close(restoreFocus) {
+        if (!isOpen) return;
+        isOpen = false;
+        overlay.hidden = true;
+        overlay.classList.remove('active');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Open menu');
+        if (!below) {
+          inertNodes.forEach(function (entry) { entry[0].inert = entry[1]; });
+          inertNodes = [];
+          document.body.style.overflow = oldOverflow;
+          if (placeholder.parentNode) placeholder.replaceWith(overlay);
+        }
+        reset();
+        if (restoreFocus !== false && toggle.isConnected) toggle.focus();
+      }
+      function open() {
+        controllers.forEach(function (controller) { if (controller !== close) controller(false); });
+        if (!below) {
+          // Escape transformed/clipped theme containers while preserving resolved styles.
+          var computed = getComputedStyle(nav);
+          overlay.style.fontFamily = computed.fontFamily;
+          overlay.style.fontSize = computed.fontSize;
+          ['--submenu-bg','--submenu-color','--mf-nav-hover-color','--mf-nav-font','--mf-nav-font-size','--mfs-menu-icon-size','--mfs-menu-image-gap'].forEach(function (key) {
+            overlay.style.setProperty(key, computed.getPropertyValue(key));
+          });
+          overlay.classList.toggle('mfs-mobile-drawer', nav.classList.contains('mfs-nav--drawer'));
+          overlay.classList.toggle('mfs-mobile-left', nav.classList.contains('mfs-nav--drawer-left'));
+          overlay.replaceWith(placeholder);
+          document.body.appendChild(overlay);
+          oldOverflow = document.body.style.overflow;
+          document.body.style.overflow = 'hidden';
+          Array.from(document.body.children).forEach(function (element) {
+            if (element !== overlay && !['SCRIPT','STYLE','LINK'].includes(element.tagName)) {
+              inertNodes.push([element, element.inert]); element.inert = true;
             }
-            // else: already open → allow navigation
-          }, false);
-        })(parents[p]);
+          });
+        }
+        isOpen = true;
+        overlay.hidden = false;
+        overlay.classList.add('active');
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.setAttribute('aria-label', 'Close menu');
+        if (!below) panel.querySelector('.mfs-nav-close').focus();
       }
-
-      var leaves = nav.querySelectorAll(".mfs-nav-menu li:not(.menu-item-has-children) > a");
-      for (var l = 0; l < leaves.length; l++) {
-        (function (anchor2) {
-          anchor2.addEventListener("click", function () {
-            closeAll(nav);
-          }, false);
-        })(leaves[l]);
+      if (toggle && overlay && panel) {
+        controllers.add(close);
+        toggle.addEventListener('click', function () { if (isOpen) close(); else open(); });
+        overlay.querySelector('.mfs-nav-close').addEventListener('click', function () { close(); });
+        overlay.addEventListener('click', function (event) {
+          if (event.target === overlay || event.target.closest('a')) close();
+        });
+        overlay.addEventListener('keydown', function (event) {
+          if (!isOpen || below || event.key !== 'Tab') return;
+          var focusable = Array.from(panel.querySelectorAll('a[href],button,[tabindex="0"]')).filter(function (el) { return !el.disabled && el.getClientRects().length; });
+          var first = focusable[0], last = focusable[focusable.length - 1];
+          if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        });
       }
-    })(navs2[n]);
+      nav.mfsEnhance = function () {
+      var items = Array.from(nav.querySelectorAll('li.menu-item-has-children'));
+      if (overlay && !nav.contains(overlay)) items = items.concat(Array.from(overlay.querySelectorAll('li.menu-item-has-children')));
+      items.forEach(function (item) {
+        if (item.dataset.mfsSubmenuReady) return;
+        item.dataset.mfsSubmenuReady = 'true';
+        var submenu = direct(item, '.sub-menu'), anchor = direct(item, 'a');
+        if (!submenu || !anchor) return;
+        var mobile = !!item.closest('.mfs-nav-overlay');
+        // wp_nav_menu is rendered twice: give every generated submenu a unique ID.
+        submenu.id = 'mfs-submenu-' + (++serial);
+        var button = document.createElement('button');
+        button.type = 'button'; button.className = 'mfs-submenu-toggle';
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', submenu.id);
+        button.setAttribute('aria-label', 'Toggle submenu: ' + (anchor.querySelector('.mfs-menu-label') || anchor).textContent.trim());
+        button.innerHTML = '<span aria-hidden="true"></span>';
+        anchor.after(button);
+        function position() {
+          if (mobile) return;
+          item.classList.remove('submenu-align-right');
+          if (submenu.getBoundingClientRect().right > window.innerWidth - 8) item.classList.add('submenu-align-right');
+        }
+        button.addEventListener('click', function () {
+          var next = !item.classList.contains('open');
+          Array.from(item.parentElement.children).forEach(function (sibling) { if (sibling !== item) setExpanded(sibling, false); });
+          setExpanded(item, next); position();
+        });
+        if (!mobile) {
+          item.addEventListener('mouseenter', function () {
+            if (window.matchMedia('(hover: hover)').matches) { setExpanded(item, true); position(); }
+          });
+          item.addEventListener('mouseleave', function () {
+            if (!item.contains(document.activeElement)) setExpanded(item, false);
+          });
+          item.addEventListener('focusout', function (event) {
+            if (!item.contains(event.relatedTarget)) setExpanded(item, false);
+          });
+        }
+        submenu.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') { event.stopPropagation(); setExpanded(item, false); button.focus(); }
+        });
+      });
+      };
+      nav.mfsEnhance();
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        if (isOpen) close(); else reset();
+      });
+      document.addEventListener('click', function (event) {
+        if (!nav.contains(event.target) && !(overlay && overlay.contains(event.target))) {
+          if (below && isOpen) close(false);
+          reset();
+        }
+      });
+      window.addEventListener('resize', function () {
+        if (window.innerWidth > 1024) close(false);
+      });
+    });
+  }
+  function boot() { init(document); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  // Customizer selective refresh replaces block markup without a page load.
+  if (window.wp && wp.customize && wp.customize.selectiveRefresh) {
+    wp.customize.selectiveRefresh.bind('partial-content-rendered', boot);
   }
 })();

@@ -8,6 +8,15 @@ function modfarm_render_navigation_menu_block($attributes) {
     $override     = !empty($attributes['localStyle']); // enable inline/local styling
     $no_collapse  = !empty($attributes['noCollapse']); // NEW: keep expanded on mobile
 
+    $presentation = in_array($attributes['mobilePresentation'] ?? 'overlay', ['below', 'drawer', 'overlay'], true) ? ($attributes['mobilePresentation'] ?? 'overlay') : 'overlay';
+    $drawer_side = ($attributes['drawerSide'] ?? 'right') === 'left' ? 'left' : 'right';
+    $show_descriptions = !empty($attributes['showDescriptions']);
+    $menu_args = ['container' => false, 'echo' => false, 'fallback_cb' => false,
+        'mfs_enhanced' => true, 'mfs_descriptions' => $show_descriptions];
+    $render_menu = function ($id, $class_name) use ($menu_args) {
+        return wp_nav_menu(array_merge($menu_args, ['menu' => $id, 'menu_class' => $class_name, 'menu_id' => wp_unique_id('mfs-menu-')]));
+    };
+
     // Pull defaults from ModFarm Settings
     $options   = get_option('modfarm_theme_settings', []);
     $bg        = $attributes['navBg']         ?? ($options['nav_bg_color']        ?? '#000000');
@@ -112,6 +121,8 @@ function modfarm_render_navigation_menu_block($attributes) {
     if ($transparent)          $class .= ' nav-transparent';
     if ($no_collapse)          $class .= ' mfs-nav--no-collapse'; // NEW
 
+    $class .= ' mfs-nav--' . $presentation . ' mfs-nav--drawer-' . $drawer_side;
+
     // Inline styles (nav bar container)
     $resolved_font = $font === 'inherit'
         ? 'inherit'
@@ -121,35 +132,28 @@ function modfarm_render_navigation_menu_block($attributes) {
         "--mf-nav-font: {$resolved_font}",
         "--mf-nav-font-size: {$resolved_font_size}px",
     ];
+    foreach (['coverWidth' => [56, 32, 120, 'cover-width'], 'iconSize' => [24, 16, 64, 'icon-size'], 'imageGap' => [16, 4, 32, 'image-gap'], 'dropdownWidth' => [320, 220, 480, 'dropdown-width']] as $key => $limits) {
+        $styles[] = '--mfs-menu-' . $limits[3] . ':' . max($limits[1], min($limits[2], (int)($attributes[$key] ?? $limits[0]))) . 'px';
+    }
     if ($override) {
-        if (!$transparent)       $styles[] = "background-color: {$bg}";
-        $styles[] = "color: {$text}";
-        $styles[] = "--submenu-bg: {$submenuBg}";
-        $styles[] = "--submenu-color: {$submenuTx}";
-        $styles[] = "--mf-nav-hover-color: {$hover}";
+        if (!$transparent && $bg !== '') $styles[] = "background-color: {$bg}";
+        if ($text !== '')      $styles[] = "color: {$text}";
+        if ($submenuBg !== '') $styles[] = "--submenu-bg: {$submenuBg}";
+        if ($submenuTx !== '') $styles[] = "--submenu-color: {$submenuTx}";
+        if ($hover !== '')     $styles[] = "--mf-nav-hover-color: {$hover}";
     }
     $inline_style = !empty($styles) ? implode('; ', $styles) . ';' : '';
 
-    // Helper: render toggle+overlay only when collapsing is enabled
-    $render_mobile_ui = function($menu_ids = []) use ($no_collapse) {
-        if ($no_collapse) return ''; // NEW: suppress UI entirely
-        $html  = '<button class="mfs-nav-toggle" aria-label="Toggle Menu">&#9776;</button>';
-        $html .= '<div class="mfs-nav-overlay">';
-        $html .=   '<button class="mfs-nav-close" aria-label="Close Menu">&times;</button>';
-        $html .=   '<nav class="mfs-nav-overlay-menu">';
-        foreach ($menu_ids as $mid) {
-            if ($mid) {
-                $html .= wp_nav_menu([
-                    'menu'       => $mid,
-                    'container'  => false,
-                    'menu_class' => 'mfs-nav-menu-vertical',
-                    'echo'       => false
-                ]);
-            }
-        }
-        $html .=   '</nav>';
-        $html .= '</div>';
-        return $html;
+    $render_mobile_ui = function ($menu_ids = []) use ($no_collapse, $presentation, $render_menu) {
+        if ($no_collapse) return '';
+        $id = wp_unique_id('mfs-mobile-');
+        $html = '<button type="button" class="mfs-nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="' . esc_attr($id) . '"><span aria-hidden="true">&#9776;</span><span class="mfs-nav-toggle-label">Menu</span></button>';
+        $html .= '<div id="' . esc_attr($id) . '" class="mfs-nav-overlay" hidden>';
+        $html .= '<div class="mfs-nav-panel"' . ($presentation !== 'below' ? ' role="dialog" aria-modal="true" aria-label="Site navigation"' : '') . ' tabindex="-1">';
+        $html .= '<div class="mfs-nav-panel-header"><span>Menu</span><button type="button" class="mfs-nav-close" aria-label="Close menu">&times;</button></div>';
+        $html .= '<nav class="mfs-nav-overlay-menu" aria-label="Mobile navigation">';
+        foreach (array_unique(array_filter($menu_ids)) as $mid) $html .= $render_menu($mid, 'mfs-nav-menu-vertical');
+        return $html . '</nav></div></div>';
     };
 
     // Begin output
@@ -164,12 +168,7 @@ function modfarm_render_navigation_menu_block($attributes) {
             // LEFT
             $nav_markup .= '<div class="mfs-nav-left">';
             if ($left_id) {
-                $nav_markup .= wp_nav_menu([
-                    'menu' => $left_id,
-                    'container' => false,
-                    'menu_class' => 'mfs-nav-menu',
-                    'echo' => false
-                ]);
+                $nav_markup .= $render_menu($left_id, 'mfs-nav-menu');
             }
             $nav_markup .= '</div>';
 
@@ -185,12 +184,7 @@ function modfarm_render_navigation_menu_block($attributes) {
             // RIGHT
             $nav_markup .= '<div class="mfs-nav-right">';
             if ($right_id) {
-                $nav_markup .= wp_nav_menu([
-                    'menu' => $right_id,
-                    'container' => false,
-                    'menu_class' => 'mfs-nav-menu',
-                    'echo' => false
-                ]);
+                $nav_markup .= $render_menu($right_id, 'mfs-nav-menu');
             }
             $nav_markup .= '</div>';
 
@@ -212,12 +206,7 @@ function modfarm_render_navigation_menu_block($attributes) {
                 $nav_markup .= $build_brand_html($center);
             }
 
-            $nav_markup .= wp_nav_menu([
-                'menu' => $left_id,
-                'container' => false,
-                'menu_class' => 'mfs-nav-menu',
-                'echo' => false
-            ]);
+            $nav_markup .= $render_menu($left_id, 'mfs-nav-menu');
 
             // Toggle + Overlay (only if collapsible)
             $nav_markup .= $render_mobile_ui([$left_id]);

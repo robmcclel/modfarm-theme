@@ -6,7 +6,10 @@
   "description": "A flexible, reliable navigation block with support for simple and split menu layouts.",
   "supports": {
     "html": false,
-    "align": ["wide", "full"]
+    "align": [
+      "wide",
+      "full"
+    ]
   },
   "attributes": {
     "layoutType": {
@@ -68,6 +71,34 @@
     "noCollapse": {
       "type": "boolean",
       "default": false
+    },
+    "mobilePresentation": {
+      "type": "string",
+      "default": "overlay"
+    },
+    "drawerSide": {
+      "type": "string",
+      "default": "right"
+    },
+    "showDescriptions": {
+      "type": "boolean",
+      "default": false
+    },
+    "coverWidth": {
+      "type": "number",
+      "default": 56
+    },
+    "iconSize": {
+      "type": "number",
+      "default": 24
+    },
+    "imageGap": {
+      "type": "number",
+      "default": 16
+    },
+    "dropdownWidth": {
+      "type": "number",
+      "default": 320
     }
   },
   "editorScript": "modfarm-navigation-menu-editor",

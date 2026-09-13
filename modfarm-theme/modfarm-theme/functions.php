@@ -557,6 +557,7 @@ add_action('admin_head', 'modfarm_output_nav_custom_properties');
 
 require_once get_template_directory() . '/inc/theme-settings.php';
 require_once get_template_directory() . '/inc/font-library.php';
+require_once get_template_directory() . '/inc/menu-images.php';
 require_once get_template_directory() . '/inc/author-meta.php';
 require_once get_template_directory() . '/blocks/register-blocks.php'; // ✅ All blocks now loaded here
 require_once get_template_directory() . '/inc/pattern-category-registration.php';
@@ -1635,7 +1636,7 @@ function modfarm_theme_enqueue_scripts() {
         'modfarm-navigation-toggle',
         get_template_directory_uri() . '/assets/js/navigation-toggle.js',
         [],
-        null,
+        filemtime(get_template_directory() . '/assets/js/navigation-toggle.js'),
         true // load in footer
     );
 }
