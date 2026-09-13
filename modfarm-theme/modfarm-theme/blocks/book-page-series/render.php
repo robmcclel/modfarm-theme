@@ -3,14 +3,12 @@
  * Server-side render for Book Page Series block
  */
 
-function modfarm_render_book_page_series_block($attributes, $content = null) {
-    $post_id = get_the_ID();
+function modfarm_render_book_page_series_block($attributes, $content = null, $block = null) {
+    $post_id = isset( $block->context['postId'] ) ? (int) $block->context['postId'] : get_the_ID();
     if (get_post_type($post_id) !== 'book') {
         return '';
     }
     //return '<div style="border:1px solid green; padding:10px;">🧪 Block rendered. Success.</div>';
-
-    $post_id = get_the_ID();
 
     $display_mode = $attributes['displayMode'] ?? 'auto';
     $volume_label = trim($attributes['volumeLabel'] ?? 'Book');

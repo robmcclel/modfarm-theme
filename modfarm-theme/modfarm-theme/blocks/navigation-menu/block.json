@@ -12,6 +12,7 @@
     ]
   },
   "attributes": {
+    "searchMode": { "type": "string", "default": "inherit" },
     "layoutType": {
       "type": "string",
       "default": "simple"

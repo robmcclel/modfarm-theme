@@ -12,6 +12,20 @@
       var below = nav.classList.contains('mfs-nav--below');
       var placeholder = overlay ? document.createComment('mobile navigation') : null;
       var isOpen = false, inertNodes = [], oldOverflow = '';
+      var search = nav.querySelector('.mfs-nav-search');
+      if (search) {
+        search.addEventListener('toggle', function () {
+          if (search.open) search.querySelector('input').focus();
+        });
+        search.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') {
+            event.stopPropagation(); search.open = false; search.querySelector('summary').focus();
+          }
+        });
+        document.addEventListener('click', function (event) {
+          if (!search.contains(event.target)) search.open = false;
+        });
+      }
       function direct(item, selector) {
         return Array.from(item.children).find(function (child) { return child.matches(selector); });
       }
@@ -42,6 +56,7 @@
         if (restoreFocus !== false && toggle.isConnected) toggle.focus();
       }
       function open() {
+        if (search) search.open = false;
         controllers.forEach(function (controller) { if (controller !== close) controller(false); });
         if (!below) {
           // Escape transformed/clipped theme containers while preserving resolved styles.
@@ -79,7 +94,7 @@
         });
         overlay.addEventListener('keydown', function (event) {
           if (!isOpen || below || event.key !== 'Tab') return;
-          var focusable = Array.from(panel.querySelectorAll('a[href],button,[tabindex="0"]')).filter(function (el) { return !el.disabled && el.getClientRects().length; });
+          var focusable = Array.from(panel.querySelectorAll('a[href],button,input,select,textarea,[tabindex="0"]')).filter(function (el) { return !el.disabled && el.getClientRects().length; });
           var first = focusable[0], last = focusable[focusable.length - 1];
           if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) { event.preventDefault(); last.focus(); }
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }

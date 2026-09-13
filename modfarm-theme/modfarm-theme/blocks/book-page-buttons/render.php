@@ -12,8 +12,8 @@ require_once get_template_directory() . '/blocks/shared/book-options.php';
  */
 
 if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
-	function modfarm_render_book_page_buttons_block( $attributes, $content ) {
-		$post_id = get_the_ID();
+	function modfarm_render_book_page_buttons_block( $attributes, $content, $block = null ) {
+		$post_id = isset( $block->context['postId'] ) ? (int) $block->context['postId'] : get_the_ID();
 
 		// Fix for editor rendering
 		if ( ! $post_id && isset( $attributes['context']['postId'] ) ) {
@@ -69,6 +69,9 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 				}
 
 				$label        = esc_html( $button['label'] ?? ( $meta_key ? ucfirst( $meta_key ) : 'Link' ) );
+				if ( ! empty( $button['phrase_key'] ) && function_exists( 'modfarm_phrase' ) && isset( modfarm_phrase_registry()[ $button['phrase_key'] ] ) ) {
+					$label = esc_html( modfarm_phrase( $button['phrase_key'], modfarm_language_context( $post_id, (int) ( $attributes['mfLanguage'] ?? 0 ) ) ) );
+				}
 				$open_new_tab = ! empty( $button['new_tab'] );
 
 				// Per-button type (new): inherit | primary | secondary

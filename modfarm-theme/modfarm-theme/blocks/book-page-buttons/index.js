@@ -168,6 +168,12 @@
                   onChange: (val) => updateButton(index, 'meta_key', val)
                 }),
 
+                window.modfarmPhraseControls && el(SelectControl, {
+                  label: __('Standard phrase', 'modfarm'),
+                  value: btn.phrase_key || '',
+                  options: [{label: 'Literal label', value: ''}, ...Object.entries(window.modfarmPhraseControls.registry).map(([value, phrase]) => ({value, label: phrase.text}))],
+                  onChange: (val) => updateButton(index, 'phrase_key', val)
+                }),
                 el(TextControl, {
                   label: __('Label', 'modfarm'),
                   value: btn.label || '',

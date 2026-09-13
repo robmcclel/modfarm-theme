@@ -7,9 +7,9 @@ const assert = require('assert/strict');
  const browser = await chromium.launch(process.platform === 'win32' ? {channel:'msedge',headless:true} : {headless:true});
  const page = await browser.newPage({reducedMotion:'reduce'});
  const errors=[];page.on('pageerror', e=>errors.push(e.message));
- async function fixture(mode,width=412,side='right') {
+ async function fixture(mode,width=412,side='right',search=false) {
    await page.setViewportSize({width,height:924});
-   await page.setContent(execFileSync('php',[path.join(__dirname,'navigation.php'),'--fixture',mode,side],{encoding:'utf8'}));
+   await page.setContent(execFileSync('php',[path.join(__dirname,'navigation.php'),'--fixture',mode,side,search?'search':''],{encoding:'utf8'}));
  }
  for(const [width,expected] of [[412,412],[768,384],[1000,350]]) {
    await fixture('drawer',width);
@@ -74,6 +74,30 @@ const assert = require('assert/strict');
  await page.keyboard.press('Enter');
  assert.equal(await page.locator('.mfs-nav-menu > li > .sub-menu').isVisible(),true);
  console.log('PASS desktop chevrons hidden with keyboard submenu access retained');
+ for (const width of [412,768,1440]) {
+   await fixture('drawer',width,'right',true);
+   const summary=page.locator('.mfs-nav-search summary');
+   await summary.click();
+   const input=page.locator('.mfs-nav-search input');
+   await page.waitForFunction(()=>document.activeElement?.matches('.mfs-nav-search input'));
+   const box=await page.locator('.mfs-nav-search-popover').boundingBox();
+   assert.ok(box.x>=0&&box.x+box.width<=width);
+   await input.fill('Greatcoats');
+   await page.keyboard.press('Escape');
+   assert.equal(await summary.evaluate(el=>el===document.activeElement),true);
+   assert.equal(await page.locator('.mfs-nav-search').getAttribute('open'),null);
+   await summary.click();await page.locator('main h1').click();
+   assert.equal(await page.locator('.mfs-nav-search').getAttribute('open'),null);
+   if(width<1025){
+     await page.locator('.mfs-nav-toggle').click();
+     await page.keyboard.press('Tab');
+     assert.equal(await page.locator('.mfs-nav-overlay input').evaluate(el=>el===document.activeElement),true);
+     await page.locator('.mfs-nav-overlay input').fill('Book 1');
+     await page.route('https://example.test/**',route=>route.fulfill({body:'Search results'}));
+     await Promise.all([page.waitForURL('https://example.test/?s=Book+1'),page.locator('.mfs-nav-overlay button[type=submit]').click()]);
+   }
+ }
+ console.log('PASS search popup bounds, focus, Escape, outside dismissal and native mobile submission');
  assert.deepEqual(errors,[]);
  if(process.env.MFS_NAV_SCREENSHOT) {await fixture('drawer',768);await page.locator('.mfs-nav-toggle').click();await page.locator('.mfs-nav-overlay .mfs-submenu-toggle').first().click();await page.screenshot({path:process.env.MFS_NAV_SCREENSHOT});}
  await browser.close();

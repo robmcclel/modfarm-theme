@@ -21,13 +21,17 @@ function esc_attr($v){return htmlspecialchars((string)$v,ENT_QUOTES);}
 function esc_html($v){return esc_attr($v);}
 function esc_url($v){return esc_attr($v);}
 function wp_strip_all_tags($v){return strip_tags($v);}
+function __($v,$domain=''){return $v;}
+function esc_html__($v,$domain=''){return esc_html($v);}
+function esc_attr__($v,$domain=''){return esc_attr($v);}
+function get_theme_mod($key,$default=false){global $test_search;return $test_search??$default;}
 function get_option($key,$default=[]){global $test_options;return $test_options??$default;}
 function wp_unique_id($prefix){static $id=0;return $prefix.(++$id);}
 function get_block_wrapper_attributes(){return 'class="wp-block-modfarm-navigation-menu"';}
 function modfarm_font_css_value($v){return $v;}
 function modfarm_effective_font_family($v){return $v;}
 function get_bloginfo($key){return 'Author Library';}
-function home_url($v){return '#home';}
+function home_url($v){return 'https://example.test/';}
 function wp_get_attachment_image($id,$size,$icon,$attrs){
  $svg='<svg xmlns="http://www.w3.org/2000/svg" width="80" height="120"><rect width="80" height="120" fill="#305265"/><text x="40" y="55" fill="white" font-size="12" text-anchor="middle">BOOK</text></svg>';
  return '<img class="'.esc_attr($attrs['class']??'').'" src="data:image/svg+xml;base64,'.base64_encode($svg).'" alt="" width="80" height="120">';
@@ -63,6 +67,23 @@ if(!in_array('--fixture',$argv)){
  $html=modfarm_render_navigation_menu_block(['leftMenu'=>1,'localStyle'=>true,'mobileBg'=>'#abcdef']);check(str_contains($html,'--mfs-mobile-bg:#abcdef'),'Local mobile background overrides global');
  $html=modfarm_render_navigation_menu_block(['leftMenu'=>1,'localStyle'=>false,'mobileBg'=>'#abcdef']);check(str_contains($html,'--mfs-mobile-bg:#123456'),'Disabled override follows global');
  $test_options=[];
+ require __DIR__.'/../inc/navigation-search.php';
+ $search_manager=new class {
+   public $sections=[],$settings=[],$controls=[];
+   function add_section($id,$args){$this->sections[$id]=$args;}
+   function add_setting($id,$args){$this->settings[$id]=$args;}
+   function add_control($id,$args){$this->controls[$id]=$args;}
+ };
+ $search_register=end($hooks['customize_register'][20]);$search_register[0]($search_manager);
+ check($search_manager->settings['mfs_navigation_search']['default']===false&&$search_manager->sections['mfs_navigation_search']['panel']==='nav_menus','Customizer checkbox is opt-in under Menus');
+ $html=modfarm_render_navigation_menu_block(['leftMenu'=>1]);check(!str_contains($html,'role="search"'),'Search defaults off');
+ $test_search=true;
+ $html=modfarm_render_navigation_menu_block(['leftMenu'=>1]);check(str_contains($html,'role="search"')&&str_contains($html,'name="s"')&&str_contains($html,'method="get"'),'Customizer enables native search');
+ preg_match_all('/id="(mfs-search-[^"]+)"/',$html,$ids);check(count($ids[1])===2&&count(array_unique($ids[1]))===2,'Unique search input labels');
+ $html=modfarm_render_navigation_menu_block(['leftMenu'=>1,'searchMode'=>'hide']);check(!str_contains($html,'role="search"'),'Block hide overrides global');
+ $html=modfarm_render_navigation_menu_block(['leftMenu'=>1,'mode'=>'footer']);check(!str_contains($html,'role="search"'),'Footer does not inherit header search');
+ $test_search=false;
+ $html=modfarm_render_navigation_menu_block(['leftMenu'=>1,'searchMode'=>'show']);check(str_contains($html,'role="search"'),'Block show overrides global');
  check(apply_filters('nav_menu_item_title','Title',$item,(object)[],0)==='Title','Other menu renderers unchanged');
 }
 function wp_nav_menu($args){
@@ -73,7 +94,9 @@ function wp_nav_menu($args){
  return '<ul id="'.$args['menu_id'].'" class="'.$args['menu_class'].'">'.$link('About').$link('Books','','','<ul class="sub-menu">'.$series.$link('Spellslinger','menu-cover','Magic, tricks, traps, and a talking squirrel cat.').'</ul>').$link('News','menu-icon-only').$link('Contact').'</ul>';
 }
 if(in_array('--fixture',$argv)){
+ require __DIR__.'/../inc/navigation-search.php';
  $mode=$argv[2]??'drawer';$attrs=['leftMenu'=>1,'mobilePresentation'=>$mode,'showDescriptions'=>true,'drawerSide'=>$argv[3]??'right'];
  if($mode==='no-collapse')$attrs['noCollapse']=true;
+ if(in_array('search',$argv))$attrs['searchMode']='show';
  echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Arial;background:#eee;color:#203040} .mfs-nav{--submenu-bg:#fff;--submenu-color:#203040;--mf-nav-bg:#fff;--mf-nav-color:#203040} main{padding:40px;min-height:1600px}</style><style>'.file_get_contents(__DIR__.'/../blocks/navigation-menu/style.css').'</style></head><body><header>'.modfarm_render_navigation_menu_block($attrs).'</header><main><h1>Stories worth exploring</h1><a id="destination" href="#home">Explore the library</a></main><script>'.file_get_contents(__DIR__.'/../assets/js/navigation-toggle.js').'</script></body></html>';
 }

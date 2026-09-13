@@ -20,6 +20,7 @@
   // Register (or override) the block with the new attribute.
   wp.blocks.registerBlockType('modfarm/navigation-menu', {
     attributes: {
+      searchMode: { type: 'string', default: 'inherit' },
       mobileBg: { type: 'string', default: '' },
       mobileColor: { type: 'string', default: '' },
       mobilePresentation: {"type":"string","default":"overlay"},
@@ -124,6 +125,17 @@
             }),
 
             // NEW: Do not collapse on mobile
+            el(SelectControl, {
+              label: 'Navigation Search',
+              value: attributes.searchMode || 'inherit',
+              options: [
+                { label: 'Use Customizer setting', value: 'inherit' },
+                { label: 'Show search', value: 'show' },
+                { label: 'Hide search', value: 'hide' }
+              ],
+              onChange: value => setAttributes({ searchMode: value }),
+              help: 'Default is off. Enable in Customizer → Menus → Navigation Search, or override here.'
+            }),
             el(ToggleControl, {
               label: 'Do not collapse on mobile',
               checked: !!noCollapse,

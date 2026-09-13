@@ -69,7 +69,15 @@ if (!function_exists('modfarm_render_advanced_book_details_block')) {
       return $val;
     };
 
-    $human_label = function($choice, $type = '') {
+    $human_label = function($choice, $type = '') use ( $post_id, $attributes ) {
+      if ( function_exists( 'modfarm_phrase_resolve' ) ) {
+        $tax_keys = array( 'book-series' => 'series.series', 'book-format' => 'book_detail.format', 'book-genre' => 'book_detail.genre', 'book-author' => 'catalog.author', 'book-language' => 'catalog.language' );
+        $phrase_key = $type === 'tax' ? ( $tax_keys[ $choice ] ?? '' ) : 'book_detail.' . $choice;
+        if ( isset( modfarm_phrase_registry()[ $phrase_key ] ) ) {
+          $resolved = modfarm_phrase_resolve( $phrase_key, modfarm_language_context( $post_id, (int) ( $attributes['mfLanguage'] ?? 0 ) ) );
+          if ( in_array( $resolved['source'], array( 'ai', 'manual' ), true ) ) return $resolved['text'];
+        }
+      }
       if ($type === 'tax') {
         $tax = get_taxonomy($choice);
         if ($tax && !empty($tax->labels->singular_name)) {

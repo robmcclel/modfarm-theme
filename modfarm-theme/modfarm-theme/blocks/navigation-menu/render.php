@@ -2,6 +2,8 @@
 function modfarm_render_navigation_menu_block($attributes) {
     $layout       = $attributes['layoutType'] ?? 'simple';
     $mode         = $attributes['mode'] ?? 'header'; // 'header' or 'footer'
+    $search_mode = $attributes['searchMode'] ?? 'inherit';
+    $search_enabled = $search_mode === 'show' || ($search_mode === 'inherit' && $mode === 'header' && get_theme_mod('mfs_navigation_search', false));
     $left_id      = $attributes['leftMenu'] ?? 0;
     $right_id     = $attributes['rightMenu'] ?? 0;
     $center       = $attributes['centerContent'] ?? 'site-title'; // site-title | site-logo | site-icon | site-icon-title | none
@@ -149,13 +151,14 @@ function modfarm_render_navigation_menu_block($attributes) {
     }
     $inline_style = !empty($styles) ? implode('; ', $styles) . ';' : '';
 
-    $render_mobile_ui = function ($menu_ids = []) use ($no_collapse, $presentation, $render_menu) {
+    $render_mobile_ui = function ($menu_ids = []) use ($no_collapse, $presentation, $render_menu, $search_enabled) {
         if ($no_collapse) return '';
         $id = wp_unique_id('mfs-mobile-');
         $html = '<button type="button" class="mfs-nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="' . esc_attr($id) . '"><span aria-hidden="true">&#9776;</span><span class="mfs-nav-toggle-label">Menu</span></button>';
         $html .= '<div id="' . esc_attr($id) . '" class="mfs-nav-overlay" hidden>';
         $html .= '<div class="mfs-nav-panel"' . ($presentation !== 'below' ? ' role="dialog" aria-modal="true" aria-label="Site navigation"' : '') . ' tabindex="-1">';
         $html .= '<div class="mfs-nav-panel-header"><span>Menu</span><button type="button" class="mfs-nav-close" aria-label="Close menu">&times;</button></div>';
+        if ($search_enabled) $html .= mfs_navigation_search_form();
         $html .= '<nav class="mfs-nav-overlay-menu" aria-label="Mobile navigation">';
         foreach (array_unique(array_filter($menu_ids)) as $mid) $html .= $render_menu($mid, 'mfs-nav-menu-vertical');
         return $html . '</nav></div></div>';
@@ -195,6 +198,7 @@ function modfarm_render_navigation_menu_block($attributes) {
 
             // Toggle + Overlay (only if collapsible)
             $nav_markup .= $render_mobile_ui([$left_id, $right_id]);
+            if ($search_enabled) $nav_markup .= mfs_navigation_search_toggle();
 
             $nav_markup .= '</div>'; // .mfs-nav
         }
@@ -215,6 +219,7 @@ function modfarm_render_navigation_menu_block($attributes) {
 
             // Toggle + Overlay (only if collapsible)
             $nav_markup .= $render_mobile_ui([$left_id]);
+            if ($search_enabled) $nav_markup .= mfs_navigation_search_toggle();
 
             $nav_markup .= '</div>'; // .mfs-nav
         }
