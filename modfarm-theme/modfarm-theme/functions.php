@@ -1539,10 +1539,13 @@ function modfarm_render_archive_page() {
     $body_slug   = modfarm_resolve_archive_body_pattern_slug($opts);
     $footer_slug = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
 
+    $posts_page = null;
+
     // A designated posts page is a page-shaped archive: keep page chrome,
     // but replace the page body with the blog-index archive body layout.
     if (is_home() && !is_front_page()) {
         $posts_page_id = (int) get_option('page_for_posts');
+        $posts_page = $posts_page_id > 0 ? get_post($posts_page_id) : null;
         if ($posts_page_id > 0 && function_exists('modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post')) {
             $page_chrome = modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($posts_page_id, 'page', $opts);
             if (!empty($page_chrome['header'])) {
@@ -1569,10 +1572,27 @@ function modfarm_render_archive_page() {
     $body   = $get_content($body_slug);
     $footer = $get_content($footer_slug);
 
+    // Core blocks derive postId/postType from the global post. On the blog
+    // index that is normally the latest post, even when using page patterns.
+    // Scope page context to chrome only; the body keeps the main posts query.
+    $render_chrome = static function ($content) use ($posts_page) {
+        if (!($posts_page instanceof WP_Post) || $posts_page->post_type !== 'page') {
+            return do_blocks($content);
+        }
+
+        $original_post = $GLOBALS['post'] ?? null;
+        $GLOBALS['post'] = $posts_page;
+        try {
+            return do_blocks($content);
+        } finally {
+            $GLOBALS['post'] = $original_post;
+        }
+    };
+
     // Render; if a pattern slug is bad, it will render as empty (safe fail)
-    echo do_blocks($header);
+    echo $render_chrome($header);
     echo do_blocks($body);
-    echo do_blocks($footer);
+    echo $render_chrome($footer);
 }
 
 /**
