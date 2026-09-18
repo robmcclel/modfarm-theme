@@ -38,6 +38,25 @@ if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
 	  $terms = array_values(array_filter($terms, static function($term) { return (int)$term->count > 0; }));
 	}
 
+    // Resolve language-specific counts before paging and TOC generation.
+    if (!empty($attributes['bookLanguage'])) {
+      foreach ($terms as $index => $term) {
+        $count_query = new WP_Query(modfarm_filter_books_by_language([
+          'post_type' => 'book', 'post_status' => 'publish',
+          'posts_per_page' => 1, 'fields' => 'ids',
+          'tax_query' => [['taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => [(int)$term->term_id]]],
+        ], $attributes));
+        $terms[$index] = clone $term;
+        $terms[$index]->count = (int)$count_query->found_posts;
+      }
+      if (!empty($attributes['hideEmpty']) || 'books_by_series' === $group_mode) {
+        $terms = array_values(array_filter($terms, static function($term) { return $term->count > 0; }));
+      }
+      if ('count_desc' === ($attributes['orderBy'] ?? '')) {
+        usort($terms, static function($a, $b) { return $b->count <=> $a->count; });
+      }
+    }
+
     $per_page = max(1, absint($attributes['perPage'] ?? 24));
 	$pagination = 'terms' === $group_mode && !empty($attributes['enablePagination']);
     $pages = $pagination ? max(1, (int)ceil(count($terms) / $per_page)) : 1;
@@ -175,10 +194,10 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       return '';
     };
 
-    $first_book_id_for_term = function($term_id) use ($tax) {
+    $first_book_id_for_term = function($term_id) use ($tax, $a) {
       $keys = ['publisher_date','publication_date','pub_date','release_date','published_on'];
       foreach ($keys as $key) {
-        $ids = get_posts([
+        $ids = get_posts(modfarm_filter_books_by_language([
           'post_type'      => 'book',
           'tax_query'      => [[ 'taxonomy' => $tax, 'terms' => $term_id ]],
           'posts_per_page' => 1,
@@ -188,10 +207,10 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           'fields'         => 'ids',
           'no_found_rows'  => true,
           'meta_type'      => 'DATETIME'
-        ]);
+        ], $a));
         if (!empty($ids)) return intval($ids[0]);
       }
-      $ids = get_posts([
+      $ids = get_posts(modfarm_filter_books_by_language([
         'post_type'      => 'book',
         'tax_query'      => [[ 'taxonomy' => $tax, 'terms' => $term_id ]],
         'posts_per_page' => 1,
@@ -199,7 +218,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         'order'          => 'ASC',
         'fields'         => 'ids',
         'no_found_rows'  => true,
-      ]);
+      ], $a));
       return !empty($ids) ? intval($ids[0]) : 0;
     };
 
@@ -492,7 +511,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         <?php foreach ($terms_for_paging as $series_loop_index => $term): ?>
           <?php
           if (!($term instanceof WP_Term)) continue;
-          $book_ids = get_posts([
+          $book_ids = get_posts(modfarm_filter_books_by_language([
             'post_type'      => 'book',
             'post_status'    => 'publish',
             'posts_per_page' => -1,
@@ -503,7 +522,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
               'field'    => 'term_id',
               'terms'    => [(int)$term->term_id],
             ]],
-          ]);
+          ], $a));
           $book_ids = array_values(array_filter(array_map('absint', is_array($book_ids) ? $book_ids : [])));
           usort($book_ids, static function($left, $right) {
             $left_position = trim((string)get_post_meta($left, 'series_position', true));

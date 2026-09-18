@@ -34,7 +34,7 @@ function modfarm_theme_resolve_handpicked_books_presentation( array $attributes,
 	$ids = array_values( array_unique( array_filter( array_map( 'absint', (array) ( $attributes['books'] ?? array() ) ) ) ) );
 	$ids = array_slice( $ids, 0, 5000 );
 	if ( $ids ) {
-		$ids = get_posts( array( 'post_type' => 'book', 'post_status' => 'publish', 'post__in' => $ids, 'orderby' => 'post__in', 'fields' => 'ids', 'posts_per_page' => count( $ids ), 'no_found_rows' => true, 'suppress_filters' => false ) );
+		$ids = get_posts( modfarm_filter_books_by_language(array( 'post_type' => 'book', 'post_status' => 'publish', 'post__in' => $ids, 'orderby' => 'post__in', 'fields' => 'ids', 'posts_per_page' => count( $ids ), 'no_found_rows' => true, 'suppress_filters' => false ), $attributes) );
 	}
 	$references = array_map( function ( $id ) { return modfarm_theme_cir_entity_reference( 'book', $id ); }, $ids );
 	$display_limit = max( 1, min( 50, absint( $attributes['books-per-page'] ?? 12 ) ) );
@@ -78,11 +78,11 @@ function modfarm_theme_resolve_taxonomy_grid_presentation( array $attributes, ar
 	} ) );
 
 	$term_ids = array_map( function ( $term ) { return (int) $term->term_id; }, $terms );
-	$book_ids = $term_ids ? get_posts( array(
+	$book_ids = $term_ids ? get_posts( modfarm_filter_books_by_language(array(
 		'post_type' => 'book', 'post_status' => 'publish', 'posts_per_page' => 5001,
 		'fields' => 'ids', 'no_found_rows' => true, 'orderby' => 'ID', 'order' => 'ASC',
 		'tax_query' => array( array( 'taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => $term_ids ) ),
-	) ) : array();
+	), $attributes) ) : array();
 	$books_complete = count( $book_ids ) <= 5000;
 	$book_ids = array_slice( array_values( array_unique( array_map( 'absint', $book_ids ) ) ), 0, 5000 );
 	$book_references = array_map( function ( $id ) { return modfarm_theme_cir_entity_reference( 'book', $id ); }, $book_ids );
@@ -104,6 +104,7 @@ function modfarm_theme_resolve_taxonomy_grid_presentation( array $attributes, ar
 		'query_scope' => array(
 			'taxonomy' => $taxonomy,
 			'group_mode' => $selection['group_mode'],
+			'book_language' => $attributes['bookLanguage'] ?? '',
 			'display_mode' => sanitize_key( $attributes['displayMode'] ?? 'all' ),
 			'parent_id' => absint( $attributes['parentId'] ?? 0 ),
 			'hide_empty' => ! empty( $attributes['hideEmpty'] ),

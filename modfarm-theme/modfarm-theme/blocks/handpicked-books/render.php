@@ -169,7 +169,7 @@ function modfarm_render_handpicked_books_block( $attributes ) {
     $q_args['no_found_rows'] = true;
   }
 
-  $q = new WP_Query($q_args);
+  $q = new WP_Query( modfarm_filter_books_by_language($q_args, $attributes) );
 
   ob_start();
 

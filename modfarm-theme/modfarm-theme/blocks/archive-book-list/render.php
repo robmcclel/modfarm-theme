@@ -417,12 +417,12 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         $args['order']     = $order;
     }
 
-    $query = new WP_Query( $args );
+    $query = new WP_Query( modfarm_filter_books_by_language($args, $attributes) );
 
     if ( $format_term && ! $query->have_posts() ) {
         $fallback_args = $args;
         $fallback_args['tax_query'] = $context_tax_query;
-        $query = new WP_Query( $fallback_args );
+        $query = new WP_Query( modfarm_filter_books_by_language($fallback_args, $attributes) );
     }
 
     // --------------------------------------------------

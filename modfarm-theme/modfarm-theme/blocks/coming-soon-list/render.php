@@ -239,7 +239,7 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
     // NOTE: intentionally NOT setting meta_type => 'DATE' for compatibility
   }
 
-  $q = new WP_Query($q_args);
+  $q = new WP_Query( modfarm_filter_books_by_language($q_args, $attributes) );
 
   // ===== Grid columns from percent =====
   $pct  = floatval(str_replace('%','',(string)$books_per_row));

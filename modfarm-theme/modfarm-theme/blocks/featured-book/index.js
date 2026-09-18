@@ -209,7 +209,7 @@
         if (attributes.mode === 'auto') {
           const dateType = attributes.dateType || 'publication_date';
           return apiFetch({
-            path: `/modfarm/v1/featured-book-description?dateType=${encodeURIComponent(dateType)}`
+            path: `/modfarm/v1/featured-book-description?dateType=${encodeURIComponent(dateType)}&bookLanguage=${encodeURIComponent(attributes.bookLanguage || '')}`
           });
         }
 
@@ -248,7 +248,7 @@
             if (raw) setAttributes({ descOverride: String(raw) });
           })
           .catch(() => {});
-      }, [attributes.useCustomDesc, attributes.refreshCustomDescOnBookChange, seedBookId, attributes.mode, attributes.dateType]);
+      }, [attributes.useCustomDesc, attributes.refreshCustomDescOnBookChange, seedBookId, attributes.mode, attributes.dateType, attributes.bookLanguage]);
 
       return el(
         Fragment,

@@ -217,7 +217,7 @@ function modfarm_render_multi_tax_format_block( $attributes ) {
         $args['order']     = $order;
     }
 
-    $query = new WP_Query( $args );
+    $query = new WP_Query( modfarm_filter_books_by_language($args, $attributes) );
 
     // --------------------------------------------------
     // 7. WRAPPER CLASSES

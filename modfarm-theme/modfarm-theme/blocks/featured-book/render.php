@@ -190,14 +190,14 @@ if (!function_exists('mfb_get_asin')) {
 
 /** Latest by selected date key; pinned override wins if valid */
 if (!function_exists('mfb_pick_latest_by_date')) {
-  function mfb_pick_latest_by_date($key, $pinned_id = 0) {
+  function mfb_pick_latest_by_date($key, $pinned_id = 0, $language = '') {
     if ($pinned_id > 0 && get_post_type($pinned_id) === 'book') return (int)$pinned_id;
 
     $date_keys = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
     $date_key = in_array($key, $date_keys, true) ? $key : 'publication_date';
     $today = current_time('Y-m-d');
 
-    $q = new WP_Query([
+    $q = new WP_Query(modfarm_filter_books_by_language([
       'post_type'      => 'book',
       'post_status'    => 'publish',
       'posts_per_page' => 1,
@@ -215,11 +215,11 @@ if (!function_exists('mfb_pick_latest_by_date')) {
       ],
       'no_found_rows'  => true,
       'ignore_sticky_posts' => true,
-    ]);
+    ], ['bookLanguage' => $language]));
     if ($q->have_posts()) { $id = (int)$q->posts[0]->ID; wp_reset_postdata(); return $id; }
     wp_reset_postdata();
 
-    $q2 = new WP_Query([
+    $q2 = new WP_Query(modfarm_filter_books_by_language([
       'post_type'      => 'book',
       'post_status'    => 'publish',
       'posts_per_page' => 1,
@@ -227,7 +227,7 @@ if (!function_exists('mfb_pick_latest_by_date')) {
       'order'          => 'DESC',
       'no_found_rows'  => true,
       'ignore_sticky_posts' => true,
-    ]);
+    ], ['bookLanguage' => $language]));
     $id = $q2->have_posts() ? (int)$q2->posts[0]->ID : 0;
     wp_reset_postdata();
     return $id;
@@ -241,11 +241,11 @@ if (!function_exists('mfb_resolve_featured_book_selection')) {
     $date_keys = [ 'publication_date', 'hardcover_publication_date', 'audiobook_publication_date' ];
     $date_type = in_array($attributes['dateType'] ?? '', $date_keys, true) ? $attributes['dateType'] : 'publication_date';
     $pinned_id = absint($attributes['pinnedId'] ?? 0);
-    $book_id = $mode === 'auto' ? mfb_pick_latest_by_date($date_type, $pinned_id) : absint($attributes['bookId'] ?? 0);
+    $book_id = $mode === 'auto' ? mfb_pick_latest_by_date($date_type, $pinned_id, $attributes['bookLanguage'] ?? '') : absint($attributes['bookId'] ?? 0);
     return [
       'book_id' => $book_id,
       'selection_method' => $mode === 'auto' ? ($pinned_id ? 'pinned' : 'latest-published') : 'manual',
-	  'query_scope' => $mode === 'auto' && !$pinned_id ? [ 'post_type' => 'book', 'date_field' => $date_type, 'not_after' => current_time('Y-m-d') ] : [],
+	  'query_scope' => $mode === 'auto' && !$pinned_id ? [ 'post_type' => 'book', 'date_field' => $date_type, 'not_after' => current_time('Y-m-d'), 'book_language' => $attributes['bookLanguage'] ?? '' ] : [],
       'dependencies' => $mode === 'auto' && !$pinned_id ? [ 'query:publication:latest:' . $date_type ] : [],
     ];
   }
@@ -263,7 +263,7 @@ add_action('rest_api_init', function () {
         ? $request->get_param('dateType')
         : 'publication_date';
       $pinned_id = absint($request->get_param('pinnedId'));
-      $book_id = mfb_pick_latest_by_date($date_type, $pinned_id);
+      $book_id = mfb_pick_latest_by_date($date_type, $pinned_id, (string)$request->get_param('bookLanguage'));
 
       if ($book_id <= 0 || get_post_type($book_id) !== 'book') {
         return new WP_REST_Response([
