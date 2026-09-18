@@ -4,6 +4,7 @@
   const {
     PanelBody,
     SelectControl,
+    ToggleControl,
     TextControl,
     RangeControl,
     ColorPalette,
@@ -17,6 +18,8 @@
     icon: "book",
     category: "modfarm-book-page",
     attributes: {
+      showTotal: { type: "boolean", default: false },
+      showStatus: { type: "boolean", default: false },
       displayMode: { type: "string", default: "auto" },
       volumeLabel: { type: "string", default: "Book" },
       customLabel: { type: "string", default: "" },
@@ -57,6 +60,7 @@
             attributes.displayMode === "auto" &&
               el(TextControl, {
                 label: "Volume Label (e.g. Book, Vol, Part)",
+                help: "Leave blank to show just the number, such as 1 of 3.",
                 value: attributes.volumeLabel,
                 onChange: (val) => setAttributes({ volumeLabel: val })
               }),
@@ -67,6 +71,18 @@
                 value: attributes.customLabel,
                 onChange: (val) => setAttributes({ customLabel: val })
               }),
+
+            attributes.displayMode === "auto" && el(ToggleControl, {
+              label: "Show series total (Book 1 of 3)",
+              help: "Uses the total entered on the Series page. Leave off for Book 1.",
+              checked: !!attributes.showTotal,
+              onChange: (value) => setAttributes({ showTotal: value })
+            }),
+            attributes.displayMode === "auto" && el(ToggleControl, {
+              label: "Show series status (Ongoing or Completed)",
+              checked: !!attributes.showStatus,
+              onChange: (value) => setAttributes({ showStatus: value })
+            }),
 
             el(SelectControl, {
               label: "Alignment",

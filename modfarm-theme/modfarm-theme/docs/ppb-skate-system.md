@@ -295,6 +295,25 @@ Current settings-page execution rules:
 
 ## Canonical Fallback Defaults
 
+### Designated Blog Page
+
+`home.php` delegates the designated posts page to `modfarm_render_archive_page()`.
+When that page has a saved PPB Body Zone, the renderer keeps its saved block
+layout (including local header/footer edits, backgrounds, and surrounding
+groups) and substitutes the selected blog-index pattern only for the Body Zone
+at render time. Stored page content is unchanged. The designated feed replaces
+the body even when its editor zone is locked; locks still protect stored content.
+
+The saved layout renders with the Blog page's post context; the feed renders
+with the original posts-query context. The main query and pagination are not
+replaced. Header/footer changes belong in the Blog page's local PPB zones.
+Global Archive Header settings do not override that saved page design.
+
+Pages without an explicit Body Zone retain the Hybrid/page-pattern fallback.
+Their header/footer patterns honor local Hybrid overrides and page defaults,
+including `user/*` patterns. Legacy unzoned page content is not automatically
+split into header/body/footer regions.
+
 The repository now has a concrete canonical fallback set for unresolved or unset PPB defaults:
 
 - archive header: `modfarm/archive-header-basic`

@@ -304,9 +304,10 @@ function mfb_ui_title(string $title, bool $show = true): string {
   return '<span class="mfb-title">' . esc_html($title) . '</span>';
 }
 
-function mfb_ui_series(string $series, $pos = '', string $vol_text = 'Book'): string {
+function mfb_ui_series(string $series, $pos = '', string $vol_text = 'Book', int $series_id = 0): string {
   if ($series === '') return '';
   $suffix = ($pos !== '' ? ' ' . esc_html($vol_text) . ' ' . esc_html($pos) : '');
+  if ($series_id && $pos !== '' && function_exists('modfarm_bms_series_position_label')) $suffix = ' ' . esc_html(modfarm_bms_series_position_label($pos, $series_id, $vol_text));
   return '<span class="mfb-series">' . esc_html($series) . $suffix . '</span>';
 }
 
@@ -346,6 +347,13 @@ function mfb_ui_card(array $card): string {
   $series    = (string)($card['series_name'] ?? '');
   $pos       = (string)($card['series_position'] ?? '');
   $vol_text  = (string)($card['volume_text'] ?? 'Book');
+  $series_id = 0;
+  if ($id && $series !== '' && function_exists('modfarm_bms_series_position_label')) {
+    $series_terms = get_the_terms($id, 'book-series');
+    foreach (is_wp_error($series_terms) || ! $series_terms ? [] : $series_terms as $series_term) {
+      if ($series_term->name === $series) { $series_id = (int)$series_term->term_id; break; }
+    }
+  }
 
   $button    = (isset($card['button']) && is_array($card['button'])) ? $card['button'] : [];
   $btn_text  = (string)($button['text']   ?? __('See The Book', 'modfarm'));
@@ -439,7 +447,7 @@ function mfb_ui_card(array $card): string {
     ]); ?>
 
     <?php echo mfb_ui_title($title, $show_title); ?>
-    <?php echo mfb_ui_series($series, $pos, $vol_text); ?>
+    <?php echo mfb_ui_series($series, $pos, $vol_text, $series_id); ?>
     <?php echo mfb_ui_author($author_name, $show_author); ?>
     <?php echo mfb_ui_blurb($blurb, $show_blurb); ?>
     <?php echo mfb_ui_pubdate($pub_date_label, $show_date); ?>

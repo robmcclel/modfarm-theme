@@ -21,6 +21,7 @@ function modfarm_render_book_page_series_block($attributes, $content = null, $bl
 
     // CASE: Display Mode 'none'
     if ($display_mode === 'none') {
+        ob_end_clean();
         return '';
     }
 
@@ -42,6 +43,7 @@ function modfarm_render_book_page_series_block($attributes, $content = null, $bl
     $position = get_post_meta($post_id, 'series_position', true);
     
     if (!$series_name) {
+        ob_end_clean();
         return '';
     }
     
@@ -49,8 +51,13 @@ function modfarm_render_book_page_series_block($attributes, $content = null, $bl
         $output = '<strong>' . esc_html($series_name) . '</strong> ';
         $output .= esc_html($volume_label) . ' ';
         $output .= '<strong>' . esc_html($position) . '</strong>';
+        if (!empty($attributes['showTotal']) && function_exists('modfarm_bms_series_position_label')) $output = '<strong>' . esc_html($series_name) . '</strong> ' . esc_html(trim(modfarm_bms_series_position_label($position, $terms[0]->term_id, $volume_label)));
     } else {
         $output = '<strong>' . esc_html($series_name) . '</strong>';
+    }
+    if (!empty($attributes['showStatus']) && function_exists('modfarm_bms_get_series_publication')) {
+        $publication = modfarm_bms_get_series_publication($terms[0]->term_id);
+        if ($publication['status']) $output .= ' <span class="series-status">(' . esc_html($publication['status'] === 'complete' ? __('Completed', 'modfarm') : __('Ongoing', 'modfarm')) . ')</span>';
     }
     
     ?>

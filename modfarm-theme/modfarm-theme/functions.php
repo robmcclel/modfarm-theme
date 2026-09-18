@@ -1564,6 +1564,9 @@ function modfarm_render_archive_page() {
 
     $get_content = static function($slug) use ($registry) {
         if (!$slug) return '';
+        if (function_exists('modfarm_ppb_get_pattern_content_by_slug')) {
+            return modfarm_ppb_get_pattern_content_by_slug((string) $slug);
+        }
         $p = $registry->get_registered($slug);
         return (is_array($p) && !empty($p['content'])) ? (string) $p['content'] : '';
     };
@@ -1589,6 +1592,42 @@ function modfarm_render_archive_page() {
         }
     };
 
+    // Zoned pages own their saved layout, including edits and blocks outside
+    // zones. Replace only the body at render time; never rewrite post_content.
+    if ($posts_page instanceof WP_Post && $posts_page->post_type === 'page'
+        && function_exists('modfarm_find_zone_block_by_slot')) {
+        $saved_content = (string) $posts_page->post_content;
+        $saved_blocks = parse_blocks($saved_content);
+        if (modfarm_find_zone_block_by_slot($saved_blocks, 'body') !== null) {
+            $query_post = $GLOBALS['post'] ?? null;
+            $rendering_body = false;
+            $replace_body = static function ($pre_render, $parsed_block) use ($body, $query_post, &$rendering_body) {
+                if ($rendering_body || ($parsed_block['blockName'] ?? '') !== 'modfarm/zone'
+                    || modfarm_get_zone_slot_from_block_attrs($parsed_block['attrs'] ?? []) !== 'body') {
+                    return $pre_render;
+                }
+
+                $page_post = $GLOBALS['post'] ?? null;
+                $GLOBALS['post'] = $query_post;
+                $rendering_body = true;
+                try {
+                    return do_blocks($body);
+                } finally {
+                    $rendering_body = false;
+                    $GLOBALS['post'] = $page_post;
+                }
+            };
+            add_filter('pre_render_block', $replace_body, 10, 2);
+            try {
+                echo $render_chrome($saved_content);
+            } finally {
+                remove_filter('pre_render_block', $replace_body, 10);
+            }
+            return;
+        }
+    }
+
+    // Unzoned/Hybrid pages retain local chrome selections and page defaults.
     // Render; if a pattern slug is bad, it will render as empty (safe fail)
     echo $render_chrome($header);
     echo do_blocks($body);

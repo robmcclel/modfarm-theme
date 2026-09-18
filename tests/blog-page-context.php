@@ -1,6 +1,7 @@
 <?php
 /** Run: php tests/blog-page-context.php (isolated renderer regression test). */
 class WP_Post {
+    public string $post_content = '';
     public function __construct(public int $ID, public string $post_type) {}
 }
 class WP_Block_Patterns_Registry {
@@ -19,6 +20,19 @@ function modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($id, $type, $opt
     return ['header' => 'page_header', 'footer' => 'page_footer'];
 }
 function do_blocks($content) {
+    $blocks = parse_blocks($content);
+    if ($blocks) {
+        foreach ($blocks as $block) {
+            $pre_render = null;
+            foreach ($GLOBALS['filters']['pre_render_block'] ?? [] as $callback) {
+                $pre_render = $callback($pre_render, $block);
+            }
+            if ($pre_render !== null) continue;
+            if (isset($block['label'])) do_blocks($block['label']);
+            if (!empty($block['innerBlocks'])) do_blocks(json_encode($block['innerBlocks']));
+        }
+        return '';
+    }
     // Model WordPress's default block context, sourced from global $post.
     $GLOBALS['renders'][] = [$content, $GLOBALS['post']?->ID];
     if ($content === ($GLOBALS['throw_on'] ?? null)) {
@@ -26,6 +40,14 @@ function do_blocks($content) {
     }
     return '';
 }
+// Structured fixtures isolate renderer behavior from WordPress's parser.
+function parse_blocks($content) { return json_decode($content, true) ?: []; }
+function add_filter($hook, $callback, $priority, $args) { $GLOBALS['filters'][$hook][] = $callback; }
+function remove_filter($hook, $callback, $priority) {
+    $GLOBALS['filters'][$hook] = array_values(array_filter($GLOBALS['filters'][$hook], fn($item) => $item !== $callback));
+}
+define('ABSPATH', __DIR__);
+require dirname(__DIR__) . '/modfarm-theme/modfarm-theme/inc/ppb-zone-detector.php';
 function same($expected, $actual, $label) {
     if ($expected !== $actual) throw new RuntimeException($label . ': ' . var_export($actual, true));
 }
@@ -79,5 +101,44 @@ try {
     same($original, $post, 'Post context restored after render failure');
 } finally {
     while (ob_get_level() > $buffer_level) ob_end_clean();
+}
+$throw_on = null;
+$pages[42]->post_content = json_encode([
+    ['blockName' => 'core/group', 'label' => 'background-wrapper', 'innerBlocks' => [
+        ['blockName' => 'modfarm/zone', 'attrs' => ['slot' => 'header'], 'innerBlocks' => [
+            ['blockName' => 'core/post-title', 'label' => 'saved-centered-title'],
+        ]],
+        ['blockName' => 'modfarm/zone', 'attrs' => [], 'innerBlocks' => [
+            ['blockName' => 'core/paragraph', 'label' => 'old-page-body'],
+        ]],
+        ['blockName' => 'modfarm/zone', 'attrs' => ['slot' => 'footer'], 'innerBlocks' => [
+            ['blockName' => 'core/paragraph', 'label' => 'saved-footer'],
+        ]],
+    ]],
+]);
+$saved = $pages[42]->post_content;
+$renders = [];
+modfarm_render_archive_page();
+same([['background-wrapper', 42], ['saved-centered-title', 42], ['body', 99], ['saved-footer', 42]], $renders, 'Saved nested layout preserved and only body replaced');
+same($saved, $pages[42]->post_content, 'Stored layout unchanged');
+same([], $filters['pre_render_block'], 'Temporary filter removed');
+same($original, $post, 'Zoned layout restores original post');
+same((array) $original_query, (array) $wp_query, 'Zoned layout preserves posts and pagination');
+
+$post = null;
+$renders = [];
+modfarm_render_archive_page();
+same([['background-wrapper', 42], ['saved-centered-title', 42], ['body', null], ['saved-footer', 42]], $renders, 'Empty feed keeps saved layout');
+same(null, $post, 'Empty zoned feed restores null context');
+
+$post = $original;
+$throw_on = 'body';
+try {
+    modfarm_render_archive_page();
+    throw new LogicException('Expected zoned render failure');
+} catch (RuntimeException $error) {
+    same('Rendering failed', $error->getMessage(), 'Body error propagated');
+    same($original, $post, 'Body error restores original post');
+    same([], $filters['pre_render_block'], 'Body error removes temporary filter');
 }
 echo "Blog page context tests passed.\n";

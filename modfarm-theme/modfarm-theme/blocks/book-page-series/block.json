@@ -9,6 +9,14 @@
     "html": false
   },
   "attributes": {
+    "showTotal": {
+      "type": "boolean",
+      "default": false
+    },
+    "showStatus": {
+      "type": "boolean",
+      "default": false
+    },
     "displayMode": {
       "type": "string",
       "default": "auto"
