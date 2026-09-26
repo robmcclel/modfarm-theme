@@ -2376,6 +2376,7 @@ function modfarm_sanitize_settings($settings) {
         'site_title_font_size',
         'nav_font',
         'facebook_pixel_id',
+        'google_tag_id',
         'nav_font_size',
         'mobile_nav_bg_color',
         'mobile_nav_text_color',
@@ -2504,6 +2505,10 @@ function modfarm_sanitize_settings($settings) {
             case 'facebook_pixel_id':
                 $pixel_id = trim((string) $val);
                 $clean[$key] = preg_match('/^\d{5,20}$/', $pixel_id) ? $pixel_id : '';
+                break;
+
+            case 'google_tag_id':
+                $clean[$key] = modfarm_normalize_google_tag_id($val);
                 break;
 
             case 'nav_logo_max_width':
@@ -4193,6 +4198,29 @@ function modfarm_render_settings_page() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <div class="mf-settings-group">
+                                        <h3 class="mf-group-title">Google Tag</h3>
+                                        <table class="form-table mf-form-table">
+                                            <tbody>
+                                            <tr>
+                                                <th scope="row"><label for="modfarm-google-tag-id">Google Tag ID</label></th>
+                                                <td>
+                                                    <input
+                                                        id="modfarm-google-tag-id"
+                                                        type="text"
+                                                        autocomplete="off"
+                                                        spellcheck="false"
+                                                        name="modfarm_theme_settings[google_tag_id]"
+                                                        value="<?php echo esc_attr($opts['google_tag_id'] ?? ''); ?>"
+                                                        class="regular-text"
+                                                        placeholder="AW-18474709286">
+                                                    <p class="description">Enter a Google tag ID such as <code>AW-18474709286</code> for Google Ads or <code>G-XXXXXXXXXX</code> for Google Analytics. Leave blank to disable it. Do not enter a <code>GTM-</code> container ID here.</p>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -4338,6 +4366,43 @@ function modfarm_output_facebook_pixel(): void {
     <?php
 }
 add_action('wp_head', 'modfarm_output_facebook_pixel', 20);
+
+/**
+ * Normalize a Google tag destination ID and reject arbitrary script input.
+ */
+function modfarm_normalize_google_tag_id($value): string {
+    $tag_id = strtoupper(trim((string) $value));
+    return preg_match('/^(?:G-[A-Z0-9]+|GT-[A-Z0-9]+|AW-\d+|DC-\d+)$/', $tag_id)
+        ? $tag_id
+        : '';
+}
+
+/**
+ * Print the standard Google tag on every public page.
+ * A validated destination/tag ID is stored instead of arbitrary script HTML.
+ */
+function modfarm_output_google_tag(): void {
+    if (is_admin()) {
+        return;
+    }
+
+    $settings = get_option('modfarm_theme_settings', []);
+    $tag_id = modfarm_normalize_google_tag_id($settings['google_tag_id'] ?? '');
+    if ($tag_id === '') {
+        return;
+    }
+    ?>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?php echo esc_attr(rawurlencode($tag_id)); ?>"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', <?php echo wp_json_encode($tag_id); ?>);
+    </script>
+    <?php
+}
+add_action('wp_head', 'modfarm_output_google_tag', 21);
 
 
 /**
