@@ -176,7 +176,7 @@ add_action('enqueue_block_editor_assets', function () {
     wp_register_script(
         'modfarm-ppb-zones-panel',
         get_template_directory_uri() . '/assets/js/ppb-zones-panel.js',
-        ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data', 'wp-blocks', 'wp-dom-ready'],
+        ['wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-block-editor', 'wp-element', 'wp-components', 'wp-data', 'wp-blocks', 'wp-dom-ready'],
         filemtime(get_template_directory() . '/assets/js/ppb-zones-panel.js'),
         true
     );
