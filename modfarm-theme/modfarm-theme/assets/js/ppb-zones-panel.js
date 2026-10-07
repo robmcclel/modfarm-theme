@@ -4,14 +4,14 @@
   const { registerPlugin } = wp.plugins;
   const PluginDocumentSettingPanel = (wp.editor && wp.editor.PluginDocumentSettingPanel) || (wp.editPost && wp.editPost.PluginDocumentSettingPanel);
   const PluginSidebar = (wp.editor && wp.editor.PluginSidebar) || (wp.editPost && wp.editPost.PluginSidebar);
-  const embedded = !!window.ModFarmOSEmbeddedEditor && !!PluginSidebar;
-  const BlockPreview = wp.blockEditor && wp.blockEditor.BlockPreview;
+  const embedded = !!window.ModFarmOSEmbeddedEditor;
+  const PanelContainer = embedded ? PluginSidebar : PluginDocumentSettingPanel;
   const { createElement: el, Fragment, useEffect, useRef, useState } = wp.element;
   const { PanelRow, Notice, Button, SelectControl, Modal, TextControl } = wp.components;
   const { select, dispatch } = wp.data;
   const { parse, serialize } = wp.blocks;
 
-  if (!registerPlugin || !PluginDocumentSettingPanel || !select || !dispatch || !parse || !serialize) return;
+  if (!registerPlugin || !PanelContainer || !select || !dispatch || !parse || !serialize) return;
 
   const initialData = config.summary || {};
   const initialization = config.initialization || {};
@@ -687,9 +687,9 @@
       }));
     }
 
-    return el(embedded ? PluginSidebar : PluginDocumentSettingPanel, {
+    return el(PanelContainer, {
       name: embedded ? 'modfarm-ppb' : 'modfarm-ppb-zones',
-      title: embedded ? 'PPB' : 'PPB Zones',
+      title: 'PPB Zones',
       className: 'mf-ppb-zone-panel'
     },
       el(Fragment, {},
