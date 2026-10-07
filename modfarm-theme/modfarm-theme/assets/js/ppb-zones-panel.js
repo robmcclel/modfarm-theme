@@ -2,9 +2,12 @@
   if (!wp || !config || !config.enabled) return;
 
   const { registerPlugin } = wp.plugins;
-  const { PluginDocumentSettingPanel } = wp.editPost || {};
+  const PluginDocumentSettingPanel = (wp.editor && wp.editor.PluginDocumentSettingPanel) || (wp.editPost && wp.editPost.PluginDocumentSettingPanel);
+  const PluginSidebar = (wp.editor && wp.editor.PluginSidebar) || (wp.editPost && wp.editPost.PluginSidebar);
+  const embedded = !!window.ModFarmOSEmbeddedEditor && !!PluginSidebar;
+  const BlockPreview = wp.blockEditor && wp.blockEditor.BlockPreview;
   const { createElement: el, Fragment, useEffect, useRef, useState } = wp.element;
-  const { PanelRow, Notice, Button, SelectControl } = wp.components;
+  const { PanelRow, Notice, Button, SelectControl, Modal, TextControl } = wp.components;
   const { select, dispatch } = wp.data;
   const { parse, serialize } = wp.blocks;
 
@@ -267,6 +270,35 @@
     });
   }
 
+  function PatternCards({ patterns, value, assigned, onChange }) {
+    const [browse, setBrowse] = useState(false);
+    const [query, setQuery] = useState('');
+    const [preview, setPreview] = useState(null);
+    function cards(items) {
+      return el('div', { className: 'mf-ppb-cards' }, items.map((pattern) =>
+        el('div', { key: pattern.value, className: 'mf-ppb-card' + (value === pattern.value ? ' is-selected' : '') },
+          el('button', { type: 'button', className: 'mf-ppb-card-select', 'aria-pressed': value === pattern.value,
+            onClick: () => onChange(pattern.value) },
+            el('div', { className: 'mf-ppb-thumbnail' }, BlockPreview
+              ? el(BlockPreview, { blocks: parse(pattern.content || ''), viewportWidth: 1200 })
+              : el('span', null, 'Preview unavailable')),
+            el('strong', null, pattern.label),
+            pattern.value === assigned ? el('small', null, 'Assigned') : null),
+          el(Button, { variant: 'tertiary', onClick: () => setPreview(pattern) }, 'Preview'))));
+    }
+    const featured = patterns.filter((pattern, index) => index < 4 || pattern.value === value || pattern.value === assigned);
+    return el(Fragment, null,
+      cards(featured),
+      el(Button, { variant: 'tertiary', onClick: () => setBrowse(true) }, 'Browse all (' + patterns.length + ')'),
+      browse ? el(Modal, { title: 'Browse patterns', onRequestClose: () => setBrowse(false), className: 'mf-ppb-browser' },
+        el(TextControl, { label: 'Search patterns', value: query, onChange: setQuery }),
+        cards(patterns.filter(pattern => (pattern.label + ' ' + pattern.value).toLowerCase().includes(query.toLowerCase()))),
+        el(Button, { variant: 'primary', onClick: () => setBrowse(false) }, 'Done')) : null,
+      preview ? el(Modal, { title: preview.label, onRequestClose: () => setPreview(null), className: 'mf-ppb-preview' },
+        BlockPreview ? el(BlockPreview, { blocks: parse(preview.content || ''), viewportWidth: 1200 }) : el('p', null, 'Preview unavailable'),
+        el(Button, { variant: 'primary', onClick: () => { onChange(preview.value); setPreview(null); } }, 'Select pattern')) : null);
+  }
+
   function zoneRow(slot, data, setData, editors, selections, setSelections, notices, setNotices) {
     const zones = data.zones || {};
     const actions = (data.actions && data.actions.zones) || {};
@@ -330,6 +362,7 @@
     }
 
     function applyReplacement() {
+      if (!canReplace || (mode === 'hybrid' && slot === 'body')) return;
       const selectedPattern = (action.patterns || []).find((item) => item.value === selectState.value);
       if (!selectedPattern) {
         setNotices((prev) => ({ ...prev, [slot]: 'Choose a pattern first.' }));
@@ -345,6 +378,10 @@
           return;
         }
 
+        if (zoneBlock.attributes && zoneBlock.attributes.locked) {
+          setNotices((prev) => ({ ...prev, [slot]: 'Unlock this zone before replacing its pattern.' }));
+          return;
+        }
         const outgoingSlotPayloads = collectSlotPayloads(zoneBlock.innerBlocks || []);
         const incomingBlocks = hydrateIncomingContentSlots(parse(selectedPattern.content), outgoingSlotPayloads);
 
@@ -455,7 +492,8 @@
       }
     }
 
-    return el('div', { className: 'mf-ppb-zone-panel__zone-row' },
+    return el(embedded ? 'details' : 'div', { className: 'mf-ppb-zone-panel__zone-row', ...(embedded ? { open: slot === 'header' } : {}) },
+      embedded ? el('summary', null, zoneLabel(slot)) : null,
       el('div', { className: 'mf-ppb-zone-panel__zone-head' },
         el('strong', null, zoneLabel(slot)),
         el('span', null, zone.present ? 'Present' : 'Not present')
@@ -471,11 +509,11 @@
         notes.map((note, index) => el('div', { key: `${slot}-note-${index}` }, note))
       ),
       (slot === 'header' || slot === 'body' || slot === 'footer') ? el('div', { className: 'mf-ppb-zone-panel__actions' },
-        el(Button, {
+        !embedded ? el(Button, {
           variant: 'secondary',
           onClick: openSelector,
           disabled: !canReplace || !hasPatterns
-        }, 'Replace'),
+        }, 'Replace') : null,
         (mode === 'hybrid' && (slot === 'header' || slot === 'footer') && zone.local_override_active) ? el(Button, {
           variant: 'tertiary',
           onClick: clearHybridOverride
@@ -486,8 +524,8 @@
         }, zone.locked ? 'Unlock' : 'Lock') : null
       ) : null,
       notice ? el('p', { className: 'mf-ppb-zone-panel__status' }, notice) : null,
-      selectState.open ? el('div', { className: 'mf-ppb-zone-panel__selector' },
-        el(SelectControl, {
+      (embedded && hasPatterns || selectState.open) ? el('div', { className: 'mf-ppb-zone-panel__selector' },
+        embedded ? el(PatternCards, { patterns: action.patterns || [], value: selectState.value || zone.pattern, assigned: zone.pattern, onChange: value => setSelections(prev => ({ ...prev, [slot]: { open: true, value } })) }) : el(SelectControl, {
           label: `Replace ${zoneLabel(slot)} With`,
           value: selectState.value,
           options: (action.patterns || []).map((pattern) => ({
@@ -507,8 +545,9 @@
         el('div', { className: 'mf-ppb-zone-panel__selector-buttons' },
           el(Button, {
             variant: 'primary',
-            onClick: applyReplacement
-          }, 'Apply'),
+            onClick: applyReplacement,
+            disabled: !canReplace || !selectState.value || selectState.value === zone.pattern
+          }, embedded ? 'Replace ' + zoneLabel(slot) : 'Apply'),
           el(Button, {
             variant: 'tertiary',
             onClick: closeSelector
@@ -648,9 +687,9 @@
       }));
     }
 
-    return el(PluginDocumentSettingPanel, {
-      name: 'modfarm-ppb-zones',
-      title: 'PPB Zones',
+    return el(embedded ? PluginSidebar : PluginDocumentSettingPanel, {
+      name: embedded ? 'modfarm-ppb' : 'modfarm-ppb-zones',
+      title: embedded ? 'PPB' : 'PPB Zones',
       className: 'mf-ppb-zone-panel'
     },
       el(Fragment, {},
@@ -720,3 +759,4 @@
     render: Panel
   });
 })(window.wp, window.ModFarmPPBZonesPanel || {});
+
