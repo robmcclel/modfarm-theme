@@ -4,7 +4,8 @@ require_once get_template_directory() . '/blocks/shared/book-options.php';
 /** Resolve the taxonomy-grid term set once for both rendering and CIR. */
 if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
   function modfarm_taxonomy_grid_resolve_terms(array $attributes, $requested_page = 1) {
-    $group_mode = in_array(($attributes['groupMode'] ?? 'terms'), ['terms','series_by_genre','books_by_series'], true) ? $attributes['groupMode'] : 'terms';
+    $group_mode = $attributes['groupMode'] ?? 'terms';
+    $group_mode = in_array($group_mode, ['terms','series_by_genre','books_by_series'], true) ? $group_mode : 'terms';
     $taxonomy = sanitize_key($attributes['taxonomy'] ?? 'book-series');
     if (in_array($group_mode, ['series_by_genre','books_by_series'], true)) $taxonomy = 'book-series';
     if (!taxonomy_exists($taxonomy)) return new WP_Error('taxonomy-grid-taxonomy-missing', sprintf(__('Taxonomy %s does not exist.', 'modfarm'), $taxonomy));
@@ -676,3 +677,4 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     return ob_get_clean();
   }
 }
+
