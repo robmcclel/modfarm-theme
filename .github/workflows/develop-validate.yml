@@ -1,0 +1,36 @@
+name: Theme develop validation
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: theme-develop-validation
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deployable theme source
+        run: |
+          set -euo pipefail
+          theme=modfarm-theme/modfarm-theme
+          test -f "$theme/style.css"
+          test -f "$theme/functions.php"
+          test -f "$theme/theme.json"
+          if find "$theme" -type l | grep -q .; then
+            echo "::error::Runtime theme contains symlinks"
+            exit 1
+          fi
+          find "$theme" -type f -name '*.php' -print0 | xargs -0 -r -n1 php -l > php-lint.txt
+          echo "Validated $(wc -l < php-lint.txt) PHP files"
+      - name: Summarize validation-only phase
+        run: |
+          echo "Theme develop push validated. Automatic deployment remains disabled pending release runner hardening." >> "$GITHUB_STEP_SUMMARY"
