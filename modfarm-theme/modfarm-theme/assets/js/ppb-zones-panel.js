@@ -4,6 +4,7 @@
   const { registerPlugin } = wp.plugins;
   const PluginDocumentSettingPanel = (wp.editor && wp.editor.PluginDocumentSettingPanel) || (wp.editPost && wp.editPost.PluginDocumentSettingPanel);
   const PluginSidebar = (wp.editor && wp.editor.PluginSidebar) || (wp.editPost && wp.editPost.PluginSidebar);
+  const BlockPreview = wp.blockEditor && wp.blockEditor.BlockPreview;
   const embedded = !!window.ModFarmOSEmbeddedEditor;
   const PanelContainer = embedded ? PluginSidebar : PluginDocumentSettingPanel;
   const { createElement: el, Fragment, useEffect, useRef, useState } = wp.element;
@@ -759,4 +760,5 @@
     render: Panel
   });
 })(window.wp, window.ModFarmPPBZonesPanel || {});
+
 

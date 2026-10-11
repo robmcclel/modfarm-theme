@@ -3,6 +3,8 @@ name: Theme develop validation
 on:
   push:
     branches: [develop]
+  pull_request:
+    branches: [develop]
   workflow_dispatch:
 
 permissions:
@@ -18,6 +20,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Validate PPB editor JavaScript and pattern rendering
+        run: |
+          node --check modfarm-theme/modfarm-theme/assets/js/ppb-zones-panel.js
+          node tests/ppb-embedded-sidebar.cjs
       - name: Validate deployable theme source
         run: |
           set -euo pipefail
@@ -33,4 +39,5 @@ jobs:
           echo "Validated $(wc -l < php-lint.txt) PHP files"
       - name: Summarize validation-only phase
         run: |
-          echo "Theme develop push validated. Automatic deployment remains disabled pending release runner hardening." >> "$GITHUB_STEP_SUMMARY"
+          echo "Theme source validated. The central Dev controller deploys only an exact develop commit with successful push validation and explicit Dev authorization." >> "$GITHUB_STEP_SUMMARY"
+
