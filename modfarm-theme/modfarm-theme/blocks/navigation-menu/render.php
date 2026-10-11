@@ -1,5 +1,6 @@
 <?php
 function modfarm_render_navigation_menu_block($attributes) {
+    $attributes = modfarm_resolve_navigation_attributes($attributes);
     $layout       = $attributes['layoutType'] ?? 'simple';
     $mode         = $attributes['mode'] ?? 'header'; // 'header' or 'footer'
     $search_mode = $attributes['searchMode'] ?? 'inherit';
@@ -32,7 +33,7 @@ function modfarm_render_navigation_menu_block($attributes) {
     $font_size = $override
         ? ($attributes['fontSize'] ?? ($options['nav_font_size'] ?? ''))
         : ($options['nav_font_size'] ?? '');
-    $padding   = $attributes['navPadding']    ?? ($options['nav_padding']         ?? 'regular');
+    $padding   = $override ? ($attributes['navPadding'] ?? 'regular') : ($options['nav_padding'] ?? 'regular');
     $transparent = $override ? !empty($attributes['transparent']) : !empty($options['nav_transparent']);
 
     // === BRAND BUILDER =======================================================

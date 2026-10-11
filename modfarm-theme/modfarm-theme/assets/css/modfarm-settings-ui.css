@@ -67,14 +67,13 @@
   background: #f3f4f5;
 }
 
-.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-site-basics"],
-.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-theme-fonts"],
-.mf-tab-control:focus-visible + .mf-tab-control + .mf-tab-control + .mf-tabs label[for="mf-tab-control-book-presentation"],
-.mf-tab-control:focus-visible + .mf-tab-control + .mf-tabs label[for="mf-tab-control-page-layouts"],
-.mf-tab-control:focus-visible + .mf-tabs label[for="mf-tab-control-marketing"] {
-  outline: 2px solid #2271b1;
-  outline-offset: -2px;
-}
+/* Each radio retains a visible keyboard focus indicator on its tab label. */
+.modfarm-settings-shell:has(#mf-tab-control-site-basics:focus-visible) label[for="mf-tab-control-site-basics"],
+.modfarm-settings-shell:has(#mf-tab-control-theme-fonts:focus-visible) label[for="mf-tab-control-theme-fonts"],
+.modfarm-settings-shell:has(#mf-tab-control-book-presentation:focus-visible) label[for="mf-tab-control-book-presentation"],
+.modfarm-settings-shell:has(#mf-tab-control-page-layouts:focus-visible) label[for="mf-tab-control-page-layouts"],
+.modfarm-settings-shell:has(#mf-tab-control-marketing:focus-visible) label[for="mf-tab-control-marketing"],
+.modfarm-settings-shell:has(#mf-tab-control-navigation:focus-visible) label[for="mf-tab-control-navigation"] { outline:2px solid #2271b1; outline-offset:-2px; }
 
 /* Panels */
 .mf-tab-panels {
@@ -967,3 +966,8 @@
     grid-template-columns: 1fr;
   }
 }
+
+#mf-tab-control-navigation:checked ~ .mf-tabs label[for="mf-tab-control-navigation"] { background:#ca0003; color:#fff; }
+#mf-tab-control-navigation:checked ~ .mf-tab-panels #mf-tab-navigation { display:block; }
+
+.modfarm-settings-shell:has(#mf-tab-control-navigation:checked) #mf-tab-navigation { display:block; }

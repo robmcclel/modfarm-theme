@@ -20,6 +20,7 @@
   // Register (or override) the block with the new attribute.
   wp.blocks.registerBlockType('modfarm/navigation-menu', {
     attributes: {
+      settingsSource: { type: 'string', default: 'inherit' },
       searchMode: { type: 'string', default: 'inherit' },
       mobileBg: { type: 'string', default: '' },
       mobileColor: { type: 'string', default: '' },
@@ -106,6 +107,13 @@
             PanelBody,
             { title: 'Navigation Settings', initialOpen: true },
             el(SelectControl, {
+              label: 'Navigation configuration',
+              value: attributes.settingsSource || 'inherit',
+              options: [{label: 'Use ModFarm Settings', value: 'inherit'}, {label: 'Use this block’s settings', value: 'local'}],
+              onChange: value => setAttributes({settingsSource: value}),
+              help: 'Shared header and footer profiles are managed in ModFarm Settings → Navigation. Block controls below apply when the shared profile is disabled or this block uses its own settings.'
+            }),
+            el(SelectControl, {
               label: 'Layout Type',
               value: layoutType,
               options: [
@@ -129,12 +137,12 @@
               label: 'Navigation Search',
               value: attributes.searchMode || 'inherit',
               options: [
-                { label: 'Use Customizer setting', value: 'inherit' },
+                { label: 'Use shared / Customizer setting', value: 'inherit' },
                 { label: 'Show search', value: 'show' },
                 { label: 'Hide search', value: 'hide' }
               ],
               onChange: value => setAttributes({ searchMode: value }),
-              help: 'Default is off. Enable in Customizer → Menus → Navigation Search, or override here.'
+              help: 'Use ModFarm Settings → Navigation for shared search options. Choose this block’s settings to override.'
             }),
             el(ToggleControl, {
               label: 'Do not collapse on mobile',

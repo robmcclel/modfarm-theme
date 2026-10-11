@@ -12,7 +12,10 @@
     ]
   },
   "attributes": {
-    "searchMode": { "type": "string", "default": "inherit" },
+    "searchMode": {
+      "type": "string",
+      "default": "inherit"
+    },
     "layoutType": {
       "type": "string",
       "default": "simple"
@@ -108,6 +111,10 @@
     "mobileColor": {
       "type": "string",
       "default": ""
+    },
+    "settingsSource": {
+      "type": "string",
+      "default": "inherit"
     }
   },
   "editorScript": "modfarm-navigation-menu-editor",

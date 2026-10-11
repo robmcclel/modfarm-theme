@@ -2576,6 +2576,7 @@ function modfarm_sanitize_settings($settings) {
         }
     }
 
+    $clean['navigation_profiles'] = modfarm_sanitize_navigation_profiles($settings['navigation_profiles'] ?? []);
     return $clean;
 }
 
@@ -3010,7 +3011,8 @@ function modfarm_render_settings_page() {
 				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-book-presentation" value="book-presentation">
 				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-page-layouts" value="page-layouts">
 				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-marketing" value="marketing">
-                <nav class="mf-tabs" role="tablist" aria-label="ModFarm settings sections">
+                <input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-navigation" value="navigation">
+<nav class="mf-tabs" role="tablist" aria-label="ModFarm settings sections">
                     <label
                             class="mf-tab is-active"
                             for="mf-tab-control-site-basics"
@@ -3051,9 +3053,144 @@ function modfarm_render_settings_page() {
                             aria-selected="false">
                         Marketing
                     </label>
-                </nav>
+                <label class="mf-tab" for="mf-tab-control-navigation" data-tab="navigation" role="tab" aria-selected="false">Navigation</label>
+</nav>
 
                 <div class="mf-tab-panels">
+<section id="mf-tab-navigation" class="mf-tab-panel" role="tabpanel" aria-label="Navigation"><div class="mf-panel-inner"><h2 class="mf-panel-title">Navigation</h2>
+                                    <!-- Navigation -->
+                                    <div class="mf-settings-group">
+                                        <h3 class="mf-group-title">Shared navigation</h3>
+<?php modfarm_navigation_profiles_field(); ?>
+<h3 class="mf-group-title">Navigation appearance</h3>
+<table class="form-table mf-form-table"><tr><th scope="row">Navigation Font</th><td><?php modfarm_font_dropdown(['id'=>'nav_font']); ?></td></tr></table>
+                                        <table class="form-table mf-form-table">
+                                            <tbody>
+                                            <tr>
+                                                <th scope="row"><label>Mobile Menu Background Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'mobile_nav_bg_color']); ?><p class="description">Applies to mobile drawers, overlays, and below-header menus. Blank uses submenu colors.</p></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Mobile Menu Text Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'mobile_nav_text_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Nav Background Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'nav_bg_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Nav Text Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'nav_text_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Nav Hover Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'nav_hover_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Submenu Background Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'submenu_bg_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Submenu Text Color</label></th>
+                                                <td><?php modfarm_color_field(['id' => 'submenu_text_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Nav Font Size</label></th>
+                                                <td>
+                                                    <?php modfarm_text_field(['id' => 'nav_font_size']); ?>
+                                                    <p class="description">Optional; numeric pixels (e.g. <code>15</code>).</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Nav Padding</label></th>
+                                                <td>
+                                                    <?php
+                                                    modfarm_select_field([
+                                                        'id'      => 'nav_padding',
+                                                        'options' => [
+                                                            'compact'  => 'Compact',
+                                                            'regular'  => 'Regular',
+                                                            'spacious' => 'Spacious',
+                                                        ],
+                                                    ]);
+                                                    ?>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Logo Max Width (px)</label></th>
+                                                <td><?php modfarm_text_field(['id' => 'nav_logo_max_width']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Logo Max Height (px)</label></th>
+                                                <td><?php modfarm_text_field(['id' => 'nav_logo_max_height']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Icon Max Width (px)</label></th>
+                                                <td><?php modfarm_text_field(['id' => 'nav_icon_max_width']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Icon Max Height (px)</label></th>
+                                                <td><?php modfarm_text_field(['id' => 'nav_icon_max_height']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Brand IconÃ¢â‚¬â€œTitle Gap (px)</label></th>
+                                                <td><?php modfarm_text_field(['id' => 'nav_brand_gap']); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row"><label>Transparent Background</label></th>
+                                                <td><?php modfarm_checkbox_field(['id' => 'nav_transparent']); ?></td>
+                                            </tr>
+
+                                            <tr>
+                                              <th scope="row"><label style="font-weight:800;">Footer Navigation</label></th>
+                                              <td><em>Separate styling for footer menus so header Ã¢â‚¬Å“heroÃ¢â‚¬Â settings donÃ¢â‚¬â„¢t break footer visibility.</em></td>
+                                            </tr>
+
+                                            <tr>
+                                              <th scope="row"><label>Footer Nav Style Mode</label></th>
+                                              <td>
+                                                <?php modfarm_select_field([
+                                                  'id' => 'footer_nav_mode',
+                                                  'options' => [
+                                                    'inherit' => 'Inherit Header Nav',
+                                                    'manual'  => 'Manual Footer Colors',
+                                                    'auto'    => 'Auto (Contrast from Site Background)',
+                                                  ],
+                                                ]); ?>
+                                                <p class="description">
+                                                  <strong>Auto</strong> chooses readable text colors based on the Site Background Color.
+                                                </p>
+                                              </td>
+                                            </tr>
+
+                                            <tr>
+                                              <th scope="row"><label>Footer Nav Background Color</label></th>
+                                              <td><?php modfarm_color_field(['id' => 'footer_nav_bg_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                              <th scope="row"><label>Footer Nav Text Color</label></th>
+                                              <td><?php modfarm_color_field(['id' => 'footer_nav_text_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                              <th scope="row"><label>Footer Nav Hover Color</label></th>
+                                              <td><?php modfarm_color_field(['id' => 'footer_nav_hover_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                              <th scope="row"><label>Footer Submenu Background Color</label></th>
+                                              <td><?php modfarm_color_field(['id' => 'footer_submenu_bg_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                              <th scope="row"><label>Footer Submenu Text Color</label></th>
+                                              <td><?php modfarm_color_field(['id' => 'footer_submenu_text_color']); ?></td>
+                                            </tr>
+                                            <tr>
+                                              <th scope="row"><label>Footer Transparent Background</label></th>
+                                              <td><?php modfarm_checkbox_field(['id' => 'footer_nav_transparent']); ?></td>
+                                            </tr>
+
+                                            </tbody>
+                                        </table>
+    </div></div></section>
 
                     <!-- SITE BASICS -->
                     <section id="mf-tab-site-basics"
@@ -3259,10 +3396,7 @@ function modfarm_render_settings_page() {
                                                     <p class="description">Optional; numeric pixels (e.g. <code>32</code>).</p>
                                                 </td>
                                             </tr>
-                                            <tr>
-                                                <th scope="row"><label>Navigation Font</label></th>
-                                                <td><?php modfarm_font_dropdown(['id' => 'nav_font']); ?></td>
-                                            </tr>
+
                                             </tbody>
                                         </table>
                                     </div>
@@ -3306,136 +3440,6 @@ function modfarm_render_settings_page() {
                                         </table>
                                     </div>
 
-                                    <!-- Navigation -->
-                                    <div class="mf-settings-group">
-                                        <h3 class="mf-group-title">Navigation</h3>
-                                        <table class="form-table mf-form-table">
-                                            <tbody>
-                                            <tr>
-                                                <th scope="row"><label>Mobile Menu Background Color</label></th>
-                                                <td><?php modfarm_color_field(['id' => 'mobile_nav_bg_color']); ?><p class="description">Applies to mobile drawers, overlays, and below-header menus. Blank uses submenu colors.</p></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Mobile Menu Text Color</label></th>
-                                                <td><?php modfarm_color_field(['id' => 'mobile_nav_text_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Nav Background Color</label></th>
-                                                <td><?php modfarm_color_field(['id' => 'nav_bg_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Nav Text Color</label></th>
-                                                <td><?php modfarm_color_field(['id' => 'nav_text_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Nav Hover Color</label></th>
-                                                <td><?php modfarm_color_field(['id' => 'nav_hover_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Submenu Background Color</label></th>
-                                                <td><?php modfarm_color_field(['id' => 'submenu_bg_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Submenu Text Color</label></th>
-                                                <td><?php modfarm_color_field(['id' => 'submenu_text_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Nav Font Size</label></th>
-                                                <td>
-                                                    <?php modfarm_text_field(['id' => 'nav_font_size']); ?>
-                                                    <p class="description">Optional; numeric pixels (e.g. <code>15</code>).</p>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Nav Padding</label></th>
-                                                <td>
-                                                    <?php
-                                                    modfarm_select_field([
-                                                        'id'      => 'nav_padding',
-                                                        'options' => [
-                                                            'compact'  => 'Compact',
-                                                            'regular'  => 'Regular',
-                                                            'spacious' => 'Spacious',
-                                                        ],
-                                                    ]);
-                                                    ?>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Logo Max Width (px)</label></th>
-                                                <td><?php modfarm_text_field(['id' => 'nav_logo_max_width']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Logo Max Height (px)</label></th>
-                                                <td><?php modfarm_text_field(['id' => 'nav_logo_max_height']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Icon Max Width (px)</label></th>
-                                                <td><?php modfarm_text_field(['id' => 'nav_icon_max_width']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Icon Max Height (px)</label></th>
-                                                <td><?php modfarm_text_field(['id' => 'nav_icon_max_height']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Brand IconÃ¢â‚¬â€œTitle Gap (px)</label></th>
-                                                <td><?php modfarm_text_field(['id' => 'nav_brand_gap']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Transparent Background</label></th>
-                                                <td><?php modfarm_checkbox_field(['id' => 'nav_transparent']); ?></td>
-                                            </tr>
-
-                                            <tr>
-                                              <th scope="row"><label style="font-weight:800;">Footer Navigation</label></th>
-                                              <td><em>Separate styling for footer menus so header Ã¢â‚¬Å“heroÃ¢â‚¬Â settings donÃ¢â‚¬â„¢t break footer visibility.</em></td>
-                                            </tr>
-
-                                            <tr>
-                                              <th scope="row"><label>Footer Nav Style Mode</label></th>
-                                              <td>
-                                                <?php modfarm_select_field([
-                                                  'id' => 'footer_nav_mode',
-                                                  'options' => [
-                                                    'inherit' => 'Inherit Header Nav',
-                                                    'manual'  => 'Manual Footer Colors',
-                                                    'auto'    => 'Auto (Contrast from Site Background)',
-                                                  ],
-                                                ]); ?>
-                                                <p class="description">
-                                                  <strong>Auto</strong> chooses readable text colors based on the Site Background Color.
-                                                </p>
-                                              </td>
-                                            </tr>
-
-                                            <tr>
-                                              <th scope="row"><label>Footer Nav Background Color</label></th>
-                                              <td><?php modfarm_color_field(['id' => 'footer_nav_bg_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                              <th scope="row"><label>Footer Nav Text Color</label></th>
-                                              <td><?php modfarm_color_field(['id' => 'footer_nav_text_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                              <th scope="row"><label>Footer Nav Hover Color</label></th>
-                                              <td><?php modfarm_color_field(['id' => 'footer_nav_hover_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                              <th scope="row"><label>Footer Submenu Background Color</label></th>
-                                              <td><?php modfarm_color_field(['id' => 'footer_submenu_bg_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                              <th scope="row"><label>Footer Submenu Text Color</label></th>
-                                              <td><?php modfarm_color_field(['id' => 'footer_submenu_text_color']); ?></td>
-                                            </tr>
-                                            <tr>
-                                              <th scope="row"><label>Footer Transparent Background</label></th>
-                                              <td><?php modfarm_checkbox_field(['id' => 'footer_nav_transparent']); ?></td>
-                                            </tr>
-
-                                            </tbody>
-                                        </table>
-                                    </div>
                                 </div>
 
                                 <!-- Theme preview -->

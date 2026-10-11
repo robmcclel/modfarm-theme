@@ -41,9 +41,21 @@ class WP_Customize_Nav_Menu_Item_Setting {
  function post_value(){return apply_filters('customize_sanitize_'.$this->id,[], $this);}
 }
 require __DIR__.'/../inc/menu-images.php';
+require __DIR__.'/../inc/navigation-settings.php';
 require __DIR__.'/../blocks/navigation-menu/render.php';
 function check($pass,$message){if(!$pass)throw new Exception($message);fwrite(STDERR,"PASS $message\n");}
 if(!in_array('--fixture',$argv)){
+ $test_options=['navigation_profiles'=>['header'=>['enabled'=>1,'leftMenu'=>42,'layoutType'=>'split','rightMenu'=>43], 'footer'=>['enabled'=>1,'leftMenu'=>44]]];
+ $resolved=modfarm_resolve_navigation_attributes(['leftMenu'=>7,'layoutType'=>'simple']);
+ check($resolved['leftMenu']===42 && $resolved['rightMenu']===43 && $resolved['layoutType']==='split','Shared header replaces pattern menu IDs and layout');
+ $resolved=modfarm_resolve_navigation_attributes(['mode'=>'footer','leftMenu'=>9]);
+ check($resolved['leftMenu']===44 && $resolved['simpleAlign']==='center' && $resolved['noCollapse']===true,'Separate footer profile defaults to centered expanded menu');
+ $resolved=modfarm_resolve_navigation_attributes(['settingsSource'=>'local','leftMenu'=>7]);
+ check($resolved['leftMenu']===7 && !isset($resolved['rightMenu']),'Explicit local override preserves block settings');
+ $safe=modfarm_sanitize_navigation_profiles(['header'=>['layoutType'=>'bad','coverWidth'=>900,'searchMode'=>['bad'],'leftMenu'=>'42']]);
+ check($safe['header']['layoutType']==='simple' && $safe['header']['coverWidth']===120 && $safe['header']['searchMode']==='inherit' && $safe['header']['leftMenu']===42,'Profile validates enums, menu IDs, bounds and malformed input');
+ $test_options=[];
+ check(modfarm_resolve_navigation_attributes(['leftMenu'=>7])===['leftMenu'=>7],'Disabled profile retains existing navigation');
  $hidden=apply_filters('hidden_columns',[],(object)['id'=>'nav-menus']);check(in_array('description',$hidden)&&in_array('mfs-image',$hidden),'Optional fields hidden even with old saved preferences');
  apply_filters('update_user_metadata',null,1,'managenav-menuscolumnshidden',['description']);
  $hidden=apply_filters('hidden_columns',['description'],(object)['id'=>'nav-menus']);check(!in_array('mfs-image',$hidden)&&in_array('description',$hidden),'Explicit image opt-in remembered independently');
@@ -97,6 +109,7 @@ if(in_array('--fixture',$argv)){
  require __DIR__.'/../inc/navigation-search.php';
  $mode=$argv[2]??'drawer';$attrs=['leftMenu'=>1,'mobilePresentation'=>$mode,'showDescriptions'=>true,'drawerSide'=>$argv[3]??'right'];
  if($mode==='no-collapse')$attrs['noCollapse']=true;
+ if($mode==='footer' || $mode==='footer-expanded') {$attrs['mode']='footer';$attrs['simpleAlign']='center';$attrs['noCollapse']=$mode==='footer-expanded';}
  if(in_array('search',$argv))$attrs['searchMode']='show';
  echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Arial;background:#eee;color:#203040} .mfs-nav{--submenu-bg:#fff;--submenu-color:#203040;--mf-nav-bg:#fff;--mf-nav-color:#203040} main{padding:40px;min-height:1600px}</style><style>'.file_get_contents(__DIR__.'/../blocks/navigation-menu/style.css').'</style></head><body><header>'.modfarm_render_navigation_menu_block($attrs).'</header><main><h1>Stories worth exploring</h1><a id="destination" href="#home">Explore the library</a></main><script>'.file_get_contents(__DIR__.'/../assets/js/navigation-toggle.js').'</script></body></html>';
 }
