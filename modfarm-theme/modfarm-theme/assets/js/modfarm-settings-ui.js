@@ -42,6 +42,10 @@
   }
   previews.forEach(preview => screen.appendChild(preview));
   root.insertBefore(studio, root.querySelector('.mf-tab-panels'));
+  const workspace = document.createElement('div');
+  workspace.className = 'mf-settings-workspace';
+  root.appendChild(workspace);
+  workspace.append(studio, root.querySelector('.mf-tab-panels'));
   root.classList.add('is-studio');
   let deviceWidth = 1200;
   let layoutActive = false;
