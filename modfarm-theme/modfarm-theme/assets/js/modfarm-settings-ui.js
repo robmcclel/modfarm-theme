@@ -6,6 +6,63 @@
   const tabs = root.querySelectorAll('.mf-tab');
   const panels = root.querySelectorAll('.mf-tab-panel');
   const storageKey = 'modfarm-settings-active-tab';
+  const studio = document.createElement('aside');
+  studio.className = 'mf-settings-studio';
+  studio.setAttribute('aria-label', 'Site visualizer');
+  studio.innerHTML = '<header><div><span class="mf-studio-eyebrow">MODFARMOS / SITE CONFIGURATION</span><h2>Build your site</h2></div><a class="button" href="#" data-open-site>View site</a></header><p class="mf-studio-note" aria-live="polite"></p><div class="mf-studio-devices" role="group" aria-label="Preview device"><button type="button" data-size="1200" aria-pressed="true">Desktop</button><button type="button" data-size="768" aria-pressed="false">Tablet</button><button type="button" data-size="390" aria-pressed="false">Phone</button></div><div class="mf-studio-canvas"><div class="mf-studio-screen"></div></div>';
+  const screen = studio.querySelector('.mf-studio-screen');
+  studio.querySelector('[data-open-site]').href = root.dataset.siteUrl || '/';
+  studio.querySelector('[data-open-site]').target = '_blank';
+  studio.querySelector('[data-open-site]').rel = 'noopener';
+  const canvas = studio.querySelector('.mf-studio-canvas');
+  const themePreview = root.querySelector('#mf-theme-live-preview');
+  const bookPreview = root.querySelector('#mf-book-live-preview');
+  const layoutPreview = root.querySelector('#mf-ppb-visualizer');
+  const previews = [themePreview, bookPreview, layoutPreview].filter(Boolean);
+  const form = root.closest('form');
+  const saveContext = form && form.querySelector('.mf-settings-actions__context');
+  let dirty = false;
+  if (form) {
+    form.addEventListener('input', event => {
+      if (!event.target.name || !event.target.name.startsWith('modfarm_theme_settings[')) return;
+      dirty = true;
+      if (saveContext) saveContext.textContent = 'Unsaved changes · Apply to this site when saved.';
+    });
+    form.addEventListener('change', event => {
+      if (!event.target.name || !event.target.name.startsWith('modfarm_theme_settings[')) return;
+      dirty = true;
+      if (saveContext) saveContext.textContent = 'Unsaved changes · Apply to this site when saved.';
+    });
+    form.addEventListener('submit', () => { dirty = false; });
+    window.addEventListener('beforeunload', event => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
+  }
+  previews.forEach(preview => screen.appendChild(preview));
+  root.insertBefore(studio, root.querySelector('.mf-tab-panels'));
+  root.classList.add('is-studio');
+  let deviceWidth = 1200;
+  let layoutActive = false;
+  function resizeStudio() {
+    if (layoutActive) return;
+    const scale = Math.min(1, Math.max(canvas.clientWidth - 32, 1) / deviceWidth);
+    screen.style.width = deviceWidth + 'px';
+    screen.style.transform = 'scale(' + scale + ')';
+    screen.style.height = Math.round(Math.max(canvas.clientHeight - 32, 1) / scale) + 'px';
+    screen.dataset.device = String(deviceWidth);
+  }
+  studio.querySelectorAll('[data-size]').forEach(button => button.addEventListener('click', () => {
+    deviceWidth = Number(button.dataset.size);
+    studio.querySelectorAll('[data-size]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    resizeStudio();
+  }));
+  if (window.ResizeObserver) new ResizeObserver(resizeStudio).observe(canvas);
+  window.addEventListener('resize', resizeStudio);
+  studio.addEventListener('click', event => {
+    if (event.target.closest('.mf-theme-visualizer a, .mf-book-visualizer a')) event.preventDefault();
+  });
 
   function activate(tabId) {
 	const control = document.getElementById(`mf-tab-control-${tabId}`);
@@ -21,6 +78,18 @@
       const id = panel.id.replace('mf-tab-', '');
       panel.classList.toggle('is-active', id === tabId);
     });
+    layoutActive = tabId === 'page-layouts';
+    studio.classList.toggle('is-layout', layoutActive);
+    previews.forEach(preview => { preview.hidden = preview !== (layoutActive ? layoutPreview : tabId === 'book-presentation' ? bookPreview : themePreview); });
+    studio.querySelector('.mf-studio-note').textContent = layoutActive
+      ? 'Rendered patterns using your selected content. Save to keep these defaults.'
+      : tabId === 'marketing' ? 'Measurement settings do not change the site appearance.'
+      : tabId === 'navigation' ? 'Appearance sample. Shared profiles and menu behavior are verified on the site after saving.'
+      : 'Live appearance sample. Changes are kept only when you save.';
+    studio.querySelector('.mf-studio-devices').hidden = layoutActive;
+    if (layoutActive) { screen.style.width = '100%'; screen.style.height = 'auto'; screen.style.transform = 'none'; }
+    else resizeStudio();
+    window.dispatchEvent(new Event('resize'));
 
     try {
       window.localStorage.setItem(storageKey, tabId);
@@ -32,6 +101,12 @@
       activate(btn.dataset.tab);
     });
   });
+  root.querySelectorAll('.mf-tab-control').forEach(control => {
+    control.addEventListener('change', () => { if (control.checked) activate(control.value); });
+  });
+  const navigationTab = root.querySelector('[data-tab="navigation"]');
+  const appearanceTab = root.querySelector('[data-tab="theme-fonts"]');
+  if (navigationTab && appearanceTab) appearanceTab.after(navigationTab);
 
   let initial = 'site-basics';
   try {
@@ -85,6 +160,7 @@
     const bookPreview = document.getElementById('mf-book-live-preview');
     const bookSample = config.bookPreviewSample || {};
     const themeFields = [
+      'content_width',
       'primary_color',
       'secondary_color',
       'background_color',
@@ -171,6 +247,12 @@
 
     function updateThemePreview() {
       if (!themePreview) return;
+      const page = themePreview.querySelector('.mf-theme-visualizer__page');
+      if (page) {
+        const width = settingValue('content_width', '1200px');
+        page.style.maxWidth = window.CSS && window.CSS.supports('max-width', width) ? width : '1200px';
+        page.style.margin = '0 auto';
+      }
 
       const primary = settingValue('primary_color', '#94a3b8');
       const secondary = settingValue('secondary_color', '#475569');
@@ -1314,3 +1396,4 @@
 
   populatePatternSelect();
 })();
+

@@ -3003,7 +3003,7 @@ function modfarm_render_settings_page() {
 				<?php submit_button(__('Save Changes', 'modfarm'), 'primary', 'submit', false); ?>
 			</div>
 
-            <div class="modfarm-settings-shell">
+            <div class="modfarm-settings-shell" data-site-url="<?php echo esc_url(home_url('/')); ?>">
 
                 <!-- Top-level tabs -->
 				<input class="mf-tab-control" type="radio" name="modfarm_settings_active_tab" id="mf-tab-control-site-basics" value="site-basics" checked>
@@ -3448,7 +3448,7 @@ function modfarm_render_settings_page() {
                                         <header class="mf-theme-visualizer__nav">
                                             <div class="mf-theme-visualizer__brand">
                                                 <span class="mf-theme-visualizer__mark"></span>
-                                                <span class="mf-theme-visualizer__site-title">Test Site 1</span>
+                                                <span class="mf-theme-visualizer__site-title"><?php echo esc_html(get_bloginfo('name')); ?></span>
                                             </div>
                                             <nav class="mf-theme-visualizer__links" aria-label="Preview navigation">
                                                 <a href="#">Books</a>
