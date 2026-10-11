@@ -559,6 +559,7 @@ require_once get_template_directory() . '/inc/theme-settings.php';
 require_once get_template_directory() . '/inc/font-library.php';
 require_once get_template_directory() . '/inc/menu-images.php';
 require_once get_template_directory() . '/inc/navigation-search.php';
+require_once get_template_directory() . '/inc/navigation-settings.php';
 require_once get_template_directory() . '/inc/author-meta.php';
 require_once get_template_directory() . '/blocks/register-blocks.php'; // ✅ All blocks now loaded here
 require_once get_template_directory() . '/inc/pattern-category-registration.php';

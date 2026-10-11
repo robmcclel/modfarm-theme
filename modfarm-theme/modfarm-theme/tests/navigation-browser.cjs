@@ -4,7 +4,7 @@ const { execFileSync } = require('child_process');
 const path = require('path');
 const assert = require('assert/strict');
 (async () => {
- const browser = await chromium.launch(process.platform === 'win32' ? {channel:'msedge',headless:true} : {headless:true});
+ const browser = await chromium.launch(process.platform === 'win32' ? {channel:'msedge',headless:true} : {headless:true, ...(process.env.MFS_CHROMIUM_PATH ? {executablePath:process.env.MFS_CHROMIUM_PATH,args:['--no-sandbox']} : {})});
  const page = await browser.newPage({reducedMotion:'reduce'});
  const errors=[];page.on('pageerror', e=>errors.push(e.message));
  async function fixture(mode,width=412,side='right',search=false) {
@@ -77,6 +77,7 @@ const assert = require('assert/strict');
  for (const width of [412,768,1440]) {
    await fixture('drawer',width,'right',true);
    const summary=page.locator('.mfs-nav-search summary');
+   if (width >= 1025) {
    await summary.click();
    const input=page.locator('.mfs-nav-search input');
    await page.waitForFunction(()=>document.activeElement?.matches('.mfs-nav-search input'));
@@ -88,6 +89,7 @@ const assert = require('assert/strict');
    assert.equal(await page.locator('.mfs-nav-search').getAttribute('open'),null);
    await summary.click();await page.locator('main h1').click();
    assert.equal(await page.locator('.mfs-nav-search').getAttribute('open'),null);
+   } else { assert.equal(await summary.isVisible(),false); }
    if(width<1025){
      await page.locator('.mfs-nav-toggle').click();
      await page.keyboard.press('Tab');
@@ -97,6 +99,13 @@ const assert = require('assert/strict');
      await Promise.all([page.waitForURL('https://example.test/?s=Book+1'),page.locator('.mfs-nav-overlay button[type=submit]').click()]);
    }
  }
+ for (const mode of ['footer','footer-expanded']) {
+   await fixture(mode,412);
+   const nav = await page.locator('.mfs-nav').boundingBox();
+   const target = await page.locator(mode==='footer' ? '.mfs-nav-toggle' : '.mfs-nav-menu').boundingBox();
+   assert.ok(Math.abs(target.x+target.width/2-nav.x-nav.width/2)<2);
+ }
+ console.log('PASS centered footer toggle and expanded links on mobile');
  console.log('PASS search popup bounds, focus, Escape, outside dismissal and native mobile submission');
  assert.deepEqual(errors,[]);
  if(process.env.MFS_NAV_SCREENSHOT) {await fixture('drawer',768);await page.locator('.mfs-nav-toggle').click();await page.locator('.mfs-nav-overlay .mfs-submenu-toggle').first().click();await page.screenshot({path:process.env.MFS_NAV_SCREENSHOT});}

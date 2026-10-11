@@ -118,3 +118,12 @@
 @media(max-width:1024px) {
   .mfs-nav-search-popover { background:var(--mfs-mobile-bg,var(--submenu-bg,#fff)); color:var(--mfs-mobile-color,var(--submenu-color,#222)); }
 }
+
+/* Search lives in the mobile panel once the hamburger is available. */
+@media (max-width:1024px) {
+  .mfs-nav:not(.mfs-nav--no-collapse)[data-mfs-ready] > .mfs-nav-search { display:none; }
+  .mfs-nav-footer.align-center > .mfs-nav-toggle { margin-inline:0; }
+  .mfs-nav-footer.align-left > .mfs-nav-toggle { margin-left:0; margin-right:auto; }
+  .mfs-nav-footer.align-right > .mfs-nav-toggle { margin-left:auto; margin-right:0; }
+  .mfs-nav-footer.align-center > .mfs-nav-menu { justify-content:center; }
+}
