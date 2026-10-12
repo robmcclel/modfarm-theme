@@ -123,6 +123,134 @@
 
   const config = typeof window.modfarmSettingsUi === 'object' ? window.modfarmSettingsUi : {};
 
+  // Reuse the registered controls and their native forms; navigation only
+  // changes which group is visible, never its enabled/submitted state.
+  function initSettingsHierarchy() {
+    const themeMain = root.querySelector('#mf-tab-theme-fonts .mf-settings-main');
+    const bookMain = root.querySelector('#mf-tab-book-presentation .mf-settings-main');
+    const siteMain = root.querySelector('#mf-tab-site-basics .mf-settings-main');
+    const layoutMain = root.querySelector('#mf-tab-page-layouts .mf-settings-main');
+    if (!themeMain || !bookMain || !siteMain || !layoutMain) return;
+    const themeGroups = Array.from(themeMain.querySelectorAll(':scope > .mf-settings-group'));
+    themeGroups.forEach((group, index) => { group.dataset.designSection = index === 0 ? 'colors' : 'fonts'; });
+    const makeGroup = (title, parent) => {
+      const group = document.createElement('div');
+      group.className = 'mf-settings-group';
+      const heading = document.createElement('h3'); heading.className = 'mf-group-title'; heading.textContent = title;
+      const table = document.createElement('table'); table.className = 'form-table mf-form-table';
+      const body = document.createElement('tbody'); table.appendChild(body); group.append(heading, table); parent.appendChild(group);
+      return {group, body};
+    };
+    const navColors = makeGroup('Navigation colors', themeMain);
+    const bookColors = makeGroup('Book colors', themeMain);
+    [navColors, bookColors].forEach(item => { item.group.dataset.designSection = 'colors'; });
+    root.querySelectorAll('#mf-tab-navigation .modfarm-color-field').forEach(control => {
+      const row = control.closest('tr'); if (row) navColors.body.appendChild(row);
+    });
+    bookMain.querySelectorAll('.modfarm-color-field').forEach(control => {
+      const row = control.closest('tr'); if (row) bookColors.body.appendChild(row);
+    });
+    const navFont = settingControl('nav_font');
+    if (navFont && navFont.closest('tr') && themeGroups[1]) themeGroups[1].querySelector('tbody').appendChild(navFont.closest('tr'));
+    bookMain.querySelectorAll(':scope > .mf-settings-group').forEach(group => {
+      if (!group.querySelector('input,select,textarea')) group.hidden = true;
+    });
+    const brand = makeGroup('Site identity', themeMain); brand.group.dataset.designSection = 'branding';
+    brand.group.querySelector('table').remove();
+    const intro = document.createElement('p'); intro.className = 'description';
+    intro.textContent = 'Use the existing WordPress identity controls for the site title, icon, and logo.';
+    brand.group.appendChild(intro);
+    [['Title & site icon','options-general.php'],['Logo & site identity','customize.php?autofocus[section]=title_tagline']].forEach(([label,path]) => {
+      const link = document.createElement('a'); link.className = 'button mf-branding-link'; link.textContent = label;
+      link.href = new URL(path, window.location.href).href; brand.group.appendChild(link);
+    });
+    const widthGroup = makeGroup('Content width', siteMain);
+    const width = settingControl('content_width'); if (width && width.closest('tr')) widthGroup.body.appendChild(width.closest('tr'));
+    const originalSiteGroups = Array.from(siteMain.querySelectorAll(':scope > .mf-settings-group')).filter(group => group !== widthGroup.group);
+    originalSiteGroups.forEach((group,index) => {
+      const archive = root.querySelector('.mf-ppb-layout-panel[data-ppb-layout-type="archive"]');
+      if (index === 1 && archive) archive.appendChild(group);
+      else layoutMain.appendChild(group);
+    });
+    const legacyNav = root.querySelector(':scope > .mf-tabs'); legacyNav.classList.add('mf-legacy-tabs');
+    const primary = document.createElement('nav'); primary.className = 'mf-settings-categories'; primary.setAttribute('aria-label','Settings categories');
+    const secondary = document.createElement('nav'); secondary.className = 'mf-settings-subnav'; secondary.setAttribute('aria-label','Settings sections');
+    root.insertBefore(primary, workspace); root.insertBefore(secondary, workspace);
+    const layoutTabs = root.querySelector('.mf-ppb-layout-tabs');
+    const choices = {design:[['branding','Branding'],['colors','Colors'],['fonts','Fonts']],function:[['navigation','Navigation'],['book-presentation','Book cards'],['marketing','Marketing'],['site-basics','Site sizing']]};
+    const remembered = {design:'colors',function:'navigation'};
+    let category = 'design';
+    const routeKey = 'modfarm-settings-section-v2';
+    function selectSection(section) {
+      remembered[category] = section;
+      const design = category === 'design';
+      const panelId = design ? 'theme-fonts' : section;
+      activate(panelId);
+      themeMain.querySelectorAll(':scope > .mf-settings-group').forEach(group => { group.hidden = design && group.dataset.designSection !== section; });
+      secondary.querySelectorAll('[data-section]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.section === section)));
+      const label = (choices[category] || []).find(item => item[0] === section);
+      const panel = root.querySelector('#mf-tab-' + panelId);
+      if (label && panel) panel.querySelector('.mf-panel-title').textContent = label[1];
+      if (design) root.querySelector('#mf-tab-theme-fonts .mf-panel-intro').textContent = section === 'colors' ? 'Choose colors for the site, navigation, and books.' : section === 'fonts' ? 'Set typography and manage custom fonts.' : 'Manage the identity readers recognize.';
+      try { window.localStorage.setItem(routeKey, JSON.stringify({category, section})); } catch (e) {}
+    }
+    function selectCategory(value) {
+      category = value;
+      primary.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.category === value)));
+      secondary.querySelectorAll('[data-section]').forEach(button => button.remove());
+      layoutTabs.hidden = value !== 'layout';
+      if (value === 'layout') { secondary.appendChild(layoutTabs); activate('page-layouts'); }
+      else {
+        choices[value].forEach(([id,label]) => {
+          const button = document.createElement('button'); button.type = 'button'; button.dataset.section = id; button.textContent = label;
+          button.addEventListener('click', () => selectSection(id)); secondary.appendChild(button);
+        });
+        selectSection(remembered[value]);
+      }
+    }
+    [['design','Design'],['layout','Layout'],['function','Function']].forEach(([id,label]) => {
+      const button = document.createElement('button'); button.type = 'button'; button.dataset.category = id; button.textContent = label;
+      button.addEventListener('click', () => selectCategory(id)); primary.appendChild(button);
+    });
+    // Native details match Presentation and leave closed inputs enabled.
+    root.querySelectorAll('.mf-settings-group').forEach(group => {
+      const heading = group.querySelector(':scope > .mf-group-title');
+      if (!heading || group.tagName === 'DETAILS') return;
+      const details = document.createElement('details');
+      Array.from(group.attributes).forEach(attribute => details.setAttribute(attribute.name, attribute.value));
+      const summary = document.createElement('summary'); summary.textContent = heading.textContent; heading.remove();
+      details.appendChild(summary); while (group.firstChild) details.appendChild(group.firstChild);
+      group.replaceWith(details);
+      if (!details.previousElementSibling || details.classList.contains('mf-ppb-layout-panel')) details.open = true;
+    });
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(routeKey) || 'null');
+      if (saved && ['design','layout','function'].includes(saved.category)) {
+        category = saved.category;
+        if (choices[category] && choices[category].some(item => item[0] === saved.section)) remembered[category] = saved.section;
+      }
+    } catch (e) {}
+    root.classList.add('has-hierarchy'); selectCategory(category);
+  }
+  initSettingsHierarchy();
+  root.querySelectorAll('.modfarm-color-field').forEach(control => {
+    const row = control.closest('tr'); if (!row) return;
+    row.classList.add('mf-color-option');
+    const update = () => row.style.setProperty('--mf-swatch', /^#[0-9a-f]{3,8}$/i.test(control.value) ? control.value : 'transparent');
+    control.addEventListener('input', update); control.addEventListener('change', update); update();
+  });
+  ['book_card_cover_shape','book_card_button_shape','book_card_sample_shape','book_card_cta_mode','book_card_shadow_style'].forEach(id => {
+    const select = settingControl(id); if (!select || select.tagName !== 'SELECT') return;
+    const choices = document.createElement('div'); choices.className = 'mf-choice-cards'; choices.setAttribute('role','group');
+    choices.setAttribute('aria-label', select.closest('tr').querySelector('th').textContent.trim());
+    Array.from(select.options).forEach(option => {
+      const button = document.createElement('button'); button.type='button'; button.textContent=option.textContent; button.dataset.value=option.value;
+      button.addEventListener('click', () => { select.value=option.value; select.dispatchEvent(new Event('change',{bubbles:true})); }); choices.appendChild(button);
+    });
+    const sync = () => choices.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.value === select.value)));
+    select.after(choices); select.classList.add('mf-choice-native'); select.addEventListener('change',sync); sync();
+  });
+
   function settingControl(fieldId) {
     return document.querySelector(`[name="modfarm_theme_settings[${fieldId}]"]`);
   }
