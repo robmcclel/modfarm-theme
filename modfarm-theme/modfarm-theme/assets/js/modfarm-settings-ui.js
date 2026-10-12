@@ -18,6 +18,30 @@
   const themePreview = root.querySelector('#mf-theme-live-preview');
   const bookPreview = root.querySelector('#mf-book-live-preview');
   const layoutPreview = root.querySelector('#mf-ppb-visualizer');
+  const deviceIcons = ['desktop', 'tablet', 'smartphone'];
+  function decorateDevices(buttons) {
+    buttons.forEach((button, index) => {
+      const icon = document.createElement('span');
+      icon.className = 'dashicons dashicons-' + deviceIcons[index];
+      icon.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.textContent = ['Desktop', 'Tablet', 'Mobile'][index];
+      button.replaceChildren(icon, label);
+    });
+  }
+  decorateDevices(studio.querySelectorAll('[data-size]'));
+  const toolbar = document.createElement('div');
+  toolbar.className = 'mf-studio-toolbar';
+  toolbar.append(studio.querySelector('.mf-studio-devices'), studio.querySelector('header'));
+  studio.append(canvas, toolbar, studio.querySelector('.mf-studio-note'));
+  if (layoutPreview) {
+    const layoutDevices = layoutPreview.querySelector('.mf-ppb-visualizer__viewports');
+    const layoutFrame = layoutPreview.querySelector('.mf-ppb-visualizer__frame-wrap');
+    if (layoutDevices && layoutFrame) {
+      layoutFrame.after(layoutDevices);
+      decorateDevices(layoutDevices.querySelectorAll('button'));
+    }
+  }
   const previews = [themePreview, bookPreview, layoutPreview].filter(Boolean);
   const form = root.closest('form');
   const saveContext = form && form.querySelector('.mf-settings-actions__context');
