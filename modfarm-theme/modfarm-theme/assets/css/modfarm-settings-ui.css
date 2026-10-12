@@ -972,6 +972,28 @@
 
 .modfarm-settings-shell:has(#mf-tab-control-navigation:checked) #mf-tab-navigation { display:block; }
 
+/* Two-level navigation and focused Presentation-style disclosure groups. */
+.has-hierarchy > .mf-legacy-tabs { display:none !important; }
+.has-hierarchy > .mf-tab-control { display:none; }
+.mf-settings-categories, .mf-settings-subnav { display:flex; gap:8px; align-items:center; overflow-x:auto; }
+.mf-settings-categories { border-bottom:1px solid #dce0e6; margin-bottom:12px; }
+.mf-settings-categories button { padding:14px 22px; border:0; border-bottom:3px solid transparent; background:transparent; font:inherit; font-weight:600; color:#6b7280; cursor:pointer; }
+.mf-settings-categories button[aria-pressed="true"] { border-bottom-color:#ca0003; color:#ca0003; }
+.mf-settings-subnav { padding:0 0 18px; }
+.mf-settings-subnav > button { padding:9px 16px; white-space:nowrap; border:1px solid #dce0e6; border-radius:8px; background:#fff; color:#444; cursor:pointer; }
+.mf-settings-subnav > button[aria-pressed="true"] { background:#444; border-color:#444; color:#fff; }
+.mf-settings-subnav .mf-ppb-layout-tabs { margin:0; padding:0; flex-wrap:nowrap; background:transparent; }
+.has-hierarchy [hidden] { display:none !important; }
+.is-studio details.mf-settings-group > summary { cursor:pointer; font-size:15px; font-weight:600; color:#1d2327; }
+.is-studio details.mf-settings-group[open] > summary { margin-bottom:16px; }
+.is-studio .mf-color-option th { display:flex; align-items:center; gap:12px; }
+.is-studio .mf-color-option th::before { content:""; flex:0 0 42px; width:42px; height:42px; border-radius:8px; border:1px solid #dce0e6; background:var(--mf-swatch,transparent); }
+.mf-choice-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.mf-choice-cards button { min-height:54px; padding:10px; background:#fff; border:1px solid #dce0e6; border-radius:10px; text-align:left; color:#444; cursor:pointer; }
+.mf-choice-cards button[aria-pressed="true"] { border:2px solid #ca0003; padding:9px; background:#fff7f7; color:#a90003; font-weight:600; }
+.is-studio select.mf-choice-native { position:absolute; width:1px; height:1px; min-height:0; padding:0; overflow:hidden; clip-path:inset(50%); }
+.mf-branding-link { display:block; width:fit-content; margin:12px 0; }
+
 /* Match the Content Presentation workspace: one stage and a white settings rail. */
 .modfarm-settings-wrap { max-width:none; padding:32px 36px 64px; }
 .modfarm-settings-wrap > h1.wp-heading-inline { font-size:32px; line-height:1.2; margin:4px 0 8px; }
@@ -982,6 +1004,7 @@
 .modfarm-settings-shell.is-studio > .mf-tabs { display:flex; flex-wrap:wrap; gap:0; margin:0 0 18px; padding:0; border:0; border-bottom:1px solid #dce0e6; border-radius:0; background:transparent; }
 .modfarm-settings-shell.is-studio > .mf-tabs .mf-tab { padding:13px 15px; min-height:44px; box-sizing:border-box; color:#6b7280; background:transparent; border:0; border-bottom:3px solid transparent; border-radius:0; font-size:14px; font-weight:600; }
 .modfarm-settings-shell.is-studio > .mf-tabs .mf-tab.is-active { background:transparent !important; color:#ca0003 !important; border-bottom-color:#ca0003; }
+.modfarm-settings-shell.is-studio > .mf-tabs .mf-tab.is-active { border-bottom-color:#ca0003 !important; }
 .modfarm-settings-shell.is-studio > .mf-tabs .mf-tab:hover { color:#ca0003; background:transparent; }
 .mf-settings-workspace { display:grid; grid-template-columns:minmax(0,1fr) 340px; align-items:start; border:1px solid #dce0e6; border-radius:12px; overflow:hidden; background:#f1f2f4; }
 .is-studio .mf-tab-panels { min-width:0; background:#fff; border-left:1px solid #dce0e6; align-self:stretch; }
