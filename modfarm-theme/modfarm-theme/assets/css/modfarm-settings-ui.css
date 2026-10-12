@@ -1073,3 +1073,18 @@
 .mf-settings-studio .mf-studio-note { margin:10px 0 0; }
 .mf-settings-studio.is-layout .mf-studio-toolbar { margin-top:12px; }
 
+/* One Presentation geometry and bezel for samples and rendered PPB previews. */
+.mf-settings-studio .mf-studio-canvas { height:auto; padding:16px; overflow:hidden; }
+.mf-settings-studio .mf-studio-stage { margin:0 auto; }
+.mf-settings-studio .mf-studio-screen { padding:24px 14px 14px; border:2px solid #444; background:#444; box-shadow:0 8px 24px rgba(0,0,0,.18); overflow:visible; }
+.mf-settings-studio .mf-studio-viewport { overflow:auto; border-radius:10px; background:#fff; }
+.mf-settings-studio .mf-studio-viewport > [hidden] { display:none !important; }
+.mf-settings-studio.is-layout .mf-studio-canvas { padding:16px; }
+.mf-settings-studio.is-layout .mf-studio-screen { padding:24px 14px 14px; border:2px solid #444; background:#444; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+.mf-settings-studio.is-layout .mf-studio-screen::before { display:block; }
+.mf-settings-studio .mf-ppb-visualizer { height:100%; }
+.mf-settings-studio .mf-ppb-visualizer__frame-wrap { height:100%; min-height:0; border:0; border-radius:0; box-shadow:none; background:#fff; }
+.mf-settings-studio .mf-ppb-visualizer__viewports { display:none !important; }
+.mf-settings-studio .mf-ppb-visualizer__frame { width:100%; height:100%; pointer-events:auto; }
+.mf-studio-size { margin:10px 0 0; text-align:center; color:#6b7280; font-size:13px; }
+

@@ -4297,7 +4297,7 @@ function modfarm_admin_enqueue_scripts($hook) {
     wp_enqueue_script(
         'modfarm-settings-ui',
         get_template_directory_uri() . '/assets/js/modfarm-settings-ui.js',
-        [],
+        ['modfarm-visualizer'],
         file_exists($settings_js_path) ? filemtime($settings_js_path) : '1.0.0',
         true
     );
@@ -4917,3 +4917,9 @@ function modfarm_inject_editor_palette($settings) {
     return $settings;
 }
 // add_filter('block_editor_settings_all', 'modfarm_inject_editor_palette', 100);
+
+// Shared Presentation geometry is available to theme and Core workspaces.
+add_action('admin_enqueue_scripts', function () {
+    $path = get_template_directory() . '/assets/js/modfarm-visualizer.js';
+    wp_enqueue_script('modfarm-visualizer', get_template_directory_uri() . '/assets/js/modfarm-visualizer.js', [], filemtime($path), true);
+}, 1);

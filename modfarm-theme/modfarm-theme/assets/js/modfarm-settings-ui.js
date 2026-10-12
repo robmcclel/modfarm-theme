@@ -9,12 +9,19 @@
   const studio = document.createElement('aside');
   studio.className = 'mf-settings-studio';
   studio.setAttribute('aria-label', 'Site visualizer');
-  studio.innerHTML = '<header><div><span class="mf-studio-eyebrow">MODFARMOS / SITE CONFIGURATION</span><h2>Build your site</h2></div><a class="button" href="#" data-open-site>View site</a></header><p class="mf-studio-note" aria-live="polite"></p><div class="mf-studio-devices" role="group" aria-label="Preview device"><button type="button" data-size="1200" aria-pressed="true">Desktop</button><button type="button" data-size="768" aria-pressed="false">Tablet</button><button type="button" data-size="390" aria-pressed="false">Phone</button></div><div class="mf-studio-canvas"><div class="mf-studio-screen"></div></div>';
+  studio.innerHTML = '<header><div><span class="mf-studio-eyebrow">MODFARMOS / SITE CONFIGURATION</span><h2>Build your site</h2></div><a class="button" href="#" data-open-site>View site</a></header><p class="mf-studio-note" aria-live="polite"></p><div class="mf-studio-devices" role="group" aria-label="Preview device"><button type="button" data-size="1440" aria-pressed="true">Desktop</button><button type="button" data-size="768" aria-pressed="false">Tablet</button><button type="button" data-size="390" aria-pressed="false">Phone</button></div><div class="mf-studio-canvas"><div class="mf-studio-screen"></div></div>';
   const screen = studio.querySelector('.mf-studio-screen');
   studio.querySelector('[data-open-site]').href = root.dataset.siteUrl || '/';
   studio.querySelector('[data-open-site]').target = '_blank';
   studio.querySelector('[data-open-site]').rel = 'noopener';
   const canvas = studio.querySelector('.mf-studio-canvas');
+  const previewStage = document.createElement('div');
+  previewStage.className = 'mf-studio-stage';
+  screen.before(previewStage); previewStage.appendChild(screen);
+  const previewViewport = document.createElement('div');
+  previewViewport.className = 'mf-studio-viewport';
+  screen.appendChild(previewViewport);
+  const sizeNote = document.createElement('p'); sizeNote.className = 'mf-studio-size';
   const themePreview = root.querySelector('#mf-theme-live-preview');
   const bookPreview = root.querySelector('#mf-book-live-preview');
   const layoutPreview = root.querySelector('#mf-ppb-visualizer');
@@ -33,13 +40,12 @@
   const toolbar = document.createElement('div');
   toolbar.className = 'mf-studio-toolbar';
   toolbar.append(studio.querySelector('.mf-studio-devices'), studio.querySelector('header'));
-  studio.append(canvas, toolbar, studio.querySelector('.mf-studio-note'));
+  studio.append(canvas, toolbar, sizeNote, studio.querySelector('.mf-studio-note'));
   if (layoutPreview) {
     const layoutDevices = layoutPreview.querySelector('.mf-ppb-visualizer__viewports');
     const layoutFrame = layoutPreview.querySelector('.mf-ppb-visualizer__frame-wrap');
     if (layoutDevices && layoutFrame) {
-      layoutFrame.after(layoutDevices);
-      decorateDevices(layoutDevices.querySelectorAll('button'));
+      layoutDevices.remove();
     }
   }
   const previews = [themePreview, bookPreview, layoutPreview].filter(Boolean);
@@ -64,21 +70,19 @@
       event.returnValue = '';
     });
   }
-  previews.forEach(preview => screen.appendChild(preview));
+  previews.forEach(preview => previewViewport.appendChild(preview));
   root.insertBefore(studio, root.querySelector('.mf-tab-panels'));
   const workspace = document.createElement('div');
   workspace.className = 'mf-settings-workspace';
   root.appendChild(workspace);
   workspace.append(studio, root.querySelector('.mf-tab-panels'));
   root.classList.add('is-studio');
-  let deviceWidth = 1200;
+  let deviceWidth = 1440;
   let layoutActive = false;
   function resizeStudio() {
-    if (layoutActive) return;
-    const scale = Math.min(1, Math.max(canvas.clientWidth - 32, 1) / deviceWidth);
-    screen.style.width = deviceWidth + 'px';
-    screen.style.transform = 'scale(' + scale + ')';
-    screen.style.height = Math.round(Math.max(canvas.clientHeight - 32, 1) / scale) + 'px';
+    const device = deviceWidth === 390 ? 'mobile' : deviceWidth === 768 ? 'tablet' : 'desktop';
+    if (window.ModFarmVisualizer) window.ModFarmVisualizer.fit({container:canvas, stage:previewStage, frame:screen, viewport:previewViewport, note:sizeNote, device});
+    screen.style.height = 'auto';
     screen.dataset.device = String(deviceWidth);
   }
   studio.querySelectorAll('[data-size]').forEach(button => button.addEventListener('click', () => {
@@ -114,9 +118,8 @@
       : tabId === 'marketing' ? 'Measurement settings do not change the site appearance.'
       : tabId === 'navigation' ? 'Appearance sample. Shared profiles and menu behavior are verified on the site after saving.'
       : 'Live appearance sample. Changes are kept only when you save.';
-    studio.querySelector('.mf-studio-devices').hidden = layoutActive;
-    if (layoutActive) { screen.style.width = '100%'; screen.style.height = 'auto'; screen.style.transform = 'none'; }
-    else resizeStudio();
+    studio.querySelector('.mf-studio-devices').hidden = false;
+    resizeStudio();
     window.dispatchEvent(new Event('resize'));
 
     try {
@@ -535,10 +538,7 @@
     const frameWrap = visualizer.querySelector('.mf-ppb-visualizer__frame-wrap');
     const feedback = document.getElementById('mf-ppb-visualizer-feedback');
     const refreshButton = document.getElementById('mf-ppb-visualizer-refresh');
-    const viewportButtons = visualizer.querySelectorAll('.mf-ppb-visualizer__viewport');
     let activeType = 'book';
-    let activeViewport = 'desktop';
-    let activeViewportWidth = 1200;
     let refreshTimer = null;
     let requestId = 0;
 
@@ -613,18 +613,10 @@
 
     function updateViewport() {
       if (!frame || !frameWrap) return;
-
-      const availableWidth = Math.max(frameWrap.clientWidth - 2, 1);
-      const availableHeight = Math.max(frameWrap.clientHeight - 2, 1);
-      const targetWidth = Math.max(activeViewportWidth, 1);
-      const scale = Math.min(1, availableWidth / targetWidth);
-      const scaledWidth = targetWidth * scale;
-
-      frameWrap.setAttribute('data-viewport', activeViewport);
-      frame.style.width = `${targetWidth}px`;
-      frame.style.height = `${Math.ceil(availableHeight / scale)}px`;
-      frame.style.transform = `scale(${scale})`;
-      frame.style.marginLeft = scale === 1 && scaledWidth < availableWidth ? `${Math.floor((availableWidth - scaledWidth) / 2)}px` : '0';
+      frameWrap.setAttribute('data-viewport', deviceWidth === 390 ? 'mobile' : deviceWidth === 768 ? 'tablet' : 'desktop');
+      frame.style.width = '100%'; frame.style.height = '100%';
+      frame.style.transform = 'none'; frame.style.marginLeft = '0';
+      resizeStudio();
     }
 
     function queueRefresh(delay) {
@@ -705,18 +697,6 @@
     if (refreshButton) {
       refreshButton.addEventListener('click', () => queueRefresh(0));
     }
-    viewportButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        activeViewport = button.getAttribute('data-viewport') || 'desktop';
-        activeViewportWidth = parseInt(button.getAttribute('data-width') || '1200', 10) || 1200;
-        viewportButtons.forEach((item) => {
-          const isActive = item === button;
-          item.classList.toggle('is-active', isActive);
-          item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
-        updateViewport();
-      });
-    });
     window.addEventListener('resize', updateViewport);
     updateLayoutTabs();
     updateSampleSelect();
