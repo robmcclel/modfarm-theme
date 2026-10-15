@@ -16,6 +16,8 @@ buttons[0].dispatchEvent(new win.KeyboardEvent('keydown', {key: 'End', bubbles: 
 check(win.document.activeElement === buttons[1] && buttons[1].getAttribute('aria-selected') === 'true', 'End key failed');
 buttons[1].dispatchEvent(new win.KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true}));
 check(win.document.activeElement === buttons[0], 'Arrow navigation did not wrap');
+win.ModFarmWorldInit(first);
+check(buttons[0].getAttribute('aria-selected') === 'true', 'Reinitializing a preview reset the selected tab');
 const ids = [...win.document.querySelectorAll('[id]')].map(node => node.id); check(ids.length === new Set(ids).size, 'Block instances duplicate IDs');
 check(win.document.querySelectorAll('.mfw--sections [role=tab]').length === 0, 'Sections mode became tabs');
 dom.window.close(); console.log('World tabs: passed');

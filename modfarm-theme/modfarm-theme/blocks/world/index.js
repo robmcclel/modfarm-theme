@@ -13,8 +13,10 @@
             useEffect(() => {
                 const root = previewRef.current; if (!root) return;
                 const init = () => window.ModFarmWorldInit?.(root);
+                const previewSubmit = event => event.preventDefault();
+                root.addEventListener('submit', previewSubmit);
                 const observer = new MutationObserver(init); observer.observe(root, {childList: true, subtree: true}); init();
-                return () => observer.disconnect();
+                return () => { observer.disconnect(); root.removeEventListener('submit', previewSubmit); };
             }, []);
             const [search, setSearch] = useState(''); const [choices, setChoices] = useState([]); const [selected, setSelected] = useState(null); const [error, setError] = useState('');
             const context = wp.data.useSelect(select => { const editor = select('core/editor'); return {id: editor?.getCurrentPostId?.(), type: editor?.getCurrentPostType?.()}; }, []);
