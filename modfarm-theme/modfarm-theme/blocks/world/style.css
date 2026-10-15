@@ -1,0 +1,25 @@
+.mfw { background:var(--mfw-background,var(--mfs-background,#fff)); color:var(--mfw-text,var(--mfs-body,#222)); padding:clamp(16px,3vw,36px); border-radius:8px; }
+.mfw h2,.mfw h3 { color:inherit; }
+.mfw a { color:var(--mfw-accent,var(--mfs-link,var(--mfs-primary,#a80003))); }
+.mfw-section { margin-block:24px; min-width:0; }
+.mfw-section > h2 { margin:0 0 20px; }
+.mfw-tablist { display:flex; gap:6px; overflow-x:auto; border-bottom:1px solid currentColor; padding-bottom:8px; margin-bottom:24px; }
+.mfw-tablist button { flex-shrink:0; border:1px solid currentColor; border-radius:5px; padding:10px 16px; color:inherit; background:var(--mfw-tab-background,transparent); font:inherit; cursor:pointer; }
+.mfw-tablist button[aria-selected=true] { background:var(--mfw-active-background,var(--mfw-accent,var(--mfs-button-bg,#222))); color:var(--mfw-active-text,var(--mfs-button-fg,#fff)); border-color:var(--mfw-active-background,var(--mfw-accent,var(--mfs-button-bg,#222))); }
+.mfw :focus-visible { outline:3px solid var(--mfw-accent,var(--mfs-primary,#a80003)); outline-offset:3px; }
+.mfw-entries { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:24px; }
+.mfw-entry { display:flex; align-items:flex-start; gap:18px; border:1px solid #8886; padding:20px; border-radius:6px; min-width:0; }
+.mfw-entry-image { width:96px; max-width:30%; height:auto; border-radius:4px; }
+.mfw-entry-copy { min-width:0; flex:1; }
+.mfw-entry h3 { margin-top:0; }
+.mfw-entry-summary { font-weight:600; }
+.mfw-rich-text { overflow-wrap:anywhere; }
+.mfw-rich-text > :first-child { margin-top:0; }
+.mfw-rich-text > :last-child { margin-bottom:0; }
+.mfw-rich-text img { max-width:100%; height:auto; }
+.mfw-spoilers { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:16px; border:1px solid #8886; border-radius:5px; margin-bottom:24px; }
+.mfw-spoilers p { flex-basis:100%; margin:0; font-size:.9em; }
+.mfw-spoilers select { max-width:100%; padding:8px; font:inherit; }
+.mfw-spoilers button { background:var(--mfw-active-background,var(--mfs-button-bg,#222)); color:var(--mfw-active-text,var(--mfs-button-fg,#fff)); padding:9px 14px; border:0; border-radius:4px; cursor:pointer; font:inherit; }
+.mfw [hidden] { display:none !important; }
+@media(max-width:480px) { .mfw-entry { padding:14px; gap:12px; } .mfw-entry-image { width:64px; } }
