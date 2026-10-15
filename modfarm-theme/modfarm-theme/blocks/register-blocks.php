@@ -49,6 +49,7 @@ add_action('init', function () {
         'column'                     => 'modfarm_render_column_block',
         'navigation-menu'            => 'modfarm_render_navigation_menu_block',
         'archive-book-list'          => 'modfarm_render_archive_book_list_block',
+        'world'                      => 'modfarm_render_world_block',
         'archive-description'        => 'modfarm_render_archive_description_block',
         'archive-layout-loader'      => 'modfarm_render_archive_layout_loader_block',
         'search-results'             => 'modfarm_render_search_results_block',
@@ -88,6 +89,11 @@ add_action('init', function () {
         // Register editor script if index.js exists
         if (file_exists($editor_script)) {
             $script_deps = [ 'wp-blocks', 'wp-element', 'wp-components', 'wp-i18n', 'wp-block-editor', 'wp-data', 'wp-api-fetch', 'wp-server-side-render' ];
+            if ($slug === 'world') {
+                $world_view = $block_dir . '/view.js';
+                wp_register_script('modfarm-world-preview', get_template_directory_uri() . '/blocks/world/view.js', [], filemtime($world_view), true);
+                $script_deps[] = 'modfarm-world-preview';
+            }
             if (wp_script_is('modfarm-book-options', 'registered')) {
                 $script_deps[] = 'modfarm-book-options';
             }

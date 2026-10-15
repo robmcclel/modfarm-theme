@@ -1,0 +1,15 @@
+{
+  "name": "modfarm/world",
+  "version": 1,
+  "label": "World",
+  "description": "Present published Series world content and optionally Books as sections or accessible tabs.",
+  "useWhen": ["Shared Series archive body", "Book page world context", "Landing page world guide"],
+  "source": "book-series term: _modfarm_world_bible",
+  "publicProjection": "modfarm_world_bible_public",
+  "placement": {"auto": "Current Series archive, otherwise Book with exactly one Series", "manual": "seriesId selected by Series name in editor"},
+  "controls": {"seriesWorkspace": ["publishing status", "display", "sections and labels", "section order", "default tab", "books placement", "full or summary descriptions", "artwork", "spoilers", "colors"], "blockOverrides": ["display", "books", "background", "text", "accent"]},
+  "visibility": "Only Published worlds and Published Public entries. Internal notes and Members entries never render. Legacy content defaults to Draft.",
+  "emptyBehavior": "Omit empty sections and their tabs; omit the complete block when no eligible content or reader-unlockable content exists.",
+  "dependencies": ["ModFarm Core World Bible presentation v2", "ModFarm Theme Book Archive List for included Books"],
+  "sideEffects": "None. Placing a block never publishes content or rewrites archive patterns."
+}

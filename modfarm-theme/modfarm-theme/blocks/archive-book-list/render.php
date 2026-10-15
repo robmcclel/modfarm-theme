@@ -54,7 +54,7 @@ if ( ! function_exists( 'modfarm_archive_book_list_taxonomy_defaults' ) ) {
 }
 
 if ( ! function_exists( 'modfarm_render_archive_book_list_block' ) ) :
-function modfarm_render_archive_book_list_block( $attributes ) {
+function modfarm_render_archive_book_list_block( $attributes, $content = '', $block = null, $series_term = null ) {
 
     // --------------------------------------------------
     // 1. BASIC ATTRIBUTES + ARCHIVE CONTEXT
@@ -108,7 +108,9 @@ function modfarm_render_archive_book_list_block( $attributes ) {
         : 'grid';
     $horizontal_cols = max( 3, min( 5, (int) ( $a['horizontal-columns'] ?? 4 ) ) );
     $horizontal_width = 'calc(' . round( 100 / $horizontal_cols, 6 ) . '% - ' . round( 10 * ( $horizontal_cols - 1 ) / $horizontal_cols, 4 ) . 'px)';
-    $qo  = get_queried_object();
+    // An explicit Series lets the World block reuse archive cards on Book and
+    // landing pages without changing the global query or queried object.
+    $qo  = $series_term instanceof WP_Term && 'book-series' === $series_term->taxonomy ? $series_term : get_queried_object();
 
     // --------------------------------------------------
     // ✅ SmartLinks toggle (default ON; matches other upgraded blocks)

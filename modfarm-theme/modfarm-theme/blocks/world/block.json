@@ -1,0 +1,23 @@
+{
+  "apiVersion": 2,
+  "name": "modfarm/world",
+  "title": "World",
+  "category": "modfarm-theme",
+  "icon": "admin-site-alt3",
+  "description": "Display a Series world as sections or tabs, using publishing and presentation controls in its World Bible workspace.",
+  "keywords": ["Series", "World Bible", "Characters", "Archive", "Tabs"],
+  "usesContext": ["postId", "postType"],
+  "supports": {"html": false, "align": ["wide", "full"]},
+  "attributes": {
+    "placement": {"type": "string", "default": "auto"},
+    "seriesId": {"type": "number", "default": 0},
+    "display": {"type": "string", "default": "inherit"},
+    "books": {"type": "string", "default": "inherit"},
+    "background": {"type": "string", "default": ""},
+    "text": {"type": "string", "default": ""},
+    "accent": {"type": "string", "default": ""}
+  },
+  "editorScript": "modfarm-world-editor",
+  "style": "file:./style.css",
+  "viewScript": "file:./view.js"
+}

@@ -1,0 +1,27 @@
+name: Validate World block
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: PHP syntax and rendering
+        run: |
+          php -l modfarm-theme/modfarm-theme/blocks/register-blocks.php
+          php -l modfarm-theme/modfarm-theme/blocks/archive-book-list/render.php
+          php -l modfarm-theme/modfarm-theme/blocks/world/render.php
+          php tests/world-block.php
+          php tests/world-block.php --fixture > /tmp/world-block.html
+      - name: Reader and editor JavaScript
+        run: |
+          node --check modfarm-theme/modfarm-theme/blocks/world/index.js
+          node --check modfarm-theme/modfarm-theme/blocks/world/view.js
+          npm install --prefix /tmp/modfarm-dom-check --no-save --ignore-scripts jsdom@26.1.0
+          NODE_PATH=/tmp/modfarm-dom-check/node_modules node tests/world-tabs.cjs /tmp/world-block.html
