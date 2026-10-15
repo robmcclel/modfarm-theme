@@ -1,7 +1,9 @@
 (function () {
     'use strict';
     function init(scope) {
-        scope.querySelectorAll('.mfw--tabs[data-world-tabs]').forEach(root => {
+        const roots = Array.from(scope.querySelectorAll('.mfw--tabs[data-world-tabs]'));
+        if (scope.matches?.('.mfw--tabs[data-world-tabs]')) roots.unshift(scope);
+        roots.forEach(root => {
             if (root.dataset.worldReady) return;
             const list = Array.from(root.children).find(node => node.classList.contains('mfw-tablist'));
             if (!list) return;
@@ -18,7 +20,7 @@
                 button.addEventListener('click', () => activate(i));
                 button.addEventListener('keydown', event => {
                     let next;
-                    const rtl = getComputedStyle(list).direction === 'rtl';
+                    const rtl = list.ownerDocument.defaultView.getComputedStyle(list).direction === 'rtl';
                     if (event.key === 'ArrowRight') next = (i + (rtl ? -1 : 1) + buttons.length) % buttons.length;
                     if (event.key === 'ArrowLeft') next = (i + (rtl ? 1 : -1) + buttons.length) % buttons.length;
                     if (event.key === 'Home') next = 0;
@@ -30,5 +32,6 @@
             activate(initial < 0 ? 0 : initial);
         });
     }
+    window.ModFarmWorldInit = init;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => init(document)); else init(document);
 })();

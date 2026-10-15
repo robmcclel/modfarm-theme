@@ -89,6 +89,11 @@ add_action('init', function () {
         // Register editor script if index.js exists
         if (file_exists($editor_script)) {
             $script_deps = [ 'wp-blocks', 'wp-element', 'wp-components', 'wp-i18n', 'wp-block-editor', 'wp-data', 'wp-api-fetch', 'wp-server-side-render' ];
+            if ($slug === 'world') {
+                $world_view = $block_dir . '/view.js';
+                wp_register_script('modfarm-world-preview', get_template_directory_uri() . '/blocks/world/view.js', [], filemtime($world_view), true);
+                $script_deps[] = 'modfarm-world-preview';
+            }
             if (wp_script_is('modfarm-book-options', 'registered')) {
                 $script_deps[] = 'modfarm-book-options';
             }

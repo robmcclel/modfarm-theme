@@ -1,6 +1,6 @@
 (function (wp) {
     'use strict';
-    const {createElement: el, Fragment, useState, useEffect} = wp.element;
+    const {createElement: el, Fragment, useState, useEffect, useRef} = wp.element;
     const {InspectorControls, useBlockProps} = wp.blockEditor;
     const {PanelBody, SelectControl, TextControl, ColorPalette, BaseControl, Notice} = wp.components;
     const ServerSideRender = wp.serverSideRender;
@@ -9,6 +9,13 @@
         title: 'World', category: 'modfarm-theme', icon,
         description: 'Display a Series world using its World Bible publishing and presentation controls.',
         edit({attributes, setAttributes}) {
+            const previewRef = useRef(null);
+            useEffect(() => {
+                const root = previewRef.current; if (!root) return;
+                const init = () => window.ModFarmWorldInit?.(root);
+                const observer = new MutationObserver(init); observer.observe(root, {childList: true, subtree: true}); init();
+                return () => observer.disconnect();
+            }, []);
             const [search, setSearch] = useState(''); const [choices, setChoices] = useState([]); const [selected, setSelected] = useState(null); const [error, setError] = useState('');
             const context = wp.data.useSelect(select => { const editor = select('core/editor'); return {id: editor?.getCurrentPostId?.(), type: editor?.getCurrentPostType?.()}; }, []);
             useEffect(() => {
@@ -35,7 +42,7 @@
                     el(SelectControl, {label: 'Display', value: attributes.display, options: [{value: 'inherit', label: 'Use Series settings'}, {value: 'sections', label: 'Sections'}, {value: 'tabs', label: 'Tabs'}], onChange: display => setAttributes({display})}),
                     el(SelectControl, {label: 'Books placement', value: attributes.books, options: [{value: 'inherit', label: 'Use Series settings'}, {value: 'separate', label: 'Separate Books block'}, {value: 'included', label: 'Inside World block'}], onChange: books => setAttributes({books})}),
                     el('p', {}, 'Content, section order, publishing, descriptions, and spoiler behavior are controlled in the Series World Bible tab.'), ...colors)),
-                el('div', useBlockProps(), error && el(Notice, {status: 'warning', isDismissible: false}, error),
+                el('div', useBlockProps({ref: previewRef}), error && el(Notice, {status: 'warning', isDismissible: false}, error),
                     needsContext ? el(Notice, {status: 'info', isDismissible: false}, 'World · Automatic placement. On a Series archive this follows the current Series. Switch to Manual to select and preview a Series here.') : manual && !attributes.seriesId ? el('p', {}, 'Choose a Series by name in the block settings.') : el(ServerSideRender, {block: 'modfarm/world', attributes, urlQueryArgs: context.id ? {post_id: context.id} : {}, EmptyResponsePlaceholder: () => el('p', {}, 'No published, eligible World content for this placement. Check the World Bible publishing status, entry status, section settings, or Series selection.')})));
         },
         save() { return null; }
