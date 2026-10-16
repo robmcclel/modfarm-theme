@@ -8,6 +8,7 @@
   const PanelContainer = embedded ? PluginSidebar : PluginDocumentSettingPanel;
   const { createElement: el, Fragment, useEffect, useRef, useState } = wp.element;
   const { PanelRow, Notice, Button, SelectControl, Modal, TextControl } = wp.components;
+  const BlockPreview = wp.blockEditor && (wp.blockEditor.BlockPreview || wp.blockEditor.__experimentalBlockPreview);
   const { select, dispatch } = wp.data;
   const { parse, serialize } = wp.blocks;
 
