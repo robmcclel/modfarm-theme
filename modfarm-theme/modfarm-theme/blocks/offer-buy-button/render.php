@@ -79,6 +79,21 @@ function modfarm_render_offer_buy_button_block($attributes = [], $content = '', 
     $ready = modfarm_store_block_readiness($offer_id);
     $wrapper_attributes = get_block_wrapper_attributes(['class' => implode(' ', $classes)]);
 
+    // Keep PPB and Store purchase controls on one renderer, including dedications
+    // and the visible, non-submitting unavailable/editor state.
+    if (class_exists('ModFarm_Store_Offer_Render') && is_callable(['ModFarm_Store_Offer_Render', 'buy_button'])) {
+        return '<div ' . $wrapper_attributes . '>' . ModFarm_Store_Offer_Render::buy_button($offer_id, [
+            'label' => $label, 'alignment' => $alignment, 'button_type' => $type,
+            'button_classes' => $button_classes,
+            'radius_mode' => $attributes['radiusMode'] ?? 'inherit',
+            'border_radius' => absint($attributes['border_radius'] ?? 0),
+            'show_advanced' => !empty($attributes['showAdvanced']),
+            'bg_color' => (string) ($attributes['bg_color'] ?? ''),
+            'text_color' => (string) ($attributes['text_color'] ?? ''),
+            'border_color' => (string) ($attributes['border_color'] ?? ''),
+        ]) . '</div>';
+    }
+
     if (!empty($ready['ready'])) {
         $buy_url = add_query_arg('mf_buy_offer', $offer_id, home_url('/'));
         if (modfarm_offer_buy_button_supports_discount($offer_id)) {
