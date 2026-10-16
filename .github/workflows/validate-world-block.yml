@@ -19,6 +19,10 @@ jobs:
           php -l modfarm-theme/modfarm-theme/blocks/world/render.php
           php tests/world-block.php
           php tests/world-block.php --fixture > /tmp/world-block.html
+      - name: PPB editor JavaScript
+        run: |
+          node --check modfarm-theme/modfarm-theme/assets/js/ppb-zones-panel.js
+          node tests/ppb-embedded-sidebar.cjs
       - name: Reader and editor JavaScript
         run: |
           node --check modfarm-theme/modfarm-theme/blocks/world/index.js
