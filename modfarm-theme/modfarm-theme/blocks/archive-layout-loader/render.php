@@ -9,16 +9,16 @@ function modfarm_render_archive_layout_loader_block($attributes) {
 
     // Fresh or unused PPB settings must still render a usable archive layout.
     $header = function_exists('modfarm_ppb_resolve_pattern_slug')
-        ? modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $options['archive_header_pattern'] ?? null, $options)
+        ? modfarm_resolve_archive_zone_pattern('header', $options)
         : ($options['archive_header_pattern'] ?? null);
     $body = function_exists('modfarm_resolve_archive_body_pattern_slug')
         ? modfarm_resolve_archive_body_pattern_slug($options)
         : ($options['archive_body_pattern'] ?? null);
     $footer = function_exists('modfarm_ppb_resolve_pattern_slug')
-        ? modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $options['archive_footer_pattern'] ?? null, $options)
+        ? modfarm_resolve_archive_zone_pattern('footer', $options)
         : ($options['archive_footer_pattern'] ?? null);
 
-    if (is_post_type_archive() && function_exists('modfarm_is_collection_type') && function_exists('modfarm_get_collection_patterns')) {
+    if (!function_exists('modfarm_resolve_archive_zone_pattern') && is_post_type_archive() && function_exists('modfarm_is_collection_type') && function_exists('modfarm_get_collection_patterns')) {
         $post_type = get_query_var('post_type');
         if (is_array($post_type)) {
             $post_type = reset($post_type);

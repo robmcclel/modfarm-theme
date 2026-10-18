@@ -638,7 +638,7 @@ function modfarm_checkbox_field($args) {
  * IMPORTANT: Categories MUST match those you register in functions.php.
  */
 function modfarm_ppb_pattern_category_map(): array {
-    return [
+    $map = [
         // Book Layout
         'book_header_pattern' => 'modfarm-book-header',
         'book_body_pattern'   => 'modfarm-book-body',
@@ -706,6 +706,10 @@ function modfarm_ppb_pattern_category_map(): array {
         'mfc_collection_single_footer'  => 'modfarm-collection-footer',
         'mfc_collection_archive_body'   => 'modfarm-archive-body',
     ];
+    foreach (modfarm_archive_layout_contexts() as $context => $definition) {
+        foreach (['header', 'body', 'footer'] as $zone) $map[modfarm_archive_layout_field($context, $zone)] = 'modfarm-archive-' . $zone;
+    }
+    return $map;
 }
 
 /**
@@ -755,7 +759,7 @@ function modfarm_get_registered_patterns_by_category(string $category_slug, bool
  */
 function modfarm_get_registered_patterns_for_field(string $field_id): array {
     $map = modfarm_ppb_pattern_category_map();
-    $map_field_id = preg_replace('/__.*/', '', $field_id);
+    $map_field_id = isset($map[$field_id]) ? $field_id : preg_replace('/__.*/', '', $field_id);
     $map_field_id = is_string($map_field_id) ? $map_field_id : $field_id;
 
     if (!empty($map[$map_field_id])) {
@@ -793,10 +797,13 @@ function modfarm_get_registered_patterns_for_field(string $field_id): array {
 function modfarm_pattern_dropdown($args) {
     $id      = $args['id'];
     $options = get_option('modfarm_theme_settings');
-    $value   = $options[$id] ?? '';
+    $value   = isset($args['archive_context']) ? modfarm_archive_layout_raw($args['archive_context'], $args['archive_zone'], (array) $options) : ($options[$id] ?? '');
     $selected_value = modfarm_ppb_normalize_admin_pattern_value($value);
 
     $patterns = modfarm_get_registered_patterns_for_field($id);
+    if ($selected_value !== 'default' && !isset($patterns[$selected_value])) {
+        $patterns[$selected_value] = __('Current selection', 'modfarm') . ' — ' . $selected_value;
+    }
 
     echo '<select name="modfarm_theme_settings[' . esc_attr($id) . ']">';
     echo '<option value="default"' . selected($selected_value, 'default', false) . '>' . esc_html__('Default', 'modfarm') . '</option>';
@@ -1011,7 +1018,7 @@ function modfarm_get_ppb_apply_all_pattern_matrix(): array {
 function modfarm_get_ppb_visualizer_content_types(): array {
     $types = [
         'book' => [
-            'label' => __('Book Page', 'modfarm'),
+            'label' => __('Books', 'modfarm'),
             'sample_label' => __('Sample Book', 'modfarm'),
             'fields' => [
                 'header' => 'book_header_pattern',
@@ -1020,7 +1027,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
             ],
         ],
         'page' => [
-            'label' => __('Standard Page', 'modfarm'),
+            'label' => __('Pages', 'modfarm'),
             'sample_label' => __('Sample Page', 'modfarm'),
             'fields' => [
                 'header' => 'page_header_pattern',
@@ -1029,7 +1036,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
             ],
         ],
         'post' => [
-            'label' => __('Blog Post', 'modfarm'),
+            'label' => __('Posts', 'modfarm'),
             'sample_label' => __('Sample Post', 'modfarm'),
             'fields' => [
                 'header' => 'post_header_pattern',
@@ -1041,7 +1048,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
 
     if (post_type_exists('offer')) {
         $types['offer'] = [
-            'label' => __('Offer Page', 'modfarm'),
+            'label' => __('Offers', 'modfarm'),
             'sample_label' => __('Sample Offer', 'modfarm'),
             'fields' => [
                 'header' => 'offer_header_pattern',
@@ -1051,7 +1058,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
         ];
     } elseif (post_type_exists('mf_offer')) {
         $types['mf_offer'] = [
-            'label' => __('Offer Page', 'modfarm'),
+            'label' => __('Offers', 'modfarm'),
             'sample_label' => __('Sample Offer', 'modfarm'),
             'fields' => [
                 'header' => 'offer_header_pattern',
@@ -1063,7 +1070,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
 
     if (post_type_exists('mf_update')) {
         $types['mf_update'] = [
-            'label' => __('Update', 'modfarm'),
+            'label' => __('Updates', 'modfarm'),
             'sample_label' => __('Sample Update', 'modfarm'),
             'fields' => [
                 'header' => 'update_header_pattern',
@@ -1076,7 +1083,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
     $event_post_type = post_type_exists('modfarm_event') ? 'modfarm_event' : (post_type_exists('mf_event') ? 'mf_event' : '');
     if ($event_post_type !== '') {
         $types[$event_post_type] = [
-            'label' => __('Event', 'modfarm'),
+            'label' => __('Events', 'modfarm'),
             'sample_label' => __('Sample Event', 'modfarm'),
             'fields' => [
                 'header' => 'event_header_pattern',
@@ -1087,7 +1094,7 @@ function modfarm_get_ppb_visualizer_content_types(): array {
     }
 
     $types['archive'] = [
-        'label' => __('Book Archive', 'modfarm'),
+        'label' => __('Other Archives', 'modfarm'),
         'sample_label' => __('Archive Context', 'modfarm'),
         'fields' => [
             'header' => 'archive_header_pattern',
@@ -1111,6 +1118,11 @@ function modfarm_get_ppb_visualizer_content_types(): array {
 
     }
 
+    foreach (modfarm_archive_layout_contexts() as $context => $definition) {
+        $fields = [];
+        foreach (['header', 'body', 'footer'] as $zone) $fields[$zone] = modfarm_archive_layout_field($context, $zone);
+        $types['archive_context__' . $context] = ['label' => $definition['label'], 'sample_label' => 'Archive layout preview', 'fields' => $fields, 'hidden_tab' => true];
+    }
     return $types;
 }
 
@@ -1236,6 +1248,14 @@ function modfarm_ppb_visualizer_resolve_slug(string $field_id, string $submitted
     $submitted = trim($submitted);
     if ($submitted !== '' && $submitted !== 'default') {
         return function_exists('modfarm_ppb_normalize_slug') ? modfarm_ppb_normalize_slug($submitted) : $submitted;
+    }
+
+    foreach (modfarm_archive_layout_contexts() as $context => $definition) {
+        foreach (['header', 'body', 'footer'] as $zone) {
+            if ($field_id === modfarm_archive_layout_field($context, $zone)) {
+                return modfarm_resolve_archive_zone_pattern($zone, array_merge($options, [$field_id => '']), $context);
+            }
+        }
     }
 
     if (str_starts_with($field_id, 'mfc_collection_')) {
@@ -2486,6 +2506,9 @@ function modfarm_sanitize_settings($settings) {
         'book_page_button_radius',
     ];
 
+    foreach (modfarm_archive_layout_contexts() as $context => $definition) {
+        foreach (['header', 'body', 'footer'] as $zone) $allowed_keys[] = modfarm_archive_layout_field($context, $zone);
+    }
     $clean = [];
 
     foreach ($allowed_keys as $key) {
@@ -2588,6 +2611,10 @@ function modfarm_sanitize_settings($settings) {
         }
     }
 
+    // Keep selections belonging to inactive modules and old taxonomy aliases.
+    foreach ((array) get_option('modfarm_theme_settings', []) as $key => $value) {
+        if (preg_match('/^archive_(header|body|footer)_pattern/', $key) && !array_key_exists($key, $clean) && is_string($value)) $clean[$key] = $value;
+    }
     $clean['navigation_profiles'] = modfarm_sanitize_navigation_profiles($settings['navigation_profiles'] ?? []);
     return $clean;
 }
@@ -3273,63 +3300,6 @@ function modfarm_render_settings_page() {
                                          </table>
                                      </div>
 
-                                     <div class="mf-settings-group">
-                                         <h3 class="mf-group-title">Archive Body Layouts</h3>
-                                         <p class="description">
-                                             Assign universal body layouts for WordPress archive views. Archive headers and footers continue to use the default Archive Header and Archive Footer patterns.
-                                         </p>
-                                         <table class="form-table mf-form-table">
-                                             <tbody>
-                                             <?php
-                                             $mf_archive_body_fields = [
-                                                 'archive_body_pattern_post_index' => [
-                                                     'label' => 'Blog Index',
-                                                     'help'  => 'Used for the posts index when WordPress is showing the blog feed.',
-                                                 ],
-                                                 'archive_body_pattern_category' => [
-                                                     'label' => 'Categories',
-                                                     'help'  => 'Used for standard post category archives.',
-                                                 ],
-                                                 'archive_body_pattern_post_tag' => [
-                                                     'label' => 'Tags',
-                                                     'help'  => 'Used for standard post tag archives.',
-                                                 ],
-                                                 'archive_body_pattern_author' => [
-                                                     'label' => 'Authors',
-                                                     'help'  => 'Used for author archive pages.',
-                                                 ],
-                                                 'archive_body_pattern_search' => [
-                                                     'label' => 'Search Results',
-                                                     'help'  => 'Used for site search result pages.',
-                                                 ],
-                                                 'archive_body_pattern_date' => [
-                                                     'label' => 'Date Archives',
-                                                     'help'  => 'Used for year, month, and day archives.',
-                                                 ],
-                                                 'archive_body_pattern_mf_offer' => [
-                                                     'label' => 'Offers Archive',
-                                                     'help'  => 'Used for the Store archive at /offers/.',
-                                                 ],
-                                             ];
-                                             ?>
-                                             <?php foreach ($mf_archive_body_fields as $mf_archive_body_id => $mf_archive_body_config) : ?>
-                                                 <tr>
-                                                     <th scope="row">
-                                                         <label for="mf-<?php echo esc_attr(str_replace('_', '-', $mf_archive_body_id)); ?>">
-                                                             <?php echo esc_html($mf_archive_body_config['label']); ?>
-                                                         </label>
-                                                     </th>
-                                                     <td>
-                                                         <?php modfarm_pattern_dropdown(['id' => $mf_archive_body_id]); ?>
-                                                         <p class="description">
-                                                             <?php echo esc_html($mf_archive_body_config['help']); ?>
-                                                         </p>
-                                                     </td>
-                                                 </tr>
-                                             <?php endforeach; ?>
-                                             </tbody>
-                                         </table>
-                                     </div>
                                  </div>
 
                                  <aside class="mf-settings-preview">
@@ -3739,15 +3709,16 @@ function modfarm_render_settings_page() {
                              class="mf-tab-panel"
                              role="tabpanel">
                         <div class="mf-panel-inner">
-                            <h2 class="mf-panel-title">Page Layouts</h2>
+                            <h2 class="mf-panel-title">Content Layouts</h2>
                             <p class="mf-panel-intro">
                                 Choose default header/body/footer patterns for key content types.
                                 These are used by the PPB / Apply Layout tools.
                             </p>
 
-                            <div class="mf-ppb-layout-tabs" role="tablist" aria-label="Page layout content type">
+                            <div class="mf-ppb-layout-tabs" role="tablist" aria-label="Content type">
                                 <?php $mf_viz_types = modfarm_get_ppb_visualizer_content_types(); ?>
                                 <?php foreach ($mf_viz_types as $value => $type_config) : ?>
+                                    <?php if (!empty($type_config['hidden_tab'])) continue; ?>
                                     <button
                                         type="button"
                                         class="mf-ppb-layout-tab<?php echo $value === 'book' ? ' is-active' : ''; ?>"
@@ -3893,49 +3864,9 @@ function modfarm_render_settings_page() {
                                         </table>
                                     </div>
 
-                                    <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="archive">
-                                        <h3 class="mf-group-title">Archive Layout</h3>
-                                        <table class="form-table mf-form-table">
-                                            <tbody>
-                                            <tr>
-                                                <th scope="row"><label>Archive Header Pattern</label></th>
-                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_header_pattern']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Archive Body Pattern (Default)</label></th>
-                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Offers Archive Pattern</label></th>
-                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_mf_offer']); ?></td>
-                                            </tr>
-                                            <?php if (post_type_exists('mf_update')) : ?>
-                                                <tr>
-                                                    <th scope="row"><label>Updates Archive Pattern</label></th>
-                                                    <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_mf_update']); ?></td>
-                                                </tr>
-                                            <?php endif; ?>
-                                            <?php if (post_type_exists('modfarm_event') || post_type_exists('mf_event')) : ?>
-                                                <tr>
-                                                    <th scope="row"><label>Events Archive Pattern</label></th>
-                                                    <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_modfarm_event']); ?></td>
-                                                </tr>
-                                            <?php endif; ?>
-                                            <tr>
-                                                <th scope="row"><label>Book Series Archive Pattern</label></th>
-                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_book_series']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Genre Archive Pattern</label></th>
-                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_book_genre']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Author Archive Pattern</label></th>
-                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_body_pattern_book_authors']); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Book Taxonomy Defaults</label></th>
-                                                <td>
+                                    <?php modfarm_render_content_archive_layout_settings(); ?>
+                                    <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="book">
+                                        <details><summary><strong>Book archive display defaults</strong></summary>
                                                     <?php
                                                     $mf_archive_tax_defaults = [
                                                         'book_series' => 'Series',
@@ -3991,24 +3922,8 @@ function modfarm_render_settings_page() {
                                                             <?php endforeach; ?>
                                                         </tbody>
                                                     </table>
-                                                    <p class="description">Term-level archive settings override these taxonomy defaults. Use Authors grouped by series for large multi-author catalogs.</p>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th scope="row"><label>Archive Footer Pattern</label></th>
-                                                <td><?php modfarm_pattern_dropdown(['id' => 'archive_footer_pattern']); ?></td>
-                                            </tr>
-                                            <?php foreach (modfarm_get_collection_type_defs_for_settings() as $mf_archive_collection_slug => $mf_archive_collection_def) : ?>
-                                                <?php $mf_archive_collection_label = modfarm_get_collection_type_label_for_settings($mf_archive_collection_slug, $mf_archive_collection_def); ?>
-                                                <tr>
-                                                    <th scope="row">
-                                                        <label><?php echo esc_html($mf_archive_collection_label); ?> Archive Body Pattern</label>
-                                                    </th>
-                                                    <td><?php modfarm_collection_pattern_dropdown($mf_archive_collection_slug, 'archive', 'body'); ?></td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
+                                                    <p class="description">Individual archive settings override these display defaults.</p>
+                                        </details>
                                     </div>
 
                                     <?php $mf_collection_types = modfarm_get_collection_type_defs_for_settings(); ?>
