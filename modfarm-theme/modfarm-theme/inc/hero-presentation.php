@@ -181,7 +181,7 @@ add_action('enqueue_block_assets', function () {
 
 add_action('enqueue_block_editor_assets', function () {
     $path = get_template_directory() . '/assets/js/hero-presentation.js';
-    wp_enqueue_script('modfarm-hero-presentation', get_template_directory_uri() . '/assets/js/hero-presentation.js', ['wp-hooks', 'wp-compose', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-blocks', 'wp-i18n', 'wp-data', 'wp-core-data'], filemtime($path), true);
+    wp_enqueue_script('modfarm-hero-presentation', get_template_directory_uri() . '/assets/js/hero-presentation.js', ['wp-hooks', 'wp-compose', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-blocks', 'wp-i18n', 'wp-data', 'wp-core-data', 'wp-api-fetch'], filemtime($path), true);
     $settings = get_option('modfarm_theme_settings', []);
     wp_localize_script('modfarm-hero-presentation', 'modfarmHeroPresentation', [
         'options' => modfarm_hero_presentation_options(),
