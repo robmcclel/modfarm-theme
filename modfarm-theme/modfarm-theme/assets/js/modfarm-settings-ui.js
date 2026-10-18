@@ -64,12 +64,12 @@
   if (form) {
     form.addEventListener('change', event => syncPatternControls(form, event.target), true);
     form.addEventListener('input', event => {
-      if (!event.target.name || !event.target.name.startsWith('modfarm_theme_settings[')) return;
+      if (!event.target.name || !(/^(modfarm_theme_settings|modfarm_site_identity)\[/.test(event.target.name))) return;
       dirty = true;
       if (saveContext) saveContext.textContent = 'Unsaved changes · Apply to this site when saved.';
     });
     form.addEventListener('change', event => {
-      if (!event.target.name || !event.target.name.startsWith('modfarm_theme_settings[')) return;
+      if (!event.target.name || !(/^(modfarm_theme_settings|modfarm_site_identity)\[/.test(event.target.name))) return;
       dirty = true;
       if (saveContext) saveContext.textContent = 'Unsaved changes · Apply to this site when saved.';
     });
@@ -126,7 +126,7 @@
     studio.querySelector('.mf-studio-note').textContent = layoutActive
       ? 'Rendered patterns using your selected content. Save to keep these defaults.'
       : tabId === 'marketing' ? 'Measurement settings do not change the site appearance.'
-      : tabId === 'navigation' ? 'Appearance sample. Shared profiles and menu behavior are verified on the site after saving.'
+      : tabId === 'navigation' ? 'Live navigation preview. Switch devices and open the menu to inspect mobile navigation.'
       : 'Live appearance sample. Changes are kept only when you save.';
     studio.querySelector('.mf-studio-devices').hidden = false;
     resizeStudio();
@@ -169,7 +169,9 @@
     const layoutMain = root.querySelector('#mf-tab-page-layouts .mf-settings-main');
     if (!themeMain || !bookMain || !siteMain || !layoutMain) return;
     const themeGroups = Array.from(themeMain.querySelectorAll(':scope > .mf-settings-group'));
-    themeGroups.forEach((group, index) => { group.dataset.designSection = index === 0 ? 'colors' : 'fonts'; });
+    themeGroups.forEach(group => {
+      if (!group.dataset.designSection) group.dataset.designSection = group.querySelector('.modfarm-color-field') ? 'colors' : group.querySelector('#mf-hero-default-image') ? 'branding' : 'fonts';
+    });
     const makeGroup = (title, parent) => {
       const group = document.createElement('div');
       group.className = 'mf-settings-group';
@@ -188,18 +190,9 @@
       const row = control.closest('tr'); if (row) bookColors.body.appendChild(row);
     });
     const navFont = settingControl('nav_font');
-    if (navFont && navFont.closest('tr') && themeGroups[1]) themeGroups[1].querySelector('tbody').appendChild(navFont.closest('tr'));
+    if (navFont && navFont.closest('tr') && settingControl('heading_font').closest('.mf-settings-group')) settingControl('heading_font').closest('.mf-settings-group').querySelector('tbody').appendChild(navFont.closest('tr'));
     bookMain.querySelectorAll(':scope > .mf-settings-group').forEach(group => {
       if (!group.querySelector('input,select,textarea')) group.hidden = true;
-    });
-    const brand = makeGroup('Site identity', themeMain); brand.group.dataset.designSection = 'branding';
-    brand.group.querySelector('table').remove();
-    const intro = document.createElement('p'); intro.className = 'description';
-    intro.textContent = 'Use the existing WordPress identity controls for the site title, icon, and logo.';
-    brand.group.appendChild(intro);
-    [['Title & site icon','options-general.php'],['Logo & site identity','customize.php?autofocus[section]=title_tagline']].forEach(([label,path]) => {
-      const link = document.createElement('a'); link.className = 'button mf-branding-link'; link.textContent = label;
-      link.href = new URL(path, window.location.href).href; brand.group.appendChild(link);
     });
     const widthGroup = makeGroup('Content width', siteMain);
     const width = settingControl('content_width'); if (width && width.closest('tr')) widthGroup.body.appendChild(width.closest('tr'));
@@ -209,6 +202,7 @@
       if (index === 1 && archive) archive.appendChild(group);
       else layoutMain.appendChild(group);
     });
+    organizeSettings(themeMain, navColors.group);
     const legacyNav = root.querySelector(':scope > .mf-tabs'); legacyNav.classList.add('mf-legacy-tabs');
     const primary = document.createElement('nav'); primary.className = 'mf-settings-categories'; primary.setAttribute('aria-label','Settings categories');
     const secondary = document.createElement('nav'); secondary.className = 'mf-settings-subnav'; secondary.setAttribute('aria-label','Settings sections');
@@ -269,6 +263,90 @@
     } catch (e) {}
     root.classList.add('has-hierarchy'); selectCategory(category);
   }
+  function layoutMainCleanup() {
+    root.querySelectorAll('#mf-tab-page-layouts .mf-settings-group').forEach(group => { if (!group.querySelector('input,select,textarea,button,details')) group.hidden = true; });
+  }
+  function organizeSettings(themeMain, navColors) {
+    const subgroup = (parent, title, description, controls) => {
+      const section = document.createElement('section'); section.className = 'mf-settings-subgroup';
+      const heading = document.createElement('h4'); heading.textContent = title;
+      const text = document.createElement('p'); text.className = 'description'; text.textContent = description;
+      const table = document.createElement('table'); table.className = 'form-table mf-form-table';
+      const body = document.createElement('tbody'); table.append(body); section.append(heading, text, table); parent.append(section);
+      controls.forEach(id => { const input = settingControl(id); const row = input && input.closest('tr'); if (row) body.append(row); });
+      return section;
+    };
+    const globals = settingControl('primary_color').closest('.mf-settings-group');
+    subgroup(globals, 'Site Colors', 'The page surface and text colors used throughout the site.', ['background_color','header_text_color','body_text_color']);
+    subgroup(globals, 'Accent Colors', 'Links and buttons guide readers to the next step. Primary and Secondary can also color hero gradients and section backgrounds to highlight content.', ['link_color','primary_color','secondary_color','button_color','button_text_color']);
+    subgroup(navColors, 'Desktop Navigation', 'Colors for the main navigation and its dropdown menus.', ['nav_bg_color','nav_text_color','nav_hover_color','submenu_bg_color','submenu_text_color']);
+    subgroup(navColors, 'Mobile Navigation', 'Colors for mobile menus. Switch to Tablet or Mobile and open the menu in the visualizer.', ['mobile_nav_bg_color','mobile_nav_text_color']);
+    subgroup(navColors, 'Footer Navigation', 'Colors used when Footer Nav Style Mode is set to Manual Footer Colors.', ['footer_nav_bg_color','footer_nav_text_color','footer_nav_hover_color','footer_submenu_bg_color','footer_submenu_text_color']);
+    const fonts = settingControl('heading_font').closest('.mf-settings-group');
+    ['nav_font','nav_font_size'].forEach(id => { const input = settingControl(id); if (input) fonts.querySelector('tbody').append(input.closest('tr')); });
+    const navigation = root.querySelector('#mf-tab-navigation .mf-panel-inner');
+    const footer = navigation.querySelector('[data-nav-section="footer"]');
+    ['footer_nav_mode','footer_nav_transparent'].forEach(id => { const input = settingControl(id); if (input && footer) footer.querySelector('tbody').append(input.closest('tr')); });
+    if (footer) { const mode = settingControl('footer_nav_mode'); footer.querySelector('tbody').prepend(mode.closest('tr')); }
+    const navGroup = navigation.querySelector('.mf-settings-group');
+    navGroup.querySelector(':scope > .mf-group-title')?.remove();
+    navigation.querySelectorAll('.mf-nav-section').forEach(section => { section.classList.add('mf-settings-group'); navigation.insertBefore(section, navGroup); });
+    const mainNav = navigation.querySelector('[data-nav-section="main"] tbody');
+    ['nav_padding','nav_logo_max_width','nav_logo_max_height','nav_icon_max_width','nav_icon_max_height','nav_brand_gap','nav_transparent'].forEach(id => { const input = settingControl(id); if(input) mainNav.append(input.closest('tr')); });
+    // Preserve unused footer profile fields without leaving an empty section.
+    navGroup.querySelectorAll('input[type="hidden"]').forEach(input => navigation.querySelector('[data-nav-section="shared"]').append(input));
+    if (!navGroup.querySelector('input,select,textarea')) navGroup.remove();
+    const postTemplate = settingControl('default_post_template');
+    const postPanel = root.querySelector('.mf-ppb-layout-panel[data-ppb-layout-type="post"]');
+    if (postTemplate && postPanel) { postPanel.append(postTemplate.closest('tr')); postTemplate.closest('tr').classList.add('mf-layout-mode-row'); }
+    root.querySelectorAll('select[name^="mfc_collection_layout_mode["]').forEach(input => {
+      const type = input.name.slice('mfc_collection_layout_mode['.length, -1);
+      const panel = Array.from(root.querySelectorAll('.mf-ppb-layout-panel')).find(item => item.dataset.ppbLayoutType === 'mfc_collection_single__' + type);
+      if (panel) panel.querySelector('tbody').prepend(input.closest('tr'));
+    });
+    layoutMainCleanup();
+    const display = root.querySelector('.mf-archive-display-defaults');
+    if (display) {
+      const group = document.createElement('div'); group.className = 'mf-settings-group mf-ppb-layout-panel'; group.dataset.ppbLayoutType = 'book';
+      display.parentElement.after(group); group.append(display);
+      display.querySelectorAll('tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length !== 4) return;
+        ['Page type','Books Per Row','Book Order','List Mode'].forEach((label,i) => cells[i].dataset.label = label);
+      });
+    }
+    root.querySelectorAll('.mf-ppb-layout-panel').forEach(panel => {
+      const heading = panel.querySelector(':scope > .mf-group-title');
+      if (heading && !panel.querySelector('details')) {
+        const note = document.createElement('p'); note.className = 'description';
+        note.textContent = 'These patterns set the layout for new pages. Existing PPB pages keep their layouts until you use PPB Apply All or their individual PPB controls. Hybrid headers and footers follow saved defaults unless locally overridden.';
+        heading.after(note);
+      }
+    });
+    // Hybrid bodies are authored content, not centrally selected patterns. Keep
+    // their saved default submitted, while presenting a disabled selector.
+    ['post','update','event'].forEach(type => {
+      const input = settingControl(type + '_body_pattern'); if (!input) return;
+      const hybrid = type !== 'post' || !settingValue('default_post_template').includes('ppb');
+      if (!hybrid) return;
+      const mirror = document.createElement('input'); mirror.type = 'hidden'; mirror.name = input.name; mirror.value = input.value;
+      input.after(mirror); input.disabled = true; input.classList.add('mf-hybrid-body');
+      const note = document.createElement('p'); note.className = 'description'; note.textContent = 'Hybrid uses the content written in the editor. A Body pattern applies only to pages explicitly using PPB.'; input.after(note);
+    });
+    const help = (target, items) => {
+      if (!target) return;
+      const links = document.createElement('div'); links.className = 'mf-settings-help';
+      items.forEach(([icon,title,text]) => {
+        const details = document.createElement('details'); const summary = document.createElement('summary');
+        const symbol = document.createElement('span'); symbol.className = 'dashicons dashicons-' + icon; symbol.setAttribute('aria-hidden','true');
+        summary.append(symbol, document.createTextNode(' ' + title)); const p = document.createElement('p'); p.textContent = text; details.append(summary,p); links.append(details);
+      }); target.append(links);
+    };
+    help(root.querySelector('.mf-ppb-layout-sample'), [['info','Overview','Choose named content, then select patterns to preview Header, Body and Footer. Previewing never changes the site.'],['book','Guide','Save defaults for future pages. Dynamic archives and Hybrid headers and footers use saved defaults unless overridden locally.'],['sos','Help','If a preview is empty, choose another sample. Individual pages and archive terms can have local settings that take precedence.']]);
+    help(Array.from(root.querySelectorAll('.mf-major-title')).find(title => title.textContent === 'PPB Apply All')?.parentElement, [['info','Overview','Apply All replaces one selected zone across eligible existing pages. It is a deliberate redesign operation.'],['book','Guide','Choose content type, zone and pattern, then Preview Impact. Review the affected items and confirm before applying. Locks protect zones; matching content-slot IDs preserve portable content.'],['sos','Help','Back up before a redesign. Manual edits outside matching content slots can be removed. Review skipped items and failures in the report and Recent PPB Runs.']]);
+    help(root.querySelector('#modfarm-font-family')?.closest('.mf-settings-group'), [['info','Overview','Upload a local font face to make it available in font selectors.'],['book','Guide','Use the same family name for each weight and italic face. WOFF2 is preferred for smaller downloads.'],['sos','Help','Use fonts you have permission to publish. If a face looks wrong, check its family, weight and style before uploading again.']]);
+  }
+
   initSettingsHierarchy();
   root.querySelectorAll('.modfarm-color-field').forEach(control => {
     const row = control.closest('tr'); if (!row) return;
@@ -388,7 +466,7 @@
 
     function buttonRadius(shape) {
       if (shape === 'pill') return '999px';
-      if (shape === 'rounded') return '14px';
+      if (shape === 'rounded') return '16px';
       return '0px';
     }
 
@@ -407,10 +485,10 @@
     }
 
     function shadowValue(style) {
-      if (style === 'shadow-sm') return '0 2px 8px rgba(0,0,0,.12)';
-      if (style === 'shadow-md') return '0 8px 22px rgba(0,0,0,.16)';
-      if (style === 'shadow-lg') return '0 14px 36px rgba(0,0,0,.22)';
-      if (style === 'emboss') return '0 8px 22px rgba(0,0,0,.14), inset 0 2px 8px rgba(255,255,255,.28)';
+      if (style === 'shadow-sm') return '0 1px 6px rgba(0,0,0,.08)';
+      if (style === 'shadow-md') return '0 4px 16px rgba(0,0,0,.12)';
+      if (style === 'shadow-lg') return '0 10px 30px rgba(0,0,0,.18)';
+      if (style === 'emboss') return '0 4px 16px rgba(0,0,0,.12), inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.06)';
       return 'none';
     }
 
@@ -425,7 +503,7 @@
 
       const primary = settingValue('primary_color', '#94a3b8');
       const secondary = settingValue('secondary_color', '#475569');
-      const background = settingValue('background_color', '#f3f4f5');
+      const background = settingValue('background_color', '#ffffff');
       const body = settingValue('body_text_color', '#1d2327');
       const heading = settingValue('header_text_color', body);
       const link = settingValue('link_color', primary || '#2271b1');
@@ -478,6 +556,8 @@
       const pageSecondaryText = settingValue('book_page_secondary_text_color', settingValue('body_text_color', '#1d2327'));
       const pageSecondaryBorder = settingValue('book_page_secondary_border_color', pageSecondaryText);
       const ctaMode = settingValue('book_card_cta_mode');
+      bookPreview.classList.toggle('is-joined', ctaMode !== 'gap');
+      bookPreview.dataset.shadow = settingValue('book_card_shadow_style');
 
       setStyleVar(bookPreview, '--mf-preview-body', settingValue('body_text_color', '#1d2327'));
       setStyleVar(bookPreview, '--mf-preview-heading', settingValue('header_text_color', settingValue('body_text_color', '#1d2327')));
@@ -487,7 +567,7 @@
       setStyleVar(bookPreview, '--mf-preview-sample-bg', sampleBg);
       setStyleVar(bookPreview, '--mf-preview-sample-border', sampleBorder);
       setStyleVar(bookPreview, '--mf-preview-sample-text', sampleText);
-      setStyleVar(bookPreview, '--mf-preview-cover-radius', settingValue('book_card_cover_shape') === 'rounded' ? '14px' : '0px');
+      setStyleVar(bookPreview, '--mf-preview-cover-radius', settingValue('book_card_cover_shape') === 'rounded' ? '16px' : '0px');
       setStyleVar(bookPreview, '--mf-preview-button-radius', buttonRadius(settingValue('book_card_button_shape')));
       setStyleVar(bookPreview, '--mf-preview-sample-radius', buttonRadius(settingValue('book_card_sample_shape')));
       setStyleVar(bookPreview, '--mf-preview-cta-gap', ctaMode === 'gap' ? '10px' : '0px');
@@ -534,6 +614,67 @@
   }
 
   initScopedPanelPreviews();
+  function initAppearancePreview() {
+    if (!themePreview || !bookPreview || !config.appearanceNonce) return;
+    const media = document.createElement('div'); media.className = 'mf-book-visualizer__media';
+    const card = bookPreview.querySelector('.mf-book-visualizer__card');
+    const cover = card.querySelector('.mf-book-visualizer__cover');
+    cover.before(media); media.append(cover, card.querySelector('.mf-book-visualizer__primary'));
+    const frame = document.createElement('iframe'); frame.className = 'mf-appearance-frame'; frame.title = 'Live site appearance and navigation';
+    frame.setAttribute('sandbox','allow-scripts');
+    themePreview.append(frame); themePreview.classList.add('has-native-preview');
+    let timer, sequence = 0;
+    const status = document.createElement('p'); status.className = 'mf-appearance-status'; status.setAttribute('role','status'); studio.append(status);
+    function cloneSample() {
+      const sample = themePreview.cloneNode(true); sample.querySelector('iframe').remove(); sample.classList.remove('has-native-preview'); sample.removeAttribute('id'); sample.hidden = false;
+      const row = sample.querySelector('.mf-theme-visualizer__book-row'); row.replaceChildren();
+      for (let i=0; i<3; i++) { const book = bookPreview.cloneNode(true); book.removeAttribute('id'); book.hidden = false; row.append(book); }
+      const title = form.querySelector('[name="modfarm_site_identity[blogname]"]');
+      if (title) sample.querySelector('.mf-theme-visualizer__site-title').textContent = title.value;
+      return sample;
+    }
+    async function render() {
+      const request = ++sequence;
+      const settings = {};
+      new FormData(form).forEach((value,name) => {
+        const profile = name.match(/^modfarm_theme_settings\[navigation_profiles\]\[(header|footer)\]\[(\w+)\]$/);
+        const field = name.match(/^modfarm_theme_settings\[(\w+)\]$/);
+        if (profile) { settings.navigation_profiles ||= {}; settings.navigation_profiles[profile[1]] ||= {}; settings.navigation_profiles[profile[1]][profile[2]] = value; }
+        else if (field) settings[field[1]] = value;
+      });
+      const identity = {};
+      new FormData(form).forEach((value,name) => { const match = name.match(/^modfarm_site_identity\[(\w+)\]$/); if (match) identity[match[1]] = value; });
+      const payload = new URLSearchParams({action:'modfarm_settings_appearance',nonce:config.appearanceNonce,settings:JSON.stringify(settings),identity:JSON.stringify(identity)});
+      try {
+        const response = await fetch(config.ajaxUrl,{method:'POST',credentials:'same-origin',body:payload});
+        const result = await response.json(); if (request !== sequence) return;
+        if (!result.success) throw new Error(result.data?.message || 'Preview unavailable');
+        const sample = cloneSample();
+        sample.querySelector('.mf-theme-visualizer__nav').outerHTML = result.data.header;
+        sample.querySelector('.mf-theme-visualizer__footer').outerHTML = result.data.footer;
+        const base = config.themeUrl.replace(/\/$/,'');
+        frame.srcdoc = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">' +
+          '<link rel="stylesheet" href="'+base+'/assets/css/modfarm-settings-ui.css"><link rel="stylesheet" href="'+base+'/blocks/navigation-menu/style.css">' + result.data.tokens +
+          '<style>[hidden]{display:none!important}html,body{margin:0;padding:0}body{background:var(--mfs-background,#fff)}.mf-theme-visualizer{border:0;border-radius:0}.mf-theme-visualizer__hero{padding:60px}.mf-theme-visualizer__book-row .mf-book-visualizer{display:block}.mf-book-visualizer__page-buttons{margin-top:18px}@media(max-width:800px){.mf-theme-visualizer__book-row{grid-template-columns:1fr 1fr}.mf-theme-visualizer__hero{padding:30px 20px}}@media(max-width:480px){.mf-theme-visualizer__book-row{grid-template-columns:1fr}}</style></head><body>'+sample.outerHTML+
+          '<script src="'+base+'/assets/js/navigation-toggle.js"><\/script><script>document.addEventListener("click",function(e){var a=e.target.closest("a");if(a)e.preventDefault()});<\/script></body></html>';
+        status.textContent = '';
+      } catch (error) { if (request === sequence) status.textContent = 'Appearance preview could not refresh. ' + error.message; }
+    }
+    form.addEventListener('input', () => { clearTimeout(timer); timer=setTimeout(render,250); });
+    form.addEventListener('change', () => { clearTimeout(timer); timer=setTimeout(render,250); });
+    document.addEventListener('click', event => {
+      const select = event.target.closest('[data-identity-select]'); const clear = event.target.closest('[data-identity-clear]');
+      if (!select && !clear) return;
+      const key = (select || clear).dataset[select ? 'identitySelect' : 'identityClear'];
+      const input = document.getElementById('mf-identity-'+key); const image = input.parentElement.querySelector('img');
+      if (clear) { input.value='0'; image.hidden=true; input.dispatchEvent(new Event('change',{bubbles:true})); return; }
+      const picker = window.wp.media({title:'Choose '+(key==='custom_logo'?'site logo':'site icon'),library:{type:'image'},multiple:false});
+      picker.on('select',()=>{ const item=picker.state().get('selection').first().toJSON(); input.value=item.id; image.src=item.url; image.hidden=false; input.dispatchEvent(new Event('change',{bubbles:true})); }); picker.open();
+    });
+    render();
+  }
+  initAppearancePreview();
+
 
   function initPpbVisualizer() {
     const visualizer = document.getElementById('mf-ppb-visualizer');

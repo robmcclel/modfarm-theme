@@ -1,0 +1,48 @@
+const {chromium}=require('playwright');
+const fs=require('fs'),assert=require('assert/strict');
+const path=require('path'), {execFileSync}=require('child_process');
+const root=path.join(__dirname,'../modfarm-theme/modfarm-theme');
+const settingsHtml=process.env.MFS_SETTINGS_FIXTURE ? fs.readFileSync(process.env.MFS_SETTINGS_FIXTURE,'utf8') : execFileSync('php',[path.join(__dirname,'settings-review-fixture.php')],{encoding:'utf8'});
+const navHtml=process.env.MFS_NAV_FIXTURE ? fs.readFileSync(process.env.MFS_NAV_FIXTURE,'utf8') : execFileSync('php',[path.join(root,'tests/navigation.php'),'--fixture','drawer'],{encoding:'utf8'});
+(async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.MFS_CHROMIUM_PATH ? {executablePath:process.env.MFS_CHROMIUM_PATH} : {}),args:['--no-sandbox']});
+ const page=await browser.newPage({viewport:{width:1600,height:1100}});const errors=[];page.on('pageerror',e=>errors.push(e.stack));
+ await page.route('https://theme.invalid/**',route=>{const file=root+new URL(route.request().url()).pathname;return route.fulfill({body:fs.readFileSync(file),contentType:file.endsWith('.css')?'text/css':'text/javascript'});});
+ await page.setContent(settingsHtml);
+ await page.addStyleTag({path:root+'/assets/css/modfarm-settings-ui.css'});
+ await page.evaluate((header)=>{window.modfarmSettingsUi={appearanceNonce:'test',themeUrl:'https://theme.invalid',ajaxUrl:'https://test.invalid/ajax'};window.fetch=async()=>({json:async()=>({success:true,data:{header,footer:'<footer>Footer</footer>',tokens:''}})});},navHtml.match(/<header>([\s\S]*?)<\/header>/)[1]);
+ await page.addScriptTag({path:root+'/assets/js/modfarm-visualizer.js'});
+ await page.addScriptTag({path:root+'/assets/js/modfarm-settings-ui.js'});
+ await page.waitForTimeout(400);assert.deepEqual(errors,[]);
+ await page.locator('[data-category="design"]').click();await page.locator('[data-section="branding"]').click();
+ assert.equal(await page.locator('#mf-hero-default-image').evaluate(e=>e.closest('[data-design-section]').dataset.designSection),'branding');
+ assert.equal(await page.locator('[name="modfarm_theme_settings[nav_font]"]').evaluate(e=>e.closest('[data-design-section]').dataset.designSection),'fonts');
+ await page.locator('[data-section="colors"]').click();
+ assert.equal(await page.locator('.mf-settings-subgroup h4').allTextContents().then(v=>v.includes('Accent Colors')),true);
+ await page.locator('[data-category="function"]').click();await page.locator('[data-section="navigation"]').click();
+ assert.equal(await page.locator('[data-nav-section]').count(),4);
+ await page.locator('[data-size="390"]').click();
+ await page.frameLocator('.mf-appearance-frame').locator('.mfs-nav-toggle').click();
+ assert.equal(await page.frameLocator('.mf-appearance-frame').locator('.mfs-nav-panel').isVisible(),true);
+ await page.frameLocator('.mf-appearance-frame').locator('.mfs-nav-close').click();
+ await page.locator('[data-size="1440"]').click();
+
+ await page.locator('[data-section="book-presentation"]').click();
+ await page.locator('#mf-tab-book-presentation details').evaluateAll(items=>items.forEach(item=>item.open=true));
+ await page.locator('[name="modfarm_theme_settings[book_card_cover_shape]"]').selectOption('');
+ await page.locator('[name="modfarm_theme_settings[book_card_button_shape]"]').selectOption('rounded');
+ await page.locator('[name="modfarm_theme_settings[book_card_cta_mode]"]').selectOption('joined');
+ const corners = await page.locator('#mf-book-live-preview .mf-book-visualizer__primary').evaluate(el => {const s=getComputedStyle(el);return [s.borderTopLeftRadius,s.borderBottomLeftRadius,s.marginTop];});
+ assert.deepEqual(corners,['0px','16px','0px']);
+ await page.locator('[name="modfarm_theme_settings[book_card_shadow_style]"]').selectOption('shadow-sm');
+ const shadow=await page.locator('#mf-book-live-preview .mf-book-visualizer__media').evaluate(el=>getComputedStyle(el).boxShadow);
+ assert.ok(shadow.includes('1px 6px'),shadow);
+ await page.locator('[data-category="layout"]').click();
+ const submission=await page.locator('.modfarm-settings-form').evaluate(form=>Array.from(new FormData(form).keys()));
+ assert.ok(submission.includes('modfarm_theme_settings[post_body_pattern]'));
+ assert.equal(await page.locator('[name="modfarm_theme_settings[post_body_pattern]"]').first().isDisabled(),true);
+ assert.equal(await page.locator('.mf-settings-help').count(),3);
+
+ console.log('PASS settings assembly, branding/fonts grouping, navigation sections, Hybrid submission, help, and no runtime errors');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

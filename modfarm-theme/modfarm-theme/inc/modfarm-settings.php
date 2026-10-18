@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/settings-review.php";
 /**
  * ModFarm Theme Settings Panel
  *
@@ -10,6 +11,7 @@
  * We still register them for sanitation/compatibility, but the UI is custom.
  */
 function modfarm_register_settings() {
+    register_setting('modfarm_theme_settings_group', 'modfarm_site_identity', 'modfarm_save_site_identity');
     register_setting(
         'modfarm_theme_settings_group',
         'modfarm_theme_settings',
@@ -3328,6 +3330,11 @@ function modfarm_render_settings_page() {
                             <div class="mf-settings-grid">
                                 <div class="mf-settings-main">
 
+                                    <div class="mf-settings-group" data-design-section="branding">
+                                        <h3 class="mf-group-title">Site identity</h3>
+                                        <p class="description">Set the name and images readers recognize across your site.</p>
+                                        <?php modfarm_site_identity_fields(); ?>
+                                    </div>
                                     <!-- Colors -->
                                     <div class="mf-settings-group">
                                         <h3 class="mf-group-title">Global Colors</h3>
@@ -3711,8 +3718,7 @@ function modfarm_render_settings_page() {
                         <div class="mf-panel-inner">
                             <h2 class="mf-panel-title">Content Layouts</h2>
                             <p class="mf-panel-intro">
-                                Choose default header/body/footer patterns for key content types.
-                                These are used by the PPB / Apply Layout tools.
+                                ModFarm’s Pattern-Based Page Builder (PPB) lets you design and redesign content using pattern selections. Preview layouts here before saving defaults for future content. Use PPB Apply All below to update existing pages. Dynamic archives and Hybrid headers and footers follow saved defaults unless locally overridden.
                             </p>
 
                             <div class="mf-ppb-layout-tabs" role="tablist" aria-label="Content type">
@@ -3734,11 +3740,11 @@ function modfarm_render_settings_page() {
                                     <div class="mf-settings-group mf-ppb-layout-sample">
                                         <h3 class="mf-group-title">Preview Content</h3>
                                         <label for="mf-ppb-visualizer-sample" class="screen-reader-text">Preview Content</label>
-                                        <select id="mf-ppb-visualizer-sample"></select>
+                                        <p class="description">Choose specific site content from the menu to see how it looks with the selected layout.</p><select id="mf-ppb-visualizer-sample"></select>
                                     </div>
 
                                     <div class="mf-settings-group mf-ppb-layout-panel is-active" data-ppb-layout-type="book">
-                                        <h3 class="mf-group-title">Book Layout</h3>
+                                        <h3 class="mf-group-title">Book Page Layout</h3>
                                         <table class="form-table mf-form-table">
                                             <tbody>
                                             <tr>
@@ -3866,7 +3872,7 @@ function modfarm_render_settings_page() {
 
                                     <?php modfarm_render_content_archive_layout_settings(); ?>
                                     <div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="book">
-                                        <details><summary><strong>Book archive display defaults</strong></summary>
+                                        <details class="mf-archive-display-defaults"><summary class="mf-major-title">Book Archive Display Defaults</summary><p class="description">Set book counts and ordering for these book-related pages. Individual archive settings override these defaults.</p>
                                                     <?php
                                                     $mf_archive_tax_defaults = [
                                                         'book_series' => 'Series',
@@ -3928,7 +3934,7 @@ function modfarm_render_settings_page() {
 
                                     <?php $mf_collection_types = modfarm_get_collection_type_defs_for_settings(); ?>
                                     <?php if (empty($mf_collection_types)) : ?>
-                                        <div class="mf-settings-group">
+                                        <div class="mf-settings-group" hidden>
                                             <h3 class="mf-group-title">Collection Layouts</h3>
                                             <p class="description">
                                                 Configure PPB layouts for custom Collection Types such as documentation, webcomics, reviews, podcasts, and other structured content.
@@ -3967,12 +3973,12 @@ function modfarm_render_settings_page() {
                                     <?php endif; ?>
 
                                     <div class="mf-settings-group">
-                                        <h3 class="mf-group-title">PPB Control</h3>
+                                        <h3 class="mf-group-title mf-major-title">PPB Apply All</h3>
                                         <p class="description">
-                                            Central PPB selectors set defaults for future content and dynamic Hybrid chrome. Apply Previewed Change updates existing zoned content only.
+                                            PPB Apply All makes mass changes across the site, bringing pages to a common layout or supporting a site redesign. Read the help below before experimenting.
                                         </p>
                                         <p class="description">
-                                            Locks prevent zone replacement. Matching <code>content-slot</code> IDs preserve portable manual content during zone changes. Hybrid posts follow central defaults unless a local override is active.
+                                            Preview the affected pages first, then confirm the change. Locked zones are skipped. Manual content in matching content slots is preserved; other manual edits within a replaced zone may be removed.
                                         </p>
 
                                         <div class="mf-ppb-preview-controls" id="mf-ppb-apply-all-preview">
@@ -4244,6 +4250,8 @@ function modfarm_admin_enqueue_scripts($hook) {
         'visualizerTypes' => modfarm_get_ppb_visualizer_content_types(),
         'visualizerSamples' => modfarm_get_ppb_visualizer_samples(),
         'bookPreviewSample' => modfarm_get_book_presentation_preview_sample(),
+        'appearanceNonce' => wp_create_nonce('modfarm_settings_appearance'),
+        'themeUrl' => get_template_directory_uri(),
         'messages' => [
             'loading' => __('Scanning matching items...', 'modfarm'),
             'missingPattern' => __('Select a valid pattern before running the preview.', 'modfarm'),
@@ -4743,7 +4751,7 @@ CSS;
 }
 add_action('enqueue_block_assets', 'modfarm_enqueue_block_style_css', 20);
 
-function modfarm_enqueue_nav_token_css() {
+function modfarm_nav_token_css(): string {
     $css = <<<CSS
 /* ==========================================================
    ModFarm Nav Tokens: header vs footer mapping
@@ -4775,7 +4783,11 @@ function modfarm_enqueue_nav_token_css() {
 }
 CSS;
 
-    wp_add_inline_style('wp-block-library', $css);
+    return $css;
+}
+
+function modfarm_enqueue_nav_token_css() {
+    wp_add_inline_style('wp-block-library', modfarm_nav_token_css());
 }
 
 add_action('enqueue_block_assets', 'modfarm_enqueue_nav_token_css', 21);
