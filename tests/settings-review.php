@@ -20,6 +20,7 @@ function wp_send_json_success($value) { throw new Exception('success:' . json_en
 function modfarm_render_navigation_menu_block($attrs) {
     global $filters;
     $options = $filters['pre_option_modfarm_theme_settings']();
+    if ($filters['pre_option_site_icon'](false) !== 42) throw new Exception('new icon not previewed');
     if (($options['nav_text_color'] ?? '') !== '#123456') throw new Exception('unsaved color not applied');
     return $attrs['mode'];
 }
@@ -36,7 +37,7 @@ try { modfarm_ajax_settings_appearance(); } catch (Exception $error) { check($er
 $allowed = true; $valid_nonce = false;
 try { modfarm_ajax_settings_appearance(); } catch (Exception $error) { check($error->getMessage() === 'bad nonce', 'Preview nonce required'); }
 $valid_nonce = true;
-$_POST = ['settings'=>json_encode(['nav_text_color'=>'#123456','mobile_nav_bg_color'=>'','navigation_profiles'=>['header'=>['enabled'=>true]]])];
+$_POST = ['identity'=>json_encode(['site_icon'=>42]), 'settings'=>json_encode(['nav_text_color'=>'#123456','mobile_nav_bg_color'=>'','navigation_profiles'=>['header'=>['enabled'=>true]]])];
 try { modfarm_ajax_settings_appearance(); } catch (Exception $error) { check(str_starts_with($error->getMessage(), 'success:'), 'Preview renders unsaved appearance settings'); }
 check(!$writes, 'Preview makes no persistent writes');
 check(!$filters, 'Preview removes temporary option and identity filters');

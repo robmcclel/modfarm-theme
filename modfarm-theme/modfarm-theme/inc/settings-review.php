@@ -49,10 +49,10 @@ function modfarm_ajax_settings_appearance() {
     $identity = is_string($identity_request) ? json_decode($identity_request, true) : [];
     $identity = is_array($identity) ? $identity : [];
     $title_filter = static function ($value) use ($identity) { return isset($identity['blogname']) && is_scalar($identity['blogname']) ? sanitize_text_field($identity['blogname']) : $value; };
-    $icon_filter = static function ($value) use ($identity) { $id = absint($identity['site_icon'] ?? $value); return !$id || wp_attachment_is_image($id) ? $id : $value; };
+    $icon_filter = static function ($value) use ($identity) { if (!isset($identity['site_icon']) || !is_scalar($identity['site_icon'])) return $value; $id = absint($identity['site_icon']); return !$id || wp_attachment_is_image($id) ? $id : $value; };
     $logo_filter = static function ($value) use ($identity) { $id = absint($identity['custom_logo'] ?? $value); return !$id || wp_attachment_is_image($id) ? $id : $value; };
     add_filter('option_blogname', $title_filter);
-    add_filter('option_site_icon', $icon_filter);
+    add_filter('pre_option_site_icon', $icon_filter);
     add_filter('theme_mod_custom_logo', $logo_filter);
     // Empty colors mean the renderer's defaults, matching cleared saved fields.
     foreach ($preview as $key => $value) if (str_ends_with($key, '_color') && $value === '') unset($preview[$key]);
@@ -74,7 +74,7 @@ function modfarm_ajax_settings_appearance() {
     } finally {
         remove_filter('pre_option_modfarm_theme_settings', $filter);
         remove_filter('option_blogname', $title_filter);
-        remove_filter('option_site_icon', $icon_filter);
+        remove_filter('pre_option_site_icon', $icon_filter);
         remove_filter('theme_mod_custom_logo', $logo_filter);
     }
     wp_send_json_success(['header' => $header, 'footer' => $footer, 'tokens' => $tokens]);
