@@ -31,6 +31,7 @@ add_action('init', function () {
         'series-nav'                 => 'modfarm_render_series_nav_block',
         'book-page-short-description' => 'modfarm_render_book_page_short_description_block',
         'hero-cover'                 => 'modfarm_render_hero_cover_block',
+        'hero-area'                  => 'modfarm_render_hero_area_block',
 
         // Author/utility blocks
         'multi-tax-format'           => 'modfarm_render_multi_tax_format_block',

@@ -103,3 +103,13 @@
 .wp-site-blocks > .wp-block-modfarm-hero-cover + * {
   margin-block-start: 0 !important;
 }
+
+.modfarm-hero-cover--editor { position: relative; }
+.modfarm-hero-cover--editor > .modfarm-hero-cover__bg { position: absolute; inset: 0; z-index: 0; }
+.modfarm-hero-cover--structured > .modfarm-hero-cover__content--editor > .block-editor-inner-blocks,
+.modfarm-hero-cover--structured > .modfarm-hero-cover__content--editor > .block-editor-inner-blocks > .block-editor-block-list__layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.mf-hero-area--content > .block-editor-inner-blocks { width: 100%; }
