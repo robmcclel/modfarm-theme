@@ -565,6 +565,7 @@ require_once get_template_directory() . '/inc/author-meta.php';
 require_once get_template_directory() . '/blocks/register-blocks.php'; // ✅ All blocks now loaded here
 require_once get_template_directory() . '/inc/pattern-category-registration.php';
 require_once get_template_directory() . '/inc/modfarm-admin-panel.php';
+require_once get_template_directory() . '/inc/archive-layouts.php';
 require_once get_template_directory() . '/inc/modfarm-settings.php';
 require_once get_template_directory() . '/inc/archive-settings.php';
 require_once get_template_directory() . '/inc/query-books.php';
@@ -1224,82 +1225,9 @@ add_action('pre_get_posts', function ($query) {
 });
 
 function modfarm_resolve_archive_body_pattern_slug(?array $opts = null): string {
-    $opts = is_array($opts) ? $opts : get_option('modfarm_theme_settings', []);
-    $key = 'archive_body_pattern';
-
-    if (is_home()) {
-        $key = 'archive_body_pattern_post_index';
-    } elseif (is_post_type_archive('mf_offer')) {
-        $key = 'archive_body_pattern_mf_offer';
-    } elseif (is_post_type_archive('mf_update')) {
-        $key = 'archive_body_pattern_mf_update';
-    } elseif (is_post_type_archive(['modfarm_event', 'mf_event'])) {
-        $key = 'archive_body_pattern_modfarm_event';
-    } elseif (is_category()) {
-        $key = 'archive_body_pattern_category';
-    } elseif (is_tag()) {
-        $key = 'archive_body_pattern_post_tag';
-    } elseif (is_author()) {
-        $key = 'archive_body_pattern_author';
-    } elseif (is_search()) {
-        $key = 'archive_body_pattern_search';
-    } elseif (is_date()) {
-        $key = 'archive_body_pattern_date';
-    } elseif (is_tax()) {
-        $qo = get_queried_object();
-        $taxonomy = (is_object($qo) && !empty($qo->taxonomy)) ? (string) $qo->taxonomy : '';
-        $known = [
-            'mf_offer_type' => 'archive_body_pattern_mf_offer',
-            'mf_offer_collection' => 'archive_body_pattern_mf_offer',
-            'book-series' => 'archive_body_pattern_book_series',
-            'book-genre' => 'archive_body_pattern_book_genre',
-            'book-author' => 'archive_body_pattern_book_authors',
-            'book-authors' => 'archive_body_pattern_book_authors',
-        ];
-
-        if ($taxonomy !== '' && !empty($known[$taxonomy])) {
-            $key = $known[$taxonomy];
-        }
-
-        $generic_key = $taxonomy !== '' ? 'archive_body_pattern__' . $taxonomy : '';
-        if ($generic_key !== '' && !empty($opts[$generic_key])) {
-            return modfarm_ppb_resolve_pattern_slug('archive_body_pattern', $opts[$generic_key], $opts);
-        }
-    }
-
-    $raw_value = $opts[$key] ?? null;
-    $post_archive_keys = [
-        'archive_body_pattern_post_index',
-        'archive_body_pattern_category',
-        'archive_body_pattern_post_tag',
-        'archive_body_pattern_author',
-        'archive_body_pattern_search',
-        'archive_body_pattern_date',
-    ];
-
-    if ($key === 'archive_body_pattern_search') {
-        $search_slug = modfarm_ppb_normalize_slug($raw_value);
-        $legacy_search_patterns = [
-            'modfarm/post-archive-layout',
-            'modfarm/post-archive-large-card-feed',
-            'modfarm/post-archive-image-right-feed',
-            'modfarm/post-archive-centered-feed',
-            'modfarm/post-archive-image-left',
-            'modfarm/post-archive-compact-list',
-            'modfarm/post-archive-feature-story',
-        ];
-
-        if (in_array($search_slug, $legacy_search_patterns, true)) {
-            $raw_value = null;
-        }
-    }
-
-    if (in_array($key, $post_archive_keys, true) && modfarm_ppb_normalize_slug($raw_value) === 'modfarm/basic-archive-layout') {
-        $raw_value = null;
-    }
-
-    return modfarm_ppb_resolve_pattern_slug($key, $raw_value, $opts);
+    return modfarm_resolve_archive_zone_pattern('body', $opts);
 }
+
 
 /**
  * Archive pattern resolution for PPB.
@@ -1320,9 +1248,9 @@ function modfarm_get_archive_patterns() {
     $opts = get_option('modfarm_theme_settings', []);
 
     // Fresh or unused sites must resolve to usable archive patterns.
-    $default_header = modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $opts['archive_header_pattern'] ?? null, $opts);
+    $default_header = modfarm_resolve_archive_zone_pattern('header', $opts);
     $default_body   = modfarm_resolve_archive_body_pattern_slug($opts);
-    $default_footer = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
+    $default_footer = modfarm_resolve_archive_zone_pattern('footer', $opts);
 
     $taxonomy_overrides = [
         'post_index'  => modfarm_ppb_resolve_pattern_slug('archive_body_pattern_post_index', $opts['archive_body_pattern_post_index'] ?? null, $opts),
@@ -1540,9 +1468,9 @@ function modfarm_render_archive_page() {
     $opts = get_option('modfarm_theme_settings', []);
 
     // Fresh or unused archive settings must still render usable defaults.
-    $header_slug = modfarm_ppb_resolve_pattern_slug('archive_header_pattern', $opts['archive_header_pattern'] ?? null, $opts);
+    $header_slug = modfarm_resolve_archive_zone_pattern('header', $opts);
     $body_slug   = modfarm_resolve_archive_body_pattern_slug($opts);
-    $footer_slug = modfarm_ppb_resolve_pattern_slug('archive_footer_pattern', $opts['archive_footer_pattern'] ?? null, $opts);
+    $footer_slug = modfarm_resolve_archive_zone_pattern('footer', $opts);
 
     $posts_page = null;
 
@@ -1553,10 +1481,10 @@ function modfarm_render_archive_page() {
         $posts_page = $posts_page_id > 0 ? get_post($posts_page_id) : null;
         if ($posts_page_id > 0 && function_exists('modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post')) {
             $page_chrome = modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post($posts_page_id, 'page', $opts);
-            if (!empty($page_chrome['header'])) {
+            if (!empty($page_chrome['header']) && (!array_key_exists('archive_header_pattern_post_index', $opts) || modfarm_ppb_normalize_slug(get_post_meta($posts_page_id, '_modfarm_ppb_local_header_pattern', true)) !== '')) {
                 $header_slug = (string) $page_chrome['header'];
             }
-            if (!empty($page_chrome['footer'])) {
+            if (!empty($page_chrome['footer']) && (!array_key_exists('archive_footer_pattern_post_index', $opts) || modfarm_ppb_normalize_slug(get_post_meta($posts_page_id, '_modfarm_ppb_local_footer_pattern', true)) !== '')) {
                 $footer_slug = (string) $page_chrome['footer'];
             }
         } else {

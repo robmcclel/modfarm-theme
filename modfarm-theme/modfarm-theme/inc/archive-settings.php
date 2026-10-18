@@ -106,6 +106,9 @@ add_action('init', function () {
     ];
 
     foreach ($taxes as $tx) {
+        foreach (['header', 'body', 'footer'] as $zone) {
+            register_term_meta($tx, 'archive_' . $zone . '_pattern', $string_schema);
+        }
         register_term_meta($tx, 'archive_image_variant', $image_variant_schema);
         register_term_meta($tx, 'archive_image_aspect',  $string_schema);
         register_term_meta($tx, 'archive_show_button',   $bool_schema);
@@ -257,6 +260,7 @@ function mfs_rich_taxonomy_description_editor() {
 function mfs_render_book_archive_term_fields($term, $taxonomy) {
     // Security
     wp_nonce_field('mfs_save_book_archive_term_fields', 'mfs_book_archive_term_nonce');
+    modfarm_render_archive_term_pattern_fields($term);
 
     $get = fn($k,$d='') => get_term_meta($term->term_id, $k, true) ?: $d;
 
@@ -454,7 +458,7 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
                         <input type="hidden" id="archive_hero_image" name="archive_hero_image" value="<?php echo esc_attr($hero_id); ?>">
                         <a href="#" class="button mfs-image-select" data-target="archive_hero_image" data-preview="archive_hero_image_preview">Select Image</a>
                         <a href="#" class="button button-secondary mfs-image-clear" data-target="archive_hero_image" data-preview="archive_hero_image_preview">Clear</a>
-                        <p class="description mfs-term-note">Displayed at the top of this archive (if enabled below).</p>
+                        <p class="description mfs-term-note">Used by the Hero block for this archive. When empty, the site default Hero Image is used. The display toggle below applies to the archive introduction image.</p>
                     </div>
                 </div>
                 <label style="display:block;margin-top:8px;">
@@ -656,6 +660,12 @@ function mfs_save_book_archive_term_fields($term_id, $tt_id = 0) {
         return;
     }
     if (!current_user_can('manage_categories')) return;
+    foreach (['header', 'body', 'footer'] as $zone) {
+        $key = 'archive_' . $zone . '_pattern';
+        if (!isset($_POST[$key]) || !is_string($_POST[$key])) continue;
+        $value = modfarm_ppb_normalize_slug(sanitize_text_field(wp_unslash($_POST[$key])));
+        if ($value === '' || modfarm_ppb_pattern_exists($value)) update_term_meta($term_id, $key, $value);
+    }
 
     // Sanitize checkbox to 1/0
     $cb = function($k){ return isset($_POST[$k]) && $_POST[$k] ? 1 : 0; };

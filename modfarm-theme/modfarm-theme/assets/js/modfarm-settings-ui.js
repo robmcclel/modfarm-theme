@@ -549,6 +549,7 @@
     const feedback = document.getElementById('mf-ppb-visualizer-feedback');
     const refreshButton = document.getElementById('mf-ppb-visualizer-refresh');
     let activeType = 'book';
+    let archivePreviewType = '';
     let refreshTimer = null;
     let requestId = 0;
 
@@ -558,7 +559,7 @@
     }
 
     function activeFields() {
-      return ((types[activeType] || {}).fields) || {};
+      return ((types[archivePreviewType || activeType] || {}).fields) || {};
     }
 
     function selectedValue(selectEl) {
@@ -643,10 +644,10 @@
       const payload = new window.FormData();
       payload.set('action', 'modfarm_ppb_visualizer_preview');
       payload.set('nonce', config.visualizerNonce || '');
-      payload.set('contentType', activeType);
+      payload.set('contentType', archivePreviewType || activeType);
       payload.set('activeZone', 'body');
       payload.set('previewScope', 'ppb_layout');
-      payload.set('sampleId', sampleSelect && !sampleSelect.disabled ? sampleSelect.value : '0');
+      payload.set('sampleId', !archivePreviewType && sampleSelect && !sampleSelect.disabled ? sampleSelect.value : '0');
       payload.set('patterns', JSON.stringify(currentPatterns()));
 
       try {
@@ -676,6 +677,7 @@
 
     layoutTabs.forEach((tab) => {
       tab.addEventListener('click', () => {
+        archivePreviewType = '';
         activeType = tab.getAttribute('data-ppb-layout-type') || 'book';
         const applyTypeSelect = document.getElementById('mf-ppb-preview-content-type');
         if (applyTypeSelect && applyTypeSelect.querySelector(`option[value="${activeType}"]`)) {
@@ -694,15 +696,21 @@
         const selectEl = fieldSelect(fields[zone]);
         if (!selectEl) return;
         selectEl.addEventListener('change', () => {
-          if (typeKey === activeType) {
+          if (typeKey === (archivePreviewType || activeType)) {
             queueRefresh(150);
           }
         });
       });
     });
 
+    root.querySelectorAll('[data-archive-layout-preview]').forEach(button => {
+      button.addEventListener('click', () => {
+        archivePreviewType = button.dataset.archiveLayoutPreview;
+        queueRefresh(0);
+      });
+    });
     if (sampleSelect) {
-      sampleSelect.addEventListener('change', () => queueRefresh(0));
+      sampleSelect.addEventListener('change', () => { archivePreviewType = ''; queueRefresh(0); });
     }
     if (refreshButton) {
       refreshButton.addEventListener('click', () => queueRefresh(0));

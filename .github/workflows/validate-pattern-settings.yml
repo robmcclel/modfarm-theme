@@ -9,6 +9,9 @@ jobs:
       - uses: actions/checkout@v4
       - run: php -l modfarm-theme/modfarm-theme/functions.php
       - run: php -l modfarm-theme/modfarm-theme/inc/modfarm-settings.php
+      - run: php -l modfarm-theme/modfarm-theme/inc/archive-layouts.php
+      - run: php -l modfarm-theme/modfarm-theme/inc/archive-settings.php
+      - run: php -l modfarm-theme/modfarm-theme/blocks/archive-layout-loader/render.php
       - run: node --check modfarm-theme/modfarm-theme/assets/js/modfarm-settings-ui.js
       - run: node tests/pattern-settings-save.cjs
       - run: php tests/offer-archive-pattern.php
