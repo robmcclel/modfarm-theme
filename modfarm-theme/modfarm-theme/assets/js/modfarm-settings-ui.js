@@ -3,6 +3,15 @@
   if (!root) return;
   window.modfarmSettingsUiLoaded = true;
 
+  // Mirrored layout controls must submit the same value, including hidden panels.
+  function syncPatternControls(form, source) {
+    if (!source || source.tagName !== 'SELECT' || !source.name ||
+        !source.name.startsWith('modfarm_theme_settings[') || !source.name.includes('_pattern')) return;
+    form.querySelectorAll('select[name]').forEach(peer => {
+      if (peer !== source && peer.name === source.name) peer.value = source.value;
+    });
+  }
+
   const tabs = root.querySelectorAll('.mf-tab');
   const panels = root.querySelectorAll('.mf-tab-panel');
   const storageKey = 'modfarm-settings-active-tab';
@@ -53,6 +62,7 @@
   const saveContext = form && form.querySelector('.mf-settings-actions__context');
   let dirty = false;
   if (form) {
+    form.addEventListener('change', event => syncPatternControls(form, event.target), true);
     form.addEventListener('input', event => {
       if (!event.target.name || !event.target.name.startsWith('modfarm_theme_settings[')) return;
       dirty = true;
