@@ -1,0 +1,30 @@
+name: Validate Settings review
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: PHP syntax and permissions
+        run: |
+          php -l modfarm-theme/modfarm-theme/inc/modfarm-settings.php
+          php -l modfarm-theme/modfarm-theme/inc/settings-review.php
+          php -l modfarm-theme/modfarm-theme/inc/navigation-settings.php
+          php -l modfarm-theme/modfarm-theme/inc/archive-layouts.php
+          php tests/settings-review.php
+          php tests/offer-archive-pattern.php
+      - name: Settings browser integration
+        run: |
+          node --check modfarm-theme/modfarm-theme/assets/js/modfarm-settings-ui.js
+          node --check modfarm-theme/modfarm-theme/assets/js/color-picker-init.js
+          node tests/pattern-settings-save.cjs
+          npm install --prefix /tmp/settings-browser --no-save playwright
+          /tmp/settings-browser/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/settings-browser/node_modules node tests/settings-review-browser.cjs

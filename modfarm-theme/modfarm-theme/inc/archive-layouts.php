@@ -100,9 +100,27 @@ function modfarm_resolve_archive_zone_pattern(string $zone, ?array $options = nu
 }
 
 function modfarm_render_content_archive_layout_settings(): void {
+    $book_pages = [
+        'book_series' => ['Series Pages', 'Each Series assigned to books has its own page, from a simple book list to banners, descriptions, world-building elements, and more.'],
+        'book_authors' => ['Author Pages', 'Each author attributed to books has an Author Page, from a book list to a complete profile with picture, biography, social links, and bibliography.'],
+        'book_genre' => ['Genre Pages', 'Each Genre assigned to books has its own page: a book listing or an introduction to the genre for new readers.'],
+        'book_format' => ['Format Pages', 'Each Format assigned to books has its own page, with a listing or a presentation suited to audiobooks, paperbacks, and other formats.'],
+        'book_language' => ['Language Pages', 'Each Language assigned to books has its own page. Lists can be organized by series or other layouts. ModFarm translation features can translate supported section titles, buttons, and metadata into the assigned language.'],
+        'book_tags' => ['Book Tags', 'Book Tags organize books across other categories. Literary worlds, publishing imprints, anthologies, and box sets are examples. Each tag can have a book list or a custom introduction.'],
+    ];
     foreach (modfarm_archive_layout_contexts() as $context => $definition) {
+        $description = 'Independent archive layout. Individual term overrides take precedence. Saving changes updates this dynamic archive.';
+        if ($context === 'book') {
+            $definition['label'] = 'All Books Index';
+            $description = 'The All Books Index lists every book on the site and normally resides at ' . home_url('/books') . '. Saving changes updates this dynamic index.';
+        } elseif ($definition['owner'] === 'book') {
+            $taxonomy = str_replace('-', '_', $definition['taxonomy'] ?? '');
+            $taxonomy = ['book_author' => 'book_authors'] [$taxonomy] ?? $taxonomy;
+            if (isset($book_pages[$taxonomy])) [$definition['label'], $description] = $book_pages[$taxonomy];
+            $description .= ' Individual page settings take precedence. Saving changes updates pages following these defaults.';
+        }
         echo '<div class="mf-settings-group mf-ppb-layout-panel" data-ppb-layout-type="' . esc_attr($definition['owner']) . '">';
-        echo '<details><summary><strong>' . esc_html($definition['label']) . '</strong></summary><p class="description">Independent archive layout. Individual term overrides take precedence.</p><table class="form-table mf-form-table"><tbody>';
+        echo '<details><summary><strong>' . esc_html($definition['label']) . '</strong></summary><p class="description">' . esc_html($description) . '</p><table class="form-table mf-form-table"><tbody>';
         foreach (['header', 'body', 'footer'] as $zone) {
             echo '<tr><th scope="row">' . esc_html(ucfirst($zone) . ' Pattern') . '</th><td>';
             modfarm_pattern_dropdown(['id' => modfarm_archive_layout_field($context, $zone), 'archive_context' => $context, 'archive_zone' => $zone]);
