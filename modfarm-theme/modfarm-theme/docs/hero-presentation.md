@@ -23,8 +23,12 @@ both `modfarm/hero-cover` and `core/cover`; explicit `none` disables an inherite
   heroes that relied on that implicit fallback during development rollout.
 - Core Cover preserves saved HTML. Enable **Use ModFarm image defaults** on a Cover
   to opt into resolution; videos are left intact. Standard Cover image handling is
-  otherwise unchanged. ModFarm image fallback is applied at frontend render time;
-  the native Cover placeholder may still appear in the editor before an image is selected.
+  otherwise unchanged. The editor resolves inherited images through Hero's existing
+  authenticated block-renderer endpoint and uses the URL only for preview. It is
+  never saved into the Cover. Native Featured Image controls and unsaved featured
+  image changes remain active; the inherited image appears behind them as a fallback.
+  A saved local hero change is reflected when the editor is reloaded. Template
+  editing without a specific archive context previews the site default.
 
 ## Independent navigation
 
@@ -50,4 +54,7 @@ No site default or existing page pattern selection is changed automatically.
 archive isolation, deleted media, live settings colors, content preservation,
 preview layers, and the real WordPress HTML Tag Processor integration for Cover.
 `node tests/hero-layout.cjs` checks desktop/mobile layout using Playwright.
+`node tests/cover-editor-preview.cjs` exercises the editor hooks in React 18 and
+Chromium, including inheritance, native Featured Image controls, unsaved featured
+changes, request races, failure handling, and saved-attribute preservation.
 A development multisite editor smoke test remains required before production.

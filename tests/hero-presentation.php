@@ -80,6 +80,8 @@ check(modfarm_hero_edge_markup(['edgePreset' => 'none']) === '', 'Explicit clean
 check(modfarm_hero_transition(['edgePreset' => 'invalid'])['preset'] === 'none', 'Invalid preset accepted');
 check(modfarm_hero_transition(['edgeColor' => 'invalid'])['color'] === 'background', 'Invalid color accepted');
 check(substr_count(modfarm_render_hero_cover_block(['__preview' => true], '<h1>Hidden in background</h1>', $block), 'mf-hero-edge--') === 0, 'Preview doubles the fade');
+check(str_contains(modfarm_render_hero_cover_block(['__preview' => true], '', $block), 'data-mf-hero-image="' . $default . '"'), 'Preview image metadata missing');
+check(!str_contains(modfarm_render_hero_cover_block([], '', $block), 'data-mf-hero-image'), 'Editor metadata leaked to frontend');
 
 if (is_file(ABSPATH . 'wp-includes/html-api/class-wp-html-tag-processor.php')) {
     if (is_file(ABSPATH . 'wp-includes/utf8.php')) require_once ABSPATH . 'wp-includes/utf8.php';

@@ -27,7 +27,11 @@ function modfarm_render_hero_cover_block($attributes, $content = '', $block = nu
     $style .= '--mf-hero-width:' . $width . ';--mf-hero-align:' . $align . ';';
     $style .= '--mf-hero-vertical:' . $positions[$vertical] . ';';
     $style .= '--mf-hero-mobile-align:' . $mobile_align . ';--mf-hero-mobile-vertical:' . $positions[$mobile_vertical] . ';';
-    $wrapper = get_block_wrapper_attributes(['class' => $classes, 'style' => $style]);
+    $wrapper_attributes = ['class' => $classes, 'style' => $style];
+    if (!empty($attributes['__preview'])) {
+        $wrapper_attributes['data-mf-hero-image'] = $image_url;
+    }
+    $wrapper = get_block_wrapper_attributes($wrapper_attributes);
     $overlay = $attributes['overlayGradient'] ?? '';
     $overlay = $overlay ?: ($attributes['overlayColor'] ?? '#000000');
     $opacity = max(0, min(100, (int) ($attributes['dimRatio'] ?? 20))) / 100;

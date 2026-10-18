@@ -25,3 +25,17 @@
 .mf-cover-edge-preview--both::after { background: linear-gradient(to bottom, var(--mf-hero-edge-color), transparent 25%, transparent 65%, var(--mf-hero-edge-color)); }
 .mf-cover-edge-preview--border::after { border-bottom: 2px solid var(--mf-hero-edge-color); }
 .mf-cover-edge-preview .wp-block-cover__inner-container { position: relative; z-index: 3; }
+/* Native Featured Image controls remain untouched. The inherited fallback sits
+   behind its real image, readability overlay, edge treatment, and editable blocks. */
+.mf-cover-inherited-preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--mf-cover-inherited-image);
+  background-position: var(--mf-cover-inherited-position, center);
+  background-size: var(--mf-cover-inherited-size, cover);
+  background-repeat: var(--mf-cover-inherited-repeat, no-repeat);
+}
+.mf-cover-inherited-preview > .wp-block-cover__image--placeholder-image { display: none; }
