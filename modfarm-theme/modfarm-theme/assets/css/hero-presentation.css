@@ -1,0 +1,27 @@
+/* The fade is independent of the readability overlay. Never fades content. */
+.modfarm-hero-cover, .mf-has-hero-edge { isolation: isolate; }
+.mf-hero-edge {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: block;
+  margin: 0 !important;
+}
+.mf-hero-edge--bottom-soft {
+  background: linear-gradient(to bottom, transparent 65%, var(--mf-hero-edge-color) 100%);
+}
+.mf-hero-edge--bottom-deep {
+  background: linear-gradient(to bottom, transparent 20%, var(--mf-hero-edge-color) 100%);
+}
+.mf-hero-edge--both {
+  background: linear-gradient(to bottom, var(--mf-hero-edge-color) 0%, transparent 25%, transparent 65%, var(--mf-hero-edge-color) 100%);
+}
+.mf-hero-edge--border { border-bottom: 2px solid var(--mf-hero-edge-color); }
+.wp-block-cover.mf-has-hero-edge > .wp-block-cover__inner-container { position: relative; z-index: 3; }
+.mf-cover-edge-preview::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.mf-cover-edge-preview--bottom-soft::after { background: linear-gradient(to bottom, transparent 65%, var(--mf-hero-edge-color) 100%); }
+.mf-cover-edge-preview--bottom-deep::after { background: linear-gradient(to bottom, transparent 20%, var(--mf-hero-edge-color) 100%); }
+.mf-cover-edge-preview--both::after { background: linear-gradient(to bottom, var(--mf-hero-edge-color), transparent 25%, transparent 65%, var(--mf-hero-edge-color)); }
+.mf-cover-edge-preview--border::after { border-bottom: 2px solid var(--mf-hero-edge-color); }
+.mf-cover-edge-preview .wp-block-cover__inner-container { position: relative; z-index: 3; }

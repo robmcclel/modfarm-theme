@@ -28,14 +28,11 @@
   var RangeControl = components.RangeControl;
   var ToggleControl = components.ToggleControl;
   var ColorPalette = components.ColorPalette;
+  var Button = components.Button;
+  var MediaUpload = be.MediaUpload;
+  var MediaUploadCheck = be.MediaUploadCheck;
 
   var ServerSideRender = wp.serverSideRender || null;
-
-  function clampInt(n, min, max, fallback) {
-    var v = parseInt(n, 10);
-    if (isNaN(v)) v = fallback;
-    return Math.max(min, Math.min(max, v));
-  }
 
   registerBlockType('modfarm/hero-cover', {
     apiVersion: 3,
@@ -51,12 +48,16 @@
       var overlayColor = a.overlayColor || '#000000';
       var overlayGradient = a.overlayGradient || '';
 
-      var hasGradient =
-        typeof overlayGradient === 'string' && overlayGradient.trim().length > 0;
-
       var blockProps = useBlockProps({
-        className: 'modfarm-hero-cover modfarm-hero-cover--editor',
-        style: { minHeight: minHeight + 'px' }
+        className: 'modfarm-hero-cover modfarm-hero-cover--editor' + (a.structuredLayout ? ' modfarm-hero-cover--structured' : ''),
+        style: {
+          minHeight: minHeight + 'px',
+          '--mf-hero-width': a.contentMaxWidth || '1200px',
+          '--mf-hero-align': a.contentAlign || 'center',
+          '--mf-hero-vertical': { top: 'flex-start', center: 'center', bottom: 'flex-end' }[a.contentVerticalAlign || 'center'],
+          '--mf-hero-mobile-align': a.mobileContentAlign === 'inherit' ? (a.contentAlign || 'center') : a.mobileContentAlign,
+          '--mf-hero-mobile-vertical': { top: 'flex-start', center: 'center', bottom: 'flex-end' }[a.mobileVerticalAlign === 'inherit' ? (a.contentVerticalAlign || 'center') : (a.mobileVerticalAlign || 'center')]
+        }
       });
 
       // Fallback background (manual only) if SSR not present
@@ -67,9 +68,7 @@
         fallbackBgStyle.backgroundPosition = '50% 0%';
       }
 
-      // Editor-only overlay preview so changes show immediately
-      var editorOverlayBg = hasGradient ? overlayGradient : overlayColor;
-      var editorOverlayOpacity = clampInt(dimRatio, 0, 100, 20) / 100;
+      var edge = window.modfarmHeroControls.resolved(a);
 
       return el(
         Fragment,
@@ -85,7 +84,8 @@
                 { className: 'modfarm-hero-cover__bg', style: { pointerEvents: 'none' } },
                 el(ServerSideRender, {
                   block: 'modfarm/hero-cover',
-                  attributes: Object.assign({}, a, { __preview: true })
+                  attributes: Object.assign({}, a, { __preview: true }),
+                  urlQueryArgs: { post_id: props.context && props.context.postId || undefined }
                 })
               )
             : el('div', {
@@ -93,10 +93,10 @@
                 style: Object.assign({ pointerEvents: 'none' }, fallbackBgStyle)
               }),
 
-          // Overlay layer preview (editor only)
-          el('div', {
-            className: 'modfarm-hero-cover__overlay modfarm-hero-cover__overlay--editor',
-            style: { background: editorOverlayBg, opacity: editorOverlayOpacity, pointerEvents: 'none' }
+          // SSR supplies the readability overlay once. Preview the edge above it.
+          el('span', {
+            className: 'mf-hero-edge mf-hero-edge--' + edge.preset,
+            style: { '--mf-hero-edge-color': edge.color }, 'aria-hidden': true
           }),
 
           // Inner content
@@ -104,12 +104,15 @@
             'div',
             {
               className: 'modfarm-hero-cover__content modfarm-hero-cover__content--editor',
-              style: {
-                maxWidth: a.contentMaxWidth || '1200px',
-                textAlign: a.contentAlign || 'center'
-              }
+              style: { maxWidth: a.contentMaxWidth || '1200px' }
             },
-            el(InnerBlocks, { templateLock: false })
+            el(InnerBlocks, {
+              templateLock: a.structuredLayout ? 'all' : false,
+              template: a.structuredLayout ? [
+                ['modfarm/hero-area', { area: 'navigation', metadata: { name: 'Hero navigation' } }, [['modfarm/navigation-menu', {}]]],
+                ['modfarm/hero-area', { area: 'content', metadata: { name: 'Hero content' } }, [['core/post-title', { level: 1 }]]]
+              ] : undefined
+            })
           )
         ),
 
@@ -124,18 +127,22 @@
               label: __('Image Source', 'modfarm'),
               value: mode,
               options: [
-                { label: __('Auto (Book / Archive)', 'modfarm'), value: 'auto' },
-                { label: __('Manual URL', 'modfarm'), value: 'manual' }
+                { label: __('Automatic (local hero / site default)', 'modfarm'), value: 'auto' },
+                { label: __('Selected image', 'modfarm'), value: 'manual' }
               ],
               onChange: function (v) { setAttributes({ mode: v }); }
             }),
             mode === 'manual'
-              ? el(TextControl, {
+              ? el(Fragment, {}, el(MediaUploadCheck, {}, el(MediaUpload, {
+                  allowedTypes: ['image'],
+                  onSelect: function (image) { setAttributes({ manualUrl: image.url }); },
+                  render: function (upload) { return el(Button, { variant: 'secondary', onClick: upload.open }, __('Select image', 'modfarm')); }
+                })), el(TextControl, {
                   label: __('Manual Image URL', 'modfarm'),
                   value: a.manualUrl || '',
                   placeholder: 'https://…',
                   onChange: function (v) { setAttributes({ manualUrl: v }); }
-                })
+                }))
               : null,
 
             el(TextControl, {
@@ -149,16 +156,24 @@
               onChange: function (v) { setAttributes({ termMetaKey: v || 'archive_hero_image' }); }
             }),
             el(ToggleControl, {
-              label: __('Fallback to Featured Image (books)', 'modfarm'),
-              checked: !!a.fallbackFeatured,
-              onChange: function (v) { setAttributes({ fallbackFeatured: !!v }); }
-            })
+              label: __('Use Featured Image override', 'modfarm'),
+              help: __('On pages, posts, and books, a featured image overrides the local hero when enabled. Archives use their explicit hero or the site default.', 'modfarm'),
+              checked: !!a.useFeaturedImage,
+              onChange: function (v) { setAttributes({ useFeaturedImage: !!v, fallbackFeatured: false }); }
+            }),
+            a.fallbackFeatured ? el(ToggleControl, {
+              label: __('Legacy featured-image fallback', 'modfarm'), checked: true,
+              onChange: function () { setAttributes({ fallbackFeatured: false }); }
+            }) : null
           ),
 
           // Layout
           el(
             PanelBody,
             { title: __('Layout', 'modfarm'), initialOpen: false },
+            el(components.Notice, { status: 'info', isDismissible: false },
+              a.structuredLayout ? __('Navigation stays at the top; alignment controls affect the content area.', 'modfarm') : __('Use the Hero with top navigation variation for independent navigation and content alignment. Existing inner blocks remain unchanged.', 'modfarm')
+            ),
             el(RangeControl, {
               label: __('Minimum Height (px)', 'modfarm'),
               value: minHeight,
@@ -180,8 +195,24 @@
               label: __('Content Max Width', 'modfarm'),
               value: a.contentMaxWidth || '1200px',
               onChange: function (v) { setAttributes({ contentMaxWidth: v || '1200px' }); }
+            }),
+            el(SelectControl, {
+              label: __('Vertical content position', 'modfarm'), value: a.contentVerticalAlign || 'center',
+              options: [{ label: 'Top', value: 'top' }, { label: 'Middle', value: 'center' }, { label: 'Bottom', value: 'bottom' }],
+              onChange: function (v) { setAttributes({ contentVerticalAlign: v }); }
+            }),
+            el(SelectControl, {
+              label: __('Mobile horizontal alignment', 'modfarm'), value: a.mobileContentAlign || 'inherit',
+              options: [{ label: 'Use desktop setting', value: 'inherit' }, { label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }],
+              onChange: function (v) { setAttributes({ mobileContentAlign: v }); }
+            }),
+            el(SelectControl, {
+              label: __('Mobile vertical position', 'modfarm'), value: a.mobileVerticalAlign || 'inherit',
+              options: [{ label: 'Use desktop setting', value: 'inherit' }, { label: 'Top', value: 'top' }, { label: 'Middle', value: 'center' }, { label: 'Bottom', value: 'bottom' }],
+              onChange: function (v) { setAttributes({ mobileVerticalAlign: v }); }
             })
           ),
+          el(window.modfarmHeroControls.Controls, props),
 
           // Overlay
           el(
@@ -253,6 +284,17 @@
     save: function () {
       return el(InnerBlocks.Content);
     }
+  });
+
+  wp.blocks.registerBlockVariation('modfarm/hero-cover', {
+    name: 'top-navigation', title: __('Hero with top navigation', 'modfarm'),
+    description: __('Navigation at the top with independently aligned title and content.', 'modfarm'),
+    attributes: { structuredLayout: true, fallbackFeatured: false },
+    innerBlocks: [
+      ['modfarm/hero-area', { area: 'navigation', metadata: { name: 'Hero navigation' } }, [['modfarm/navigation-menu', {}]]],
+      ['modfarm/hero-area', { area: 'content', metadata: { name: 'Hero content' } }, [['core/post-title', { level: 1 }]]]
+    ],
+    scope: ['inserter'], isActive: ['structuredLayout']
   });
 
 })(window.wp);

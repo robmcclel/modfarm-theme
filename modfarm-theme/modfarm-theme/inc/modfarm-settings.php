@@ -2370,6 +2370,9 @@ function modfarm_sanitize_settings($settings) {
         'button_text_color',
         'background_color',
         'secondary_color',
+        'hero_default_image',
+        'hero_edge_preset',
+        'hero_edge_color',
         'heading_font',
         'body_font',
         'site_title_font',
@@ -2492,6 +2495,15 @@ function modfarm_sanitize_settings($settings) {
         $val = $settings[$key];
 
         switch ($key) {
+            case 'hero_default_image':
+                $clean[$key] = absint($val);
+                break;
+            case 'hero_edge_preset':
+            case 'hero_edge_color':
+                $options = modfarm_hero_presentation_options();
+                $choices = $key === 'hero_edge_preset' ? $options['presets'] : $options['colors'];
+                $clean[$key] = is_string($val) && isset($choices[$val]) ? $val : ($key === 'hero_edge_preset' ? 'none' : 'background');
+                break;
             case 'heading_font':
             case 'body_font':
             case 'site_title_font':
@@ -3371,6 +3383,8 @@ function modfarm_render_settings_page() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <?php modfarm_hero_settings_fields(); ?>
 
                                     <!-- Fonts -->
                                     <div class="mf-settings-group">

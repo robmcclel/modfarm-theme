@@ -47,6 +47,59 @@
   pointer-events: none;
 }
 
+/* Shared layout for the frontend and editor. Navigation participates in normal
+   flow, so a tall menu or growing mobile title cannot overlap another area. */
+.modfarm-hero-cover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--mf-hero-vertical, center);
+  background-size: cover;
+  background-position: 50% 0%;
+  background-color: var(--mfs-background, #fff);
+}
+.modfarm-hero-cover > .modfarm-hero-cover__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.modfarm-hero-cover > .modfarm-hero-cover__content {
+  position: relative;
+  z-index: 3;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--mf-hero-width, 1200px);
+  margin: 0 auto;
+  padding: 24px;
+  text-align: var(--mf-hero-align, center);
+}
+.modfarm-hero-cover--structured { justify-content: flex-start; }
+.modfarm-hero-cover--no-image { background-color: #222; }
+.modfarm-hero-cover--structured > .modfarm-hero-cover__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.mf-hero-area { width: 100%; box-sizing: border-box; min-width: 0; margin: 0; }
+.mf-hero-area--navigation { flex: 0 0 auto; position: relative; z-index: 5; }
+.mf-hero-area--content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--mf-hero-vertical, center);
+  padding: 24px 0;
+  text-align: var(--mf-hero-align, center);
+}
+.mf-hero-area__inner { width: 100%; min-width: 0; }
+@media (max-width: 781px) {
+  .modfarm-hero-cover { justify-content: var(--mf-hero-mobile-vertical, var(--mf-hero-vertical, center)); }
+  .modfarm-hero-cover > .modfarm-hero-cover__content,
+  .mf-hero-area--content { text-align: var(--mf-hero-mobile-align, var(--mf-hero-align, center)); }
+  .modfarm-hero-cover--structured { justify-content: flex-start; }
+  .mf-hero-area--content { justify-content: var(--mf-hero-mobile-vertical, var(--mf-hero-vertical, center)); }
+}
+
 .wp-block-modfarm-hero-cover .modfarm-hero-cover__content{
   position: relative;
   z-index: 5;
@@ -81,6 +134,12 @@
 .wp-block-modfarm-hero-cover .modfarm-hero-cover{
   position: relative;
   overflow: visible;
+}
+
+.wp-block-modfarm-hero-cover.modfarm-hero-cover--structured > .modfarm-hero-cover__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 /* Overlay must be pinned to the hero container */

@@ -1,0 +1,12 @@
+{
+  "apiVersion": 3,
+  "name": "modfarm/hero-area",
+  "title": "Hero Area",
+  "description": "A top navigation area or independently positioned content area inside Hero.",
+  "category": "modfarm-theme",
+  "icon": "align-wide",
+  "parent": ["modfarm/hero-cover"],
+  "supports": {"html": false, "inserter": false},
+  "attributes": {"area": {"type": "string", "default": "content"}},
+  "editorScript": "modfarm-hero-area-editor"
+}

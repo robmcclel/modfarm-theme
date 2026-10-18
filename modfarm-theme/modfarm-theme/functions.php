@@ -58,6 +58,7 @@ add_action('load-appearance_page_font-library', 'modfarm_block_native_font_libra
 add_action('load-appearance_page_font-library-wp-admin', 'modfarm_block_native_font_library_screen');
 
 require_once get_template_directory() . '/inc/content-slot-payloads.php';
+require_once get_template_directory() . '/inc/hero-presentation.php';
 
 add_action('after_setup_theme', function() {
     register_nav_menus([

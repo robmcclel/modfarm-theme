@@ -1,0 +1,35 @@
+name: Validate Hero presentation
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          repository: WordPress/WordPress
+          path: wordpress
+          sparse-checkout: wp-includes
+      - name: PHP rendering and syntax
+        run: |
+          php -l modfarm-theme/modfarm-theme/inc/hero-presentation.php
+          php -l modfarm-theme/modfarm-theme/blocks/hero-cover/render.php
+          php -l modfarm-theme/modfarm-theme/blocks/hero-area/render.php
+          php -l modfarm-theme/modfarm-theme/inc/modfarm-settings.php
+          php tests/hero-presentation.php "$PWD/wordpress"
+      - name: JavaScript and layout
+        run: |
+          node --check modfarm-theme/modfarm-theme/assets/js/hero-presentation.js
+          node --check modfarm-theme/modfarm-theme/assets/js/hero-settings-media.js
+          node --check modfarm-theme/modfarm-theme/blocks/hero-cover/index.js
+          node --check modfarm-theme/modfarm-theme/blocks/hero-area/index.js
+          npm install --prefix /tmp/hero-layout --no-save playwright
+          /tmp/hero-layout/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/hero-layout/node_modules node tests/hero-layout.cjs
