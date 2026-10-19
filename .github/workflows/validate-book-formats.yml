@@ -1,0 +1,21 @@
+name: Validate book format defaults
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/book-controls.cjs
+      - run: php tests/taxonomy-grid-book-controls.php
+      - name: PHP syntax
+        run: |
+          php -l modfarm-theme/modfarm-theme/blocks/shared/book-options.php
+          php -l modfarm-theme/modfarm-theme/blocks/coming-soon-list/render.php
+          find modfarm-theme/modfarm-theme/inc/patterns -name '*.php' -print0 | xargs -0 -n1 php -l

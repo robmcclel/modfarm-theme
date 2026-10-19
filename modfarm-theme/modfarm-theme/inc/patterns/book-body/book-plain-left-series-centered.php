@@ -31,7 +31,7 @@ return [
 <h2 class="wp-block-heading has-text-align-center has-large-font-size">The Complete Series</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/book-page-tax {"exclude-current":false,"display-order":"ASC","books-per-page":20,"book-format":{"id":2}} /--></div>
+<!-- wp:modfarm/book-page-tax {"exclude-current":false,"display-order":"ASC","books-per-page":20,"book-format":{"id":0}} /--></div>
 <!-- /wp:group -->
 
 <!-- wp:group {"metadata":{"categories":["modfarm-book-elements"],"patternName":"modfarm/book-details-2-column-center-heading","name":"Book Details 2 Column Center Heading"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}}},"layout":{"type":"constrained","contentSize":"1000px","wideSize":"1200px"}} -->

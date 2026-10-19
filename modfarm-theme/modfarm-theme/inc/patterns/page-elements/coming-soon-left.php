@@ -12,7 +12,7 @@ return array(
 <h2 class="wp-block-heading has-text-align-left">Coming Soon</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/coming-soon-list {"book-format":{"id":2},"launchWindowDays":3} /--></div>
+<!-- wp:modfarm/coming-soon-list {"book-format":{"id":0},"launchWindowDays":3} /--></div>
 <!-- /wp:group -->
 HTML
 );

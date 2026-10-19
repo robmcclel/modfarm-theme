@@ -11,7 +11,7 @@ return [
 <h2 class="wp-block-heading has-text-align-center has-xlarge-font-size">Series Title</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/multi-tax-format {"tax-type":"series","book-format":{"id":2},"display-order":"ASC"} /--></div>
+<!-- wp:modfarm/multi-tax-format {"tax-type":"series","book-format":{"id":0},"display-order":"ASC"} /--></div>
 <!-- /wp:group -->
 ',
 ];

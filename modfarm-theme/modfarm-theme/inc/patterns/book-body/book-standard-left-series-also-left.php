@@ -33,7 +33,7 @@ return [
 <h2 class="wp-block-heading has-text-align-left has-large-font-size">The Complete Series</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/book-page-tax {"exclude-current":false,"display-order":"ASC","books-per-page":20,"book-format":{"id":2}} /--></div>
+<!-- wp:modfarm/book-page-tax {"exclude-current":false,"display-order":"ASC","books-per-page":20,"book-format":{"id":0}} /--></div>
 <!-- /wp:group -->
 
 <!-- wp:group {"metadata":{"categories":["modfarm-book-elements"],"patternName":"modfarm/book-page-also-like-left-heading","name":"Book Page Also Like Left Heading"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}}},"layout":{"type":"constrained"}} -->
@@ -41,7 +41,7 @@ return [
 <h2 class="wp-block-heading has-text-align-left has-large-font-size">You Might Also Like</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/book-page-tax {"tax-source":"genre","display-order":"rand","books-per-page":4,"book-format":{"id":2}} /--></div>
+<!-- wp:modfarm/book-page-tax {"tax-source":"genre","display-order":"rand","books-per-page":4,"book-format":{"id":0}} /--></div>
 <!-- /wp:group -->
 
 <!-- wp:group {"metadata":{"categories":["modfarm-book-elements"],"patternName":"modfarm/book-details-2-column-left-heading","name":"Book Details 2 Column Left Heading"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}}},"layout":{"type":"constrained","contentSize":"1000px","wideSize":"1200px"}} -->

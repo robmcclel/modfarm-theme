@@ -14,6 +14,7 @@ function esc_attr_e($v, $domain = '') { echo esc_attr($v); }
 function esc_html_e($v, $domain = '') { echo esc_html($v); }
 function wp_parse_args($a, $d) { return array_merge($d, $a); }
 function wp_json_encode($v) { return json_encode($v); }
+function term_exists($id, $taxonomy) { return in_array((int)$id, [7, 8], true) ? ['term_id'=>$id] : null; }
 function taxonomy_exists($v) { return true; }
 function is_wp_error($v) { return false; }
 function get_queried_object_id() { return 100; }
@@ -88,3 +89,11 @@ check(str_contains($audio, 'Listen Now') && !str_contains($audio, 'Play Sample')
 check(mfb_ui_audio(['audio_mode'=>'off', 'audio_sample'=>'https://example.test/sample.mp3']) === '', 'Disabled samples must render nothing.');
 restore_error_handler();
 echo "Taxonomy Grid: filtering, TOC, ordering, artwork, defaults, and four visibility controls passed.\n";
+
+$stale = modfarm_filter_books_by_format($no_format, ['book-format'=>['id'=>2]]);
+check($stale === $no_format, 'Unknown format IDs from copied patterns must mean All Formats.');
+check(modfarm_filter_books_by_format($no_format, ['book-format'=>['id'=>0]]) === $no_format, 'All Formats must preserve taxonomy filters.');
+$keys = modfarm_book_cover_fallback_keys('featured_image');
+check(array_search('cover_ebook', $keys) < array_search('cover_paperback', $keys)
+    && array_search('cover_paperback', $keys) < array_search('cover_hardcover', $keys)
+    && array_search('cover_hardcover', $keys) < array_search('cover_image_audio', $keys), 'Automatic cover fallback must prefer ebook, paperback, hardcover, then audio.');
