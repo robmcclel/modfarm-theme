@@ -78,11 +78,11 @@ function modfarm_theme_resolve_taxonomy_grid_presentation( array $attributes, ar
 	} ) );
 
 	$term_ids = array_map( function ( $term ) { return (int) $term->term_id; }, $terms );
-	$book_ids = $term_ids ? get_posts( modfarm_filter_books_by_language(array(
+	$book_ids = $term_ids ? get_posts( modfarm_filter_books_by_language(modfarm_filter_books_by_format(array(
 		'post_type' => 'book', 'post_status' => 'publish', 'posts_per_page' => 5001,
 		'fields' => 'ids', 'no_found_rows' => true, 'orderby' => 'ID', 'order' => 'ASC',
 		'tax_query' => array( array( 'taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => $term_ids ) ),
-	), $attributes) ) : array();
+	), $attributes), $attributes) ) : array();
 	$books_complete = count( $book_ids ) <= 5000;
 	$book_ids = array_slice( array_values( array_unique( array_map( 'absint', $book_ids ) ) ), 0, 5000 );
 	$book_references = array_map( function ( $id ) { return modfarm_theme_cir_entity_reference( 'book', $id ); }, $book_ids );
@@ -105,6 +105,7 @@ function modfarm_theme_resolve_taxonomy_grid_presentation( array $attributes, ar
 			'taxonomy' => $taxonomy,
 			'group_mode' => $selection['group_mode'],
 			'book_language' => $attributes['bookLanguage'] ?? '',
+			'book_format' => absint($attributes['book-format']['id'] ?? 0),
 			'display_mode' => sanitize_key( $attributes['displayMode'] ?? 'all' ),
 			'parent_id' => absint( $attributes['parentId'] ?? 0 ),
 			'hide_empty' => ! empty( $attributes['hideEmpty'] ),

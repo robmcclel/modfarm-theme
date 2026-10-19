@@ -348,3 +348,30 @@ if (!function_exists('modfarm_book_link_default_label')) {
         return ucwords(str_replace(['_', 'url'], [' ', ''], $source));
     }
 }
+
+/** Apply the standard format selector without weakening existing taxonomy filters. */
+if (!function_exists('modfarm_filter_books_by_format')) {
+function modfarm_filter_books_by_format(array $args, array $attributes): array {
+    $format = absint($attributes['book-format']['id'] ?? 0);
+    if ($format) {
+        $clause = ['taxonomy' => 'book-format', 'field' => 'term_id', 'terms' => $format];
+        $existing = $args['tax_query'] ?? [];
+        $args['tax_query'] = $existing ? ['relation' => 'AND', $existing, $clause] : [$clause];
+    }
+    return $args;
+}
+
+}
+
+/** Standard visibility contract shared by book listing blocks. */
+if (!function_exists('modfarm_book_card_visibility')) {
+function modfarm_book_card_visibility(array $attributes): array {
+    $global = $attributes['cardUseGlobal'] ?? true;
+    $result = [];
+    foreach (['title' => 'cardShowTitle', 'series' => 'cardShowSeries',
+              'primary' => 'cardShowPrimaryButton', 'sample' => 'cardShowSampleButton'] as $key => $attribute) {
+        $result[$key] = $global || ($attributes[$attribute] ?? true);
+    }
+    return $result;
+}
+}

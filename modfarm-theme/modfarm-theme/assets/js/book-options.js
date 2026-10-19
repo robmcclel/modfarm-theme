@@ -69,4 +69,36 @@
       { label: 'Featured Image (Book Page)', value: 'featured_image' }
     ]
   };
+  window.ModFarmBookOptions.FormatControl = function ({ attributes, setAttributes }) {
+    const el = window.wp.element.createElement;
+    const terms = window.wp.data.useSelect((select) => select('core').getEntityRecords(
+      'taxonomy', 'book-format', { per_page: -1, hide_empty: false }
+    ) || [], []);
+    return el(window.wp.components.SelectControl, {
+      label: window.wp.i18n.__('Book Format', 'modfarm'),
+      value: attributes['book-format']?.id || 0,
+      options: [{ label: window.wp.i18n.__('All Formats', 'modfarm'), value: 0 }].concat(
+        terms.map((term) => ({ label: term.name, value: term.id }))
+      ),
+      onChange: (value) => setAttributes({ 'book-format': { id: parseInt(value, 10) || 0 } })
+    });
+  };
+
+  // Used by the live, unbundled editors. Keep attribute names and labels identical.
+  window.ModFarmBookOptions.VisibilityControls = function ({ attributes, setAttributes }) {
+    const el = window.wp.element.createElement;
+    const { ToggleControl } = window.wp.components;
+    const __ = window.wp.i18n.__;
+    if (attributes.cardUseGlobal !== false) {
+      return el('p', { className: 'components-base-control__help' },
+        __('Turn off "Use Global Card Styles" to customize visibility for this block.', 'modfarm'));
+    }
+    return el(window.wp.element.Fragment, {}, ...[
+      ['cardShowTitle', 'Show Title'], ['cardShowSeries', 'Show Series'],
+      ['cardShowPrimaryButton', 'Show Primary Button'], ['cardShowSampleButton', 'Show Sample Button']
+    ].map(([key, label]) => el(ToggleControl, {
+      key, label: __(label, 'modfarm'), checked: attributes[key] !== false,
+      onChange: (value) => setAttributes({ [key]: !!value })
+    })));
+  };
 })(window);

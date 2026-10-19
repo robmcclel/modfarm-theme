@@ -228,6 +228,34 @@
             })
           ),
 
+          (attributes.groupMode || 'terms') === 'books_by_series' && el(
+            PanelBody, { title: 'Book Controls', initialOpen: true },
+            el(window.ModFarmBookOptions.FormatControl, { attributes, setAttributes }),
+            el(ToggleControl, {
+              label: 'Use Global Card Styles', checked: attributes.cardUseGlobal !== false,
+              onChange: (v) => setAttributes({ cardUseGlobal: !!v })
+            }),
+            el(window.ModFarmBookOptions.VisibilityControls, { attributes, setAttributes }),
+            el(TextControl, {
+              label: 'Primary Button Text', value: attributes['button-text'] || '',
+              help: 'Leave empty to use the global button label.',
+              onChange: (v) => setAttributes({ 'button-text': v })
+            }),
+            el(TextControl, {
+              label: 'Sample Button Text', value: attributes['samplebtn-text'] || 'Play Sample',
+              onChange: (v) => setAttributes({ 'samplebtn-text': v })
+            }),
+            el(SelectControl, {
+              label: 'Audio Mode', value: attributes['audio-mode'] || 'auto',
+              options: [
+                { label: 'Auto (prefer player)', value: 'auto' },
+                { label: 'Player only', value: 'player' },
+                { label: 'Sample only', value: 'sample' },
+                { label: 'Off', value: 'off' }
+              ], onChange: (v) => setAttributes({ 'audio-mode': v })
+            })
+          ),
+
           el(
             PanelBody,
             { title: 'Colors', initialOpen: false },
@@ -351,7 +379,7 @@
               onChange: (v) => setAttributes({ orderBy: v })
             }),
             el(ToggleControl, {
-              label: 'Show A–Z TOC (from all terms)',
+              label: (attributes.groupMode || 'terms') === 'terms' ? 'Show A–Z TOC (from all terms)' : 'Show Table of Contents',
               checked: !!attributes.showTOC,
               onChange: (v) => setAttributes({ showTOC: !!v })
             }),

@@ -239,7 +239,7 @@ function mfb_ui_audio(array $args): string {
     'origin'         => ($origin !== '' ? $origin : 'book_card'),
     'book_id'        => $id,
     'meta_key'       => ($audio_ui === 'constructed') ? 'audio_player_url' : 'audio_sample_url',
-    'label'          => 'Play Sample',
+    'label'          => (string)($a['sample_button_text'] ?? __('Play Sample', 'modfarm')),
     'series'         => $series,
     'format'         => 'audio',
     'tracker'        => $tracker,
@@ -264,7 +264,7 @@ function mfb_ui_audio(array $args): string {
          data-format="audio"
          data-book-id="<?php echo esc_attr($id); ?>"
          data-tracker="<?php echo esc_attr($tracker); ?>">
-        <?php esc_html_e('Play Sample', 'modfarm'); ?>
+        <?php echo esc_html($a['sample_button_text'] ?? __('Play Sample', 'modfarm')); ?>
       </a>
 
     <?php elseif ($audio_ui === 'sample' && $has_sample): ?>
@@ -280,7 +280,7 @@ function mfb_ui_audio(array $args): string {
                  data-book-id="<?php echo esc_attr($id); ?>"
                  data-tracker="<?php echo esc_attr($tracker); ?>"
                  aria-label="<?php esc_attr_e('Play audio sample', 'modfarm'); ?>">
-          <?php esc_html_e('Play Sample', 'modfarm'); ?>
+          <?php echo esc_html($a['sample_button_text'] ?? __('Play Sample', 'modfarm')); ?>
         </summary>
         <div class="mfb-audio-panel">
           <?php
@@ -444,6 +444,7 @@ function mfb_ui_card(array $card): string {
       'amazon_asin'  => $amazon_asin,
       'audio_date'   => $audio_date,
       'store_tld'    => 'com',
+      'sample_button_text' => $card['sample_button_text'] ?? __('Play Sample', 'modfarm'),
     ]); ?>
 
     <?php echo mfb_ui_title($title, $show_title); ?>

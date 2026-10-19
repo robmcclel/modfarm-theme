@@ -39,14 +39,14 @@ if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
 	  $terms = array_values(array_filter($terms, static function($term) { return (int)$term->count > 0; }));
 	}
 
-    // Resolve language-specific counts before paging and TOC generation.
-    if (!empty($attributes['bookLanguage'])) {
+    // Resolve format/language counts before paging, TOC generation, and CIR.
+    if (!empty($attributes['bookLanguage']) || !empty($attributes['book-format']['id'])) {
       foreach ($terms as $index => $term) {
-        $count_query = new WP_Query(modfarm_filter_books_by_language([
+        $count_query = new WP_Query(modfarm_filter_books_by_language(modfarm_filter_books_by_format([
           'post_type' => 'book', 'post_status' => 'publish',
           'posts_per_page' => 1, 'fields' => 'ids',
           'tax_query' => [['taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => [(int)$term->term_id]]],
-        ], $attributes));
+        ], $attributes), $attributes));
         $terms[$index] = clone $term;
         $terms[$index]->count = (int)$count_query->found_posts;
       }
@@ -198,7 +198,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     $first_book_id_for_term = function($term_id) use ($tax, $a) {
       $keys = ['publisher_date','publication_date','pub_date','release_date','published_on'];
       foreach ($keys as $key) {
-        $ids = get_posts(modfarm_filter_books_by_language([
+        $ids = get_posts(modfarm_filter_books_by_language(modfarm_filter_books_by_format([
           'post_type'      => 'book',
           'tax_query'      => [[ 'taxonomy' => $tax, 'terms' => $term_id ]],
           'posts_per_page' => 1,
@@ -208,10 +208,10 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           'fields'         => 'ids',
           'no_found_rows'  => true,
           'meta_type'      => 'DATETIME'
-        ], $a));
+        ], $a), $a));
         if (!empty($ids)) return intval($ids[0]);
       }
-      $ids = get_posts(modfarm_filter_books_by_language([
+      $ids = get_posts(modfarm_filter_books_by_language(modfarm_filter_books_by_format([
         'post_type'      => 'book',
         'tax_query'      => [[ 'taxonomy' => $tax, 'terms' => $term_id ]],
         'posts_per_page' => 1,
@@ -219,7 +219,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         'order'          => 'ASC',
         'fields'         => 'ids',
         'no_found_rows'  => true,
-      ], $a));
+      ], $a), $a));
       return !empty($ids) ? intval($ids[0]) : 0;
     };
 
@@ -253,17 +253,16 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     $book_cover_source = modfarm_book_option_normalize_cover_source((string)$a['bookCoverSource']);
     $book_link_source = modfarm_book_option_normalize_link_source((string)$a['bookLinkSource']);
 
-    $book_image_url = function($book_id) use ($book_cover_source): string {
-      return modfarm_book_cover_url((int)$book_id, $book_cover_source);
-    };
-
     $tracker = !empty($a['trackerLoc']) ? sanitize_key($a['trackerLoc']) : 'taxonomy-grid';
 
-    $book_card = function($book_id, $series_term, array $analytics_context = []) use ($book_image_url, $book_link_source, $tracker): array {
+    $book_card = function($book_id, $series_term, array $analytics_context = []) use ($book_link_source, $book_cover_source, $tracker, $a): array {
+      $visibility = modfarm_book_card_visibility($a);
+      $cover = modfarm_book_cover_data((int)$book_id, $book_cover_source);
       $permalink = get_permalink($book_id);
       $button_url = modfarm_book_link_url((int)$book_id, $book_link_source, (string)$permalink);
       $opts = get_option('modfarm_theme_settings', []);
-      $button_text = (string)($opts['book_card_button_text'] ?? modfarm_book_link_default_label($book_link_source));
+      $button_text = (string)($a['button-text'] ?? '');
+      if ($button_text === '') $button_text = (string)($opts['book_card_button_text'] ?? modfarm_book_link_default_label($book_link_source));
       if ($button_text === '') {
         $button_text = modfarm_book_link_default_label($book_link_source);
       }
@@ -272,16 +271,18 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         'id'        => $book_id,
         'title'     => get_the_title($book_id),
         'permalink' => $permalink,
-        'image_url' => $book_image_url($book_id),
-        'aspect'    => '2 / 3',
+        'image_url' => $cover['url'],
+        'aspect'    => modfarm_book_cover_aspect($cover['source'], $a['cardImageAspect'] ?? 'auto'),
+        'image_fit' => modfarm_book_cover_image_fit($cover['source'], $a['cardImageAspect'] ?? 'auto'),
         'format'    => null,
 
-        'show_title'      => true,
-        'series_name'     => $series_term instanceof WP_Term ? (string)$series_term->name : '',
-        'series_position' => (string)get_post_meta($book_id, 'series_position', true),
-        'volume_text'     => 'Book',
+        'show_title'      => $visibility['title'],
+        'series_name'     => $visibility['series'] && $series_term instanceof WP_Term ? (string)$series_term->name : '',
+        'series_position' => $visibility['series'] ? (string)get_post_meta($book_id, 'series_position', true) : '',
+        'volume_text'     => $a['volume-text'] ?? 'Book',
+        'sample_button_text' => $a['samplebtn-text'] ?? __('Play Sample', 'modfarm'),
 
-        'audio_mode'                   => 'auto',
+        'audio_mode'                   => $visibility['sample'] ? ($a['audio-mode'] ?? 'auto') : 'off',
         'audio_player_embed'           => (string)get_post_meta($book_id, 'audio_player_embed', true),
         'audio_sample_url'             => (string)get_post_meta($book_id, 'audio_sample_url', true),
         'audiobook_publication_date'   => get_post_meta($book_id, 'audiobook_publication_date', true) ?: null,
@@ -290,7 +291,8 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
 
         'button' => [
           'text'    => $button_text,
-          'url'     => $button_url,
+          'url'     => $visibility['primary'] ? $button_url : '',
+          'meta_key' => $book_link_source,
           'target'  => modfarm_book_link_is_internal($book_link_source) ? '_self' : '_blank',
           'tracker' => $tracker,
           'origin'  => 'taxonomy-grid-series-books',
@@ -512,7 +514,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
         <?php foreach ($terms_for_paging as $series_loop_index => $term): ?>
           <?php
           if (!($term instanceof WP_Term)) continue;
-          $book_ids = get_posts(modfarm_filter_books_by_language([
+          $book_ids = get_posts(modfarm_filter_books_by_language(modfarm_filter_books_by_format([
             'post_type'      => 'book',
             'post_status'    => 'publish',
             'posts_per_page' => -1,
@@ -523,7 +525,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
               'field'    => 'term_id',
               'terms'    => [(int)$term->term_id],
             ]],
-          ], $a));
+          ], $a), $a));
           $book_ids = array_values(array_filter(array_map('absint', is_array($book_ids) ? $book_ids : [])));
           usort($book_ids, static function($left, $right) {
             $left_position = trim((string)get_post_meta($left, 'series_position', true));
