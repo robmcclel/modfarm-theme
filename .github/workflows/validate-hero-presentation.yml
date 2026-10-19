@@ -30,6 +30,8 @@ jobs:
           node --check modfarm-theme/modfarm-theme/assets/js/hero-settings-media.js
           node --check modfarm-theme/modfarm-theme/blocks/hero-cover/index.js
           node --check modfarm-theme/modfarm-theme/blocks/hero-area/index.js
+          npm install --prefix /tmp/hero-content --no-save @wordpress/blocks jsdom@26
+          NODE_PATH=/tmp/hero-content/node_modules node tests/hero-content-persistence.cjs
           npm install --prefix /tmp/hero-layout --no-save playwright react@18 react-dom@18
           /tmp/hero-layout/node_modules/.bin/playwright install --with-deps chromium
           NODE_PATH=/tmp/hero-layout/node_modules node tests/hero-layout.cjs
