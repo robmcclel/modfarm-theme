@@ -317,7 +317,7 @@
             }),
             el(SelectControl, {
               label: 'Section title alignment',
-              value: attributes.sectionHeadingAlign || 'left',
+              value: attributes.sectionHeadingAlign || 'center',
               options: [
                 { label: 'Left', value: 'left' },
                 { label: 'Center', value: 'center' },
@@ -329,7 +329,7 @@
               label: 'Section title size',
               min: 16,
               max: 56,
-              value: attributes.sectionHeadingSize || 28,
+              value: attributes.sectionHeadingSize || 36,
               onChange: (v) => setAttributes({ sectionHeadingSize: v })
             }),
             (attributes.groupMode || 'terms') === 'series_by_genre' &&
@@ -394,7 +394,7 @@
             (attributes.groupMode || 'terms') !== 'terms' &&
               el(SelectControl, {
                 label: 'TOC alignment',
-                value: attributes.tocAlign || 'left',
+                value: attributes.tocAlign || 'center',
                 options: [
                   { label: 'Left', value: 'left' },
                   { label: 'Center', value: 'center' },

@@ -87,10 +87,10 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       'orderBy'            => 'name_asc', // name_asc | name_desc | count_desc
       'showTOC'            => true,
       'tocColumns'         => 2,
-      'tocAlign'           => 'left',
+      'tocAlign'           => 'center',
       'tocCollapseMobile'  => true,
-      'sectionHeadingAlign'=> 'left',
-      'sectionHeadingSize' => 28,
+      'sectionHeadingAlign'=> 'center',
+      'sectionHeadingSize' => 36,
       'showSectionPrompt'  => false,
       'sectionPromptText'  => __('Click on the cover art to see all books in the series', 'modfarm'),
       'sectionPromptAlign' => 'center',
@@ -359,13 +359,13 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     }
     $index_id_parts = [$index_type, $tax, $group_mode, ($series_genre_slug !== '' ? $series_genre_slug : ''), 'page-' . (int)get_queried_object_id(), ($anchor !== '' ? trim((string)$a['anchor']) : 'block-1')];
     $index_id = implode(':', array_map('sanitize_title', array_filter($index_id_parts)));
-    $section_heading_align = in_array($a['sectionHeadingAlign'], ['left','center','right'], true) ? $a['sectionHeadingAlign'] : 'left';
+    $section_heading_align = in_array($a['sectionHeadingAlign'], ['left','center','right'], true) ? $a['sectionHeadingAlign'] : 'center';
     $section_heading_size = max(16, min(72, (int)$a['sectionHeadingSize']));
     $section_prompt_text = sanitize_text_field((string)$a['sectionPromptText']);
     $section_prompt_align = in_array($a['sectionPromptAlign'], ['left','center','right'], true) ? $a['sectionPromptAlign'] : 'center';
     $section_prompt_size = max(12, min(48, (int)$a['sectionPromptSize']));
     $toc_columns = max(1, min(3, (int)$a['tocColumns']));
-    $toc_align = in_array($a['tocAlign'], ['left','center','right'], true) ? $a['tocAlign'] : 'left';
+    $toc_align = in_array($a['tocAlign'], ['left','center','right'], true) ? $a['tocAlign'] : 'center';
     $toc_collapse_mobile = !empty($a['tocCollapseMobile']);
     $label_color = trim((string)$a['labelColor']);
     $label_style_attr = $label_color !== '' ? ' style="--mfb-taxgrid-label:' . esc_attr($label_color) . ';"' : '';
