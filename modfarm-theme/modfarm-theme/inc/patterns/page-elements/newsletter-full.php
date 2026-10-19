@@ -30,7 +30,7 @@ return [
 <h2 class="wp-block-heading has-text-align-center has-xlarge-font-size">New and Upcoming Releases</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/multi-tax-format {"tax-type":"series","book-format":{"id":2},"books-per-page":8} /--></div>
+<!-- wp:modfarm/multi-tax-format {"tax-type":"series","book-format":{"id":0},"books-per-page":8} /--></div>
 <!-- /wp:group --></div>
 <!-- /wp:group -->
 ',

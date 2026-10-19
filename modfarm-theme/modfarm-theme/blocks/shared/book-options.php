@@ -84,9 +84,9 @@ if (!function_exists('modfarm_book_cover_source_keys')) {
         return [
             'cover_ebook',
             'cover_image_flat',
-            'cover_image_audio',
             'cover_paperback',
             'cover_hardcover',
+            'cover_image_audio',
             'cover_ebook_3d',
             'cover_paperback_3d',
             'cover_hardcover_3d',
@@ -353,7 +353,9 @@ if (!function_exists('modfarm_book_link_default_label')) {
 if (!function_exists('modfarm_filter_books_by_format')) {
 function modfarm_filter_books_by_format(array $args, array $attributes): array {
     $format = absint($attributes['book-format']['id'] ?? 0);
-    if ($format) {
+    // Saved patterns may contain a term ID from another multisite site.
+    // An unknown selection has the same meaning as the editor's All Formats.
+    if ($format && term_exists($format, 'book-format')) {
         $clause = ['taxonomy' => 'book-format', 'field' => 'term_id', 'terms' => $format];
         $existing = $args['tax_query'] ?? [];
         $args['tax_query'] = $existing ? ['relation' => 'AND', $existing, $clause] : [$clause];

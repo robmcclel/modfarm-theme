@@ -11,7 +11,7 @@ return [
 <h2 class="wp-block-heading has-text-align-left has-large-font-size">The Complete Series</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/book-page-tax {"exclude-current":false,"display-order":"ASC","books-per-page":20,"book-format":{"id":2}} /--></div>
+<!-- wp:modfarm/book-page-tax {"exclude-current":false,"display-order":"ASC","books-per-page":20,"book-format":{"id":0}} /--></div>
 <!-- /wp:group -->
 ',
 ];

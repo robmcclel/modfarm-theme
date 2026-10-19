@@ -11,7 +11,7 @@ return [
 <h2 class="wp-block-heading has-text-align-left has-large-font-size">You Might Also Like</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/book-page-tax {"tax-source":"genre","display-order":"rand","books-per-page":4,"book-format":{"id":2}} /--></div>
+<!-- wp:modfarm/book-page-tax {"tax-source":"genre","display-order":"rand","books-per-page":4,"book-format":{"id":0}} /--></div>
 <!-- /wp:group -->
 ',
 ];

@@ -123,12 +123,6 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
     if ($term_id) $tax_query[] = ['taxonomy' => $tax_slug, 'field' => 'term_id', 'terms' => $term_id];
   }
 
-  $format_term = (isset($attributes['book-format']['id']) && $attributes['book-format']['id'])
-    ? (int)$attributes['book-format']['id'] : null;
-  if ($format_term) {
-    $tax_query[] = ['taxonomy' => 'book-format', 'field' => 'term_id', 'terms' => $format_term];
-  }
-
   // ===== Build meta_query (robust, string-based) =====
   $meta_query = [];
   $now_ts = current_time('timestamp');
@@ -239,7 +233,7 @@ function modfarm_render_coming_soon_list_block( $attributes ) {
     // NOTE: intentionally NOT setting meta_type => 'DATE' for compatibility
   }
 
-  $q = new WP_Query( modfarm_filter_books_by_language($q_args, $attributes) );
+  $q = new WP_Query( modfarm_filter_books_by_language(modfarm_filter_books_by_format($q_args, $attributes), $attributes) );
 
   // ===== Grid columns from percent =====
   $pct  = floatval(str_replace('%','',(string)$books_per_row));

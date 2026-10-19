@@ -76,7 +76,8 @@
     ) || [], []);
     return el(window.wp.components.SelectControl, {
       label: window.wp.i18n.__('Book Format', 'modfarm'),
-      value: attributes['book-format']?.id || 0,
+      value: terms.some((term) => term.id === Number(attributes['book-format']?.id))
+        ? Number(attributes['book-format'].id) : 0,
       options: [{ label: window.wp.i18n.__('All Formats', 'modfarm'), value: 0 }].concat(
         terms.map((term) => ({ label: term.name, value: term.id }))
       ),

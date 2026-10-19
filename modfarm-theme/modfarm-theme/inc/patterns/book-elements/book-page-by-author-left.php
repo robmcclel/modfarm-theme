@@ -11,7 +11,7 @@ return [
 <h2 class="wp-block-heading">By The Author</h2>
 <!-- /wp:heading -->
 
-<!-- wp:modfarm/book-page-tax {"tax-source":"author","display-order":"rand","books-per-page":4,"book-format":{"id":2}} /--></div>
+<!-- wp:modfarm/book-page-tax {"tax-source":"author","display-order":"rand","books-per-page":4,"book-format":{"id":0}} /--></div>
 <!-- /wp:group -->
 ',
 ];

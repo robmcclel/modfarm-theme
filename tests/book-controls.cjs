@@ -15,6 +15,8 @@ vm.runInNewContext(fs.readFileSync(path.join(root, 'assets/js/book-options.js'),
 const controls = window.ModFarmBookOptions;
 const format = controls.FormatControl({ attributes: {}, setAttributes: (v) => { changes = v; } });
 assert.equal(format.props.options[0].label, 'All Formats');
+assert.equal(controls.FormatControl({ attributes: { 'book-format': { id: 2 } }, setAttributes() {} }).props.value, 0);
+assert.equal(controls.FormatControl({ attributes: { 'book-format': { id: 7 } }, setAttributes() {} }).props.value, 7);
 format.props.onChange('7'); assert.equal(changes['book-format'].id, 7);
 format.props.onChange('0'); assert.equal(changes['book-format'].id, 0);
 const visibility = controls.VisibilityControls({ attributes: { cardUseGlobal: false, cardShowTitle: false }, setAttributes: (v) => { changes = v; } });
