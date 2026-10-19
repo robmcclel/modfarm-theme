@@ -88,23 +88,12 @@
       const cardCtaMode          = attributes.cardCtaMode          || 'inherit';
       const cardShadowStyle      = attributes.cardShadowStyle      || 'inherit';
 
-      const cardShowTitle        = attributes.cardShowTitle        !== false; // default true
-      const cardShowSeries       = attributes.cardShowSeries       !== false; // default true
-      const cardShowPrimaryButton= attributes.cardShowPrimaryButton!== false; // default true
-      const cardShowSampleButton = attributes.cardShowSampleButton !== false; // default true
-
       const cardButtonBg         = attributes.cardButtonBg   || '';
       const cardButtonFg         = attributes.cardButtonFg   || '';
       const cardSampleBg         = attributes.cardSampleBg   || '';
       const cardSampleFg         = attributes.cardSampleFg   || '';
 
       const excludeCurrent = attributes['exclude-current'] !== false; // default true
-
-      // Format taxonomy (book-format) for filtering
-      const formatTerms = useSelect((select) => {
-        const terms = select('core').getEntityRecords('taxonomy', 'book-format', { per_page: -1 });
-        return terms || [];
-      }, []);
 
       const themeColors = useSelect(
         (select) => {
@@ -113,17 +102,6 @@
         },
         []
       );
-
-      const formatOptions = formatTerms.length
-        ? [{ label: '— Select Format —', value: '' }].concat(
-            formatTerms.map((term) => ({ label: term.name, value: term.id }))
-          )
-        : [{ label: 'Loading...', value: '' }];
-
-      const selectedFormatId = attributes['book-format']?.id ?? '';
-      const validFormatValue = formatOptions.some((opt) => opt.value === selectedFormatId)
-        ? selectedFormatId
-        : '';
 
       // Helpers for color overrides
       const renderColorOverrideControl = (label, attrKey, currentValue) => {
@@ -202,12 +180,7 @@
               checked: !!excludeCurrent,
               onChange: (val) => setAttributes({ 'exclude-current': !!val })
             }),
-            el(SelectControl, {
-              label: __('Book Format', 'modfarm'),
-              value: validFormatValue,
-              options: formatOptions,
-              onChange: (val) => setAttributes({ 'book-format': { id: parseInt(val, 10) || 0 } })
-            }),
+            el(window.ModFarmBookOptions.FormatControl, { attributes, setAttributes }),
             el(SelectControl, {
               label: __('Image Type', 'modfarm'),
               value: normalizeCoverOption(attributes['image-type']),
@@ -355,32 +328,7 @@
 
           // Display Toggles (title/series/buttons/sample override) — shared with multi-tax-format
           el(PanelBody, { title: __('Display Toggles', 'modfarm'), initialOpen: false },
-            cardUseGlobal
-              ? el('p', { className: 'components-base-control__help' },
-                  __('Visibility is using the global Book Card settings. Turn off "Use Global Card Styles" to override for this block.', 'modfarm')
-                )
-              : el(Fragment, {},
-                  el(ToggleControl, {
-                    label: __('Show Title', 'modfarm'),
-                    checked: cardShowTitle,
-                    onChange: (val) => setAttributes({ cardShowTitle: !!val })
-                  }),
-                  el(ToggleControl, {
-                    label: __('Show Series', 'modfarm'),
-                    checked: cardShowSeries,
-                    onChange: (val) => setAttributes({ cardShowSeries: !!val })
-                  }),
-                  el(ToggleControl, {
-                    label: __('Show Primary Button', 'modfarm'),
-                    checked: cardShowPrimaryButton,
-                    onChange: (val) => setAttributes({ cardShowPrimaryButton: !!val })
-                  }),
-                  el(ToggleControl, {
-                    label: __('Show Sample Button', 'modfarm'),
-                    checked: cardShowSampleButton,
-                    onChange: (val) => setAttributes({ cardShowSampleButton: !!val })
-                  })
-                ),
+            el(window.ModFarmBookOptions.VisibilityControls, { attributes, setAttributes }),
             // Audio Mode still applies in both global + local style modes
             el(SelectControl, {
               label: __('Audio Mode', 'modfarm'),

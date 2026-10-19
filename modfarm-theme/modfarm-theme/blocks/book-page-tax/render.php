@@ -105,17 +105,11 @@ function modfarm_render_book_page_tax_block( $attributes ) {
     // --------------------------------------------------
     // 3. VISIBILITY (title / series / buttons / sample)
     // --------------------------------------------------
-    if ( $card_use_global ) {
-        $show_title       = true;
-        $show_series      = true;
-        $show_primary_btn = true;
-        $show_sample_btn  = true;
-    } else {
-        $show_title       = ! empty( $attributes['cardShowTitle'] );
-        $show_series      = ! empty( $attributes['cardShowSeries'] );
-        $show_primary_btn = ! empty( $attributes['cardShowPrimaryButton'] );
-        $show_sample_btn  = ! empty( $attributes['cardShowSampleButton'] );
-    }
+    $visibility = modfarm_book_card_visibility($attributes);
+    $show_title = $visibility['title'];
+    $show_series = $visibility['series'];
+    $show_primary_btn = $visibility['primary'];
+    $show_sample_btn = $visibility['sample'];
 
     // Audio mode (local or forced off)
     $audio_mode = $show_sample_btn ? ( $attributes['audio-mode'] ?? 'auto' ) : 'off';
@@ -199,19 +193,6 @@ function modfarm_render_book_page_tax_block( $attributes ) {
         'operator' => 'IN',
     ]];
 
-    // book-format filter
-    $format_term = ( isset( $attributes['book-format']['id'] ) && $attributes['book-format']['id'] )
-        ? (int) $attributes['book-format']['id']
-        : null;
-
-    if ( $format_term ) {
-        $tax_query[] = [
-            'taxonomy' => 'book-format',
-            'field'    => 'term_id',
-            'terms'    => $format_term,
-        ];
-    }
-
     // --------------------------------------------------
     // 6. QUERY
     // --------------------------------------------------
@@ -240,7 +221,7 @@ function modfarm_render_book_page_tax_block( $attributes ) {
         $args['order']     = $order;
     }
 
-    $query = new WP_Query( modfarm_filter_books_by_language($args, $attributes) );
+    $query = new WP_Query( modfarm_filter_books_by_language(modfarm_filter_books_by_format($args, $attributes), $attributes) );
 
     // --------------------------------------------------
     // 7. WRAPPER CLASSES

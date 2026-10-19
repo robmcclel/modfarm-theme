@@ -35,8 +35,9 @@
 }
 
 .mfb-taxgrid-group-title {
-  margin: 0 0 1rem;
-  font-size: 1.35rem;
+  margin: 0 0 calc(1rem + 20px);
+  font-size: 36px;
+  text-align: center;
   line-height: 1.2;
 }
 
@@ -52,7 +53,7 @@
 }
 
 .mfb-taxgrid-section-toc {
-  margin: 0 0 2rem;
+  margin: 0 0 calc(2rem + 40px);
 }
 
 .mfb-taxgrid-section-toc .mftoc-summary {
