@@ -41,6 +41,13 @@ area. Mobile overrides use a 781px breakpoint. Height is a minimum: growing mobi
 content expands the Hero rather than overlapping the menu. Existing Hero inner
 blocks are not automatically wrapped, moved, or migrated.
 
+New Hero-with-navigation variations and Page/Book/Archive header patterns start
+with local styling and a transparent navigation background. Shared menu/profile
+configuration still applies. Turn off **Transparent Background** on the navigation
+block for an opaque bar. For a Hero already inserted with the earlier defaults,
+enable **Local Style Overrides** and **Transparent Background** on its navigation
+block; replacing the whole header is unnecessary.
+
 The variation and PPB patterns supply insertion-time defaults only. Hero has no
 live locked template: both areas retain added blocks, including series details,
 author credit, format icons, and custom groups, through save/reload. A live nested
