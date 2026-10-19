@@ -107,11 +107,9 @@
               style: { maxWidth: a.contentMaxWidth || '1200px' }
             },
             el(InnerBlocks, {
-              templateLock: a.structuredLayout ? 'all' : false,
-              template: a.structuredLayout ? [
-                ['modfarm/hero-area', { area: 'navigation', metadata: { name: 'Hero navigation' } }, [['modfarm/navigation-menu', {}]]],
-                ['modfarm/hero-area', { area: 'content', metadata: { name: 'Hero content' } }, [['core/post-title', { level: 1 }]]]
-              ] : undefined
+              // The variation/pattern supplies the initial areas. A live locked
+              // template recursively removes author-added blocks when synchronized.
+              templateLock: false
             })
           )
         ),

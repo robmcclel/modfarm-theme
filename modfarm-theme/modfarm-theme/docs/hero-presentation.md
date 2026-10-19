@@ -41,6 +41,11 @@ area. Mobile overrides use a 781px breakpoint. Height is a minimum: growing mobi
 content expands the Hero rather than overlapping the menu. Existing Hero inner
 blocks are not automatically wrapped, moved, or migrated.
 
+The variation and PPB patterns supply insertion-time defaults only. Hero has no
+live locked template: both areas retain added blocks, including series details,
+author credit, format icons, and custom groups, through save/reload. A live nested
+template would recursively reset those additions to its initial title/menu layout.
+
 ## Onboarder integration
 
 The shared option registry is `modfarm_hero_presentation_options()`. The companion
