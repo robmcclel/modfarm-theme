@@ -1,7 +1,7 @@
 (function (wp) {
   const { __ } = wp.i18n;
   const { registerBlockType } = wp.blocks;
-  const { useBlockProps, InspectorControls } = wp.blockEditor || wp.editor;
+  const { useBlockProps, InspectorControls, RichText } = wp.blockEditor || wp.editor;
   const {
     PanelBody, SelectControl, TextControl, RangeControl,
     ToggleControl, ColorPalette, Button, Spinner, Notice, ComboboxControl
@@ -197,6 +197,26 @@
               __('Auto mode will show the first attached term. Pick a creator term above for a specific person.', 'modfarm')
             ),
 
+            el('div', { className: 'mfc-description-override' },
+              el('p', { style: { fontWeight: 600 } }, __('Description override', 'modfarm')),
+              el(RichText, {
+                tagName: 'div',
+                value: attributes.descriptionOverride || '',
+                onChange: value => setAttributes({ descriptionOverride: value }),
+                placeholder: __('Write a description for this block…', 'modfarm'),
+                allowedFormats: ['core/bold', 'core/italic', 'core/link'],
+                'aria-label': __('Description override', 'modfarm')
+              }),
+              el('p', { className: 'components-base-control__help' },
+                __('Leave blank to use the saved creator biography. Changes apply only to this block. Supports paragraphs, links, bold and italic.', 'modfarm')
+              ),
+              el(Button, {
+                variant: 'secondary',
+                disabled: !attributes.descriptionOverride,
+                onClick: () => setAttributes({ descriptionOverride: '' })
+              }, __('Use saved biography', 'modfarm'))
+            ),
+
             !effectiveTax && el(Notice, { status: 'warning', isDismissible: false },
               __('Choose a taxonomy or enter a custom slug.', 'modfarm')
             )
@@ -214,7 +234,16 @@
               ],
               onChange: v => setAttributes({ layout: v })
             }),
-            el(SelectControl, {
+            ...[
+              ['showImage', __('Show portrait', 'modfarm')],
+              ['showName', __('Show name', 'modfarm')],
+              ['showRole', __('Show role label', 'modfarm')]
+            ].map(([key, label]) => el(ToggleControl, {
+              key, label,
+              checked: attributes[key] !== false,
+              onChange: value => setAttributes({ [key]: !!value })
+            })),
+            attributes.showImage !== false && el(SelectControl, {
               label: __('Image Shape', 'modfarm'),
               value: attributes.imageShape,
               options: [
@@ -223,19 +252,19 @@
               ],
               onChange: v => setAttributes({ imageShape: v })
             }),
-            el(RangeControl, {
+            attributes.showImage !== false && el(RangeControl, {
               label: __('Image size (px)', 'modfarm'),
               value: attributes.imgSize,
               min: 120, max: 360, step: 10,
               onChange: v => setAttributes({ imgSize: v })
             }),
-            el(ToggleControl, {
+            attributes.showName !== false && el(ToggleControl, {
               label: __('Link name to archive', 'modfarm'),
               checked: !!attributes.linkToArchive,
               onChange: v => setAttributes({ linkToArchive: !!v })
             }),
             el(ToggleControl, {
-              label: __('Show description (full bio)', 'modfarm'),
+              label: __('Show description', 'modfarm'),
               checked: !!attributes.showDescription,
               onChange: v => setAttributes({ showDescription: !!v })
             }),
