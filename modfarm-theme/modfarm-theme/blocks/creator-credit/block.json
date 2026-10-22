@@ -17,6 +17,10 @@
     "imgSize":       { "type": "number",  "default": 240 },     
 
     "linkToArchive": { "type": "boolean", "default": true },
+    "showImage": { "type": "boolean", "default": true },
+    "showName": { "type": "boolean", "default": true },
+    "showRole": { "type": "boolean", "default": true },
+    "descriptionOverride": { "type": "string", "default": "" },
     "showDescription": { "type": "boolean", "default": true },
     "showSocialLinks": { "type": "boolean", "default": false },
     "socialIconSize": { "type": "number", "default": 28 },

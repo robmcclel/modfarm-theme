@@ -15,6 +15,11 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
     $image_shape = ($attributes['imageShape'] ?? 'circle') === 'square' ? 'square' : 'circle';
     $img_size    = max(80, min(600, intval($attributes['imgSize'] ?? 240)));
 
+    $show_image  = ($attributes['showImage'] ?? true) !== false;
+    $show_name   = ($attributes['showName'] ?? true) !== false;
+    $show_role   = ($attributes['showRole'] ?? true) !== false;
+    $description_override = trim(wp_kses_post((string)($attributes['descriptionOverride'] ?? '')));
+
     $link_name   = !empty($attributes['linkToArchive']);
     $show_desc   = !empty($attributes['showDescription']);
     $show_social = !empty($attributes['showSocialLinks']);
@@ -163,8 +168,11 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
       <?php endif; ?>
 
       <article class="mfc-card">
+        <?php if ($show_image): ?>
         <div class="mfc-card__image"><?php echo $resolve_img($term); ?></div>
-        <div class="mfc-card__body">
+        <?php endif; ?>
+        <?php ob_start(); ?>
+          <?php if ($show_name): ?>
           <h3 class="mfc-card__name">
             <?php $link = get_term_link($term); $has_link = $link && !is_wp_error($link); ?>
             <?php if ($link_name && $has_link): ?>
@@ -173,9 +181,14 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
               <?php echo esc_html($term->name); ?>
             <?php endif; ?>
           </h3>
+          <?php endif; ?>
+          <?php if ($show_role): ?>
           <div class="mfc-card__role"><?php echo esc_html($role_label); ?></div>
+          <?php endif; ?>
           <?php if ($show_desc):
-            $desc = term_description((int) $term->term_id, $tax);
+            $desc = trim(wp_strip_all_tags($description_override)) !== ''
+              ? wpautop($description_override)
+              : term_description((int) $term->term_id, $tax);
             if (!empty($desc)): ?>
               <div class="mfc-card__desc"><?php echo wp_kses_post($desc); ?></div>
             <?php endif; ?>
@@ -199,7 +212,13 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
               }
             }
           ?>
-        </div>
+        <?php
+          $body = trim(ob_get_clean());
+          // Do not reserve a text column when every text/social element is hidden or empty.
+          if ($body !== '') {
+            echo '<div class="mfc-card__body">' . $body . '</div>';
+          }
+        ?>
       </article>
     </section>
     <?php
