@@ -689,6 +689,11 @@
     const frameWrap = visualizer.querySelector('.mf-ppb-visualizer__frame-wrap');
     const feedback = document.getElementById('mf-ppb-visualizer-feedback');
     const refreshButton = document.getElementById('mf-ppb-visualizer-refresh');
+    const initialPatterns = new Map();
+    Object.values(types).forEach(type => Object.values(type.fields || {}).forEach(field => {
+      const select = fieldSelect(field);
+      if (select && !initialPatterns.has(field)) initialPatterns.set(field, selectedValue(select));
+    }));
     let activeType = 'book';
     let archivePreviewType = '';
     let refreshTimer = null;
@@ -763,6 +768,15 @@
       };
     }
 
+    function changedPatterns() {
+      const changed = {};
+      Object.entries(activeFields()).forEach(([zone, field]) => {
+        const select = fieldSelect(field);
+        if (select && selectedValue(select) !== initialPatterns.get(field)) changed[zone] = selectedValue(select);
+      });
+      return changed;
+    }
+
     function updateViewport() {
       if (!frame || !frameWrap) return;
       frameWrap.setAttribute('data-viewport', deviceWidth === 390 ? 'mobile' : deviceWidth === 768 ? 'tablet' : 'desktop');
@@ -790,6 +804,7 @@
       payload.set('previewScope', 'ppb_layout');
       payload.set('sampleId', !archivePreviewType && sampleSelect && !sampleSelect.disabled ? sampleSelect.value : '0');
       payload.set('patterns', JSON.stringify(currentPatterns()));
+      payload.set('changedPatterns', JSON.stringify(changedPatterns()));
 
       try {
         const response = await window.fetch(config.ajaxUrl, {
@@ -803,19 +818,31 @@
           return;
         }
 
-        if (!data || !data.success || !data.data || !data.data.html) {
+        if (!data || !data.success || !data.data || (!data.data.html && !data.data.url)) {
           const message = data && data.data && data.data.message ? data.data.message : 'Preview could not be generated.';
           throw new Error(message);
         }
 
-        frame.srcdoc = data.data.html;
+        if (data.data.url) {
+          frame.removeAttribute('srcdoc');
+          frame.src = data.data.url;
+        } else {
+          frame.removeAttribute('src');
+          frame.srcdoc = data.data.html;
+        }
         updateViewport();
-        setFeedback('');
+        setFeedback(data.data.message || 'Pattern sample · no saved content selected.');
       } catch (error) {
         setFeedback(error && error.message ? error.message : 'Preview could not be generated.', true);
       }
     }
 
+    frame.addEventListener('load', () => {
+      const doc = frame.contentDocument;
+      if (!doc) return;
+      doc.addEventListener('click', event => { if (event.target.closest('a[href]')) event.preventDefault(); }, true);
+      doc.addEventListener('submit', event => event.preventDefault(), true);
+    });
     layoutTabs.forEach((tab) => {
       tab.addEventListener('click', () => {
         archivePreviewType = '';

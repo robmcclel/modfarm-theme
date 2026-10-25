@@ -13,3 +13,15 @@ Validation: JavaScript syntax, PHP parser checks, form-preservation and hierarch
 Settings renders selected PPB patterns inside a standalone document. During that render, it isolates the WordPress style queue and captures the block-requested frontend styles using a cloned WordPress style printer. Dependencies, versioned URLs, RTL styles, and inline CSS follow WordPress handling. Admin styles are excluded, and the original queue and printer state are retained even if rendering fails. This includes Webcomic Reader Stage/Reader and Series styles without hardcoding plugin paths into the Theme. Preview scripts are not executed by this style capture.
 
 Run `php tests/ppb-visualizer-assets.php` for queue isolation, repeated previews, dependency/inline styles, and failure recovery. Review Series and Episodes in Settings at each device size on staging; these isolated checks do not replace a live visual review.
+
+## Selected content and proposed layout changes
+
+When real content is selected, Settings opens a signed, editor-only frontend preview URL rather than reconstructing the page from global defaults. The initial view uses the saved item, its blocks, local overrides, native frontend styles, and normal content/shortcode rendering. Draft/private items require edit access. Preview requests disable caching and hide the admin bar; iframe links and forms do not navigate or submit.
+
+The browser records initial selector values and sends only explicitly changed zones. Proposed replacements are request-local content filters, preserving surrounding blocks and other zones. Matching Content Slot payloads are hydrated using the existing helpers; locked zones, Hybrid bodies, unzoned content, and local Hybrid overrides are retained with explanatory notices. Body replacements carry a notice that non-slot content can disappear. Reverting selectors restores the saved-content view. Saving defaults is separate from applying layouts to existing content.
+
+No-sample and archive-pattern contexts retain the standalone pattern document and plugin-style capture; they are labelled as pattern samples. Live visual acceptance with the site's active plugins remains required.
+
+## Footer login alignment
+
+Use `[modfarm_footer_login align="center"]` (also `left` or `right`) to align the copyright/login line directly. The unmodified shortcode retains its parent paragraph/group alignment. Explicit alignment uses a block-displayed span, valid both inside a paragraph and in a Shortcode block. Targeted leaf-block rendering expands the Theme footer login/copyright shortcodes on directly rendered archive patterns as well as ordinary content; unrelated shortcode tags are left alone.

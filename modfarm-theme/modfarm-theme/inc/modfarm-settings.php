@@ -1157,6 +1157,7 @@ function modfarm_get_ppb_visualizer_samples(): array {
             'suppress_filters' => false,
         ]);
 
+        $posts = array_values(array_filter($posts, static function ($post) { return current_user_can('edit_post', $post->ID); }));
         $samples[$post_type] = array_map(static function ($post) {
             return [
                 'value' => (string) $post->ID,
@@ -1459,6 +1460,37 @@ function modfarm_ajax_ppb_visualizer_preview() {
         if (is_array($decoded)) {
             $patterns = $decoded;
         }
+    }
+
+    $sample_id = isset($_POST['sampleId']) ? absint($_POST['sampleId']) : 0;
+    $content_type = isset($_POST['contentType']) ? sanitize_key(wp_unslash($_POST['contentType'])) : 'book';
+    $types = modfarm_get_ppb_visualizer_content_types();
+    if ($sample_id > 0) {
+        $post = get_post($sample_id);
+        $expected = str_starts_with($content_type, 'mfc_collection_single__')
+            ? substr($content_type, strlen('mfc_collection_single__')) : $content_type;
+        if (!$post || !isset($types[$content_type]) || $post->post_type !== $expected || !current_user_can('edit_post', $sample_id)) {
+            wp_send_json_error(['message' => 'Choose content you can edit in this content type.'], 403);
+        }
+        $raw_changed = isset($_POST['changedPatterns']) ? wp_unslash($_POST['changedPatterns']) : '';
+        $changed = is_string($raw_changed) ? json_decode($raw_changed, true) : [];
+        $resolved = [];
+        foreach (['header', 'body', 'footer'] as $zone) {
+            if (!is_array($changed) || !isset($changed[$zone]) || !is_string($changed[$zone])) continue;
+            $field = $types[$content_type]['fields'][$zone] ?? '';
+            if ($field) $resolved[$zone] = modfarm_ppb_visualizer_resolve_slug($field, $changed[$zone], get_option('modfarm_theme_settings', []));
+        }
+        $plan = modfarm_settings_content_preview_plan($post, $resolved);
+        $url = $post->post_status === 'publish' ? get_permalink($post) : get_preview_post_link($post);
+        $url = add_query_arg([
+            'mf_settings_preview' => $sample_id,
+            'mf_settings_nonce' => wp_create_nonce('modfarm_settings_content_preview_' . $sample_id),
+            'mf_settings_patterns' => wp_json_encode($resolved),
+        ], $url);
+        $message = $resolved ? 'Previewing layout changes. ' : 'Current page. ';
+        $message .= implode(' ', $plan['messages']);
+        if ($resolved) $message .= ' Saving defaults does not apply replacements to this page.';
+        wp_send_json_success(['url' => $url, 'message' => trim($message)]);
     }
 
     $html = modfarm_build_ppb_visualizer_document([
@@ -3747,7 +3779,7 @@ function modfarm_render_settings_page() {
                                     <div class="mf-settings-group mf-ppb-layout-sample">
                                         <h3 class="mf-group-title">Preview Content</h3>
                                         <label for="mf-ppb-visualizer-sample" class="screen-reader-text">Preview Content</label>
-                                        <p class="description">Choose specific site content from the menu to see how it looks with the selected layout.</p><select id="mf-ppb-visualizer-sample"></select>
+                                        <p class="description">Shows the selected item’s saved content and layout. Change a pattern to preview that zone; saving defaults does not replace existing page content.</p><select id="mf-ppb-visualizer-sample"></select>
                                     </div>
 
                                     <div class="mf-settings-group mf-ppb-layout-panel is-active" data-ppb-layout-type="book">

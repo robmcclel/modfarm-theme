@@ -1131,7 +1131,7 @@ function modfarm_ppb_get_effective_hybrid_chrome_slugs_for_post(int $post_id, st
         }
     }
 
-    return $resolved;
+    return apply_filters('modfarm_ppb_hybrid_chrome_slugs', $resolved, $post_id, $post_type);
 }
 
 /**
@@ -1666,17 +1666,8 @@ add_shortcode('modfarm_menu', function ($atts) {
     ]);
 });
 
-function modfarm_footer_login_shortcode() {
-    $year = date('Y');
-    $site = get_bloginfo('name');
-
-    $link = is_user_logged_in()
-        ? '<a href="' . esc_url(wp_logout_url()) . '">Logout</a>'
-        : '<a href="' . esc_url(wp_login_url()) . '">Login</a>';
-
-    return "&copy; {$year} {$site} &middot; {$link}";
-}
-add_shortcode('modfarm_footer_login', 'modfarm_footer_login_shortcode');
+require_once __DIR__ . '/inc/footer-shortcodes.php';
+require_once __DIR__ . '/inc/settings-content-preview.php';
 
 /**
  * Render a cache-safe footer copyright using the current site identity.
