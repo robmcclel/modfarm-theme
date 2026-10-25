@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . "/settings-review.php";
+require_once __DIR__ . "/ppb-visualizer-assets.php";
 /**
  * ModFarm Theme Settings Panel
  *
@@ -1380,20 +1381,25 @@ function modfarm_build_ppb_visualizer_document(array $args): string {
     $zone_markup = [];
     $resolved = [];
 
-    foreach (['header', 'body', 'footer'] as $zone) {
-        $field_id = $fields[$zone] ?? '';
-        $slug = $field_id ? modfarm_ppb_visualizer_resolve_slug($field_id, (string) ($submitted_patterns[$zone] ?? ''), $options) : '';
-        $resolved[$zone] = $slug;
-        $content = ($slug && function_exists('modfarm_ppb_get_pattern_content_by_slug'))
-            ? modfarm_ppb_get_pattern_content_by_slug($slug)
-            : '';
-
-        $zone_markup[$zone] = sprintf(
-            '<div class="mf-ppb-viz-zone mf-ppb-viz-zone--%1$s" data-zone="%1$s">%2$s</div>',
-            esc_attr($zone),
-            do_blocks($content)
-        );
-    }
+    $rendered_preview = modfarm_ppb_visualizer_capture_styles(static function () use ($fields, $submitted_patterns, $options, &$resolved) {
+        $zone_markup = [];
+        foreach (['header', 'body', 'footer'] as $zone) {
+            $field_id = $fields[$zone] ?? '';
+            $slug = $field_id ? modfarm_ppb_visualizer_resolve_slug($field_id, (string) ($submitted_patterns[$zone] ?? ''), $options) : '';
+            $resolved[$zone] = $slug;
+            $content = ($slug && function_exists('modfarm_ppb_get_pattern_content_by_slug'))
+                ? modfarm_ppb_get_pattern_content_by_slug($slug)
+                : '';
+    
+            $zone_markup[$zone] = sprintf(
+                '<div class="mf-ppb-viz-zone mf-ppb-viz-zone--%1$s" data-zone="%1$s">%2$s</div>',
+                esc_attr($zone),
+                do_blocks($content)
+            );
+        }
+        return $zone_markup;
+    });
+    $zone_markup = $rendered_preview['content'];
 
     $body_classes = get_body_class([
         'mf-ppb-visualizer-doc',
@@ -1407,6 +1413,7 @@ function modfarm_build_ppb_visualizer_document(array $args): string {
     foreach (modfarm_ppb_visualizer_stylesheet_urls() as $stylesheet_url) {
         $document .= '<link rel="stylesheet" href="' . esc_url($stylesheet_url) . '">';
     }
+    $document .= $rendered_preview['styles'];
     $document .= modfarm_ppb_visualizer_inline_token_styles();
     if ($global_styles !== '') {
         $document .= '<style id="global-styles-inline-css">' . str_replace('</style', '<\/style', $global_styles) . '</style>';
