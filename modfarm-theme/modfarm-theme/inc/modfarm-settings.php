@@ -1273,7 +1273,7 @@ function modfarm_ppb_visualizer_resolve_slug(string $field_id, string $submitted
     }
 
     return function_exists('modfarm_ppb_resolve_pattern_slug')
-        ? modfarm_ppb_resolve_pattern_slug($field_id, $options[$field_id] ?? null, $options)
+        ? modfarm_ppb_resolve_pattern_slug($field_id, '', $options)
         : '';
 }
 

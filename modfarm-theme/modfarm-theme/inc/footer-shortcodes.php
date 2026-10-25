@@ -17,7 +17,8 @@ add_shortcode('modfarm_footer_login', 'modfarm_footer_login_shortcode');
 
 /** Expand only our footer shortcodes; leave unrelated shortcodes untouched. */
 function modfarm_render_footer_shortcodes_in_block(string $content): string {
-    if (!str_contains($content, '[modfarm_footer_')) return $content;
+    // the_content expands shortcodes after do_blocks; do not expand twice there.
+    if (doing_filter('the_content') || !str_contains($content, '[modfarm_footer_')) return $content;
     $pattern = get_shortcode_regex(['modfarm_footer_login', 'modfarm_footer_copyright']);
     return (string) preg_replace_callback('/' . $pattern . '/s', static function ($match) {
         return do_shortcode($match[0]);

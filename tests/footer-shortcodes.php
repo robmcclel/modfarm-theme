@@ -3,6 +3,7 @@
 define('ABSPATH', __DIR__);
 $filters = []; $logged_in = false;
 function add_shortcode(...$args) {}
+function doing_filter($name) { return $GLOBALS['in_content_filter'] ?? false; }
 function add_filter($name, $fn, ...$rest) { $GLOBALS['filters'][$name] = $fn; }
 function shortcode_atts($defaults, $atts, ...$args) { return array_merge($defaults, (array) $atts); }
 function is_user_logged_in() { return $GLOBALS['logged_in']; }
@@ -32,3 +33,6 @@ check(!str_contains($rendered,'[modfarm_footer_login'), 'Archive paragraph expan
 check(modfarm_render_footer_shortcodes_in_block('[unrelated_shortcode]') === '[unrelated_shortcode]', 'Unrelated shortcodes are left alone');
 check($filters['render_block']('[modfarm_footer_login]', ['blockName'=>null]) !== '[modfarm_footer_login]', 'Legacy unwrapped pattern HTML also expands footer shortcodes');
 check($filters['render_block']('[[modfarm_footer_login]]', ['blockName'=>'core/group']) === '[[modfarm_footer_login]]', 'Parent containers do not expand child shortcodes a second time');
+
+$in_content_filter = true;
+check(modfarm_render_footer_shortcodes_in_block('[[modfarm_footer_login]]') === '[[modfarm_footer_login]]', 'Page content leaves escaped shortcodes for the native single expansion pass');
