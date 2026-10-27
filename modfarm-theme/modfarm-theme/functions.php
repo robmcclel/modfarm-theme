@@ -1814,3 +1814,16 @@ function modfarm_enqueue_google_fonts() {
         }
     }
 }
+
+
+/**
+ * The WordPress publishing account is not a public creator credit.
+ * Keep site/provider metadata and embed content, but omit account attribution.
+ */
+function modfarm_remove_oembed_account_author( $data ) {
+    if ( is_array( $data ) ) {
+        unset( $data['author_name'], $data['author_url'] );
+    }
+    return $data;
+}
+add_filter( 'oembed_response_data', 'modfarm_remove_oembed_account_author', 99 );
