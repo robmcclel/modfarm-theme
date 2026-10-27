@@ -18,6 +18,13 @@ jobs:
           php -l modfarm-theme/modfarm-theme/inc/settings-review.php
           php -l modfarm-theme/modfarm-theme/inc/navigation-settings.php
           php -l modfarm-theme/modfarm-theme/inc/archive-layouts.php
+          php -l modfarm-theme/modfarm-theme/inc/ppb-visualizer-assets.php
+          php -l modfarm-theme/modfarm-theme/functions.php
+          php -l modfarm-theme/modfarm-theme/inc/footer-shortcodes.php
+          php -l modfarm-theme/modfarm-theme/inc/settings-content-preview.php
+          php tests/footer-shortcodes.php
+          php tests/settings-content-preview.php
+          php tests/ppb-visualizer-assets.php
           php tests/settings-review.php
           php tests/offer-archive-pattern.php
       - name: Settings browser integration
@@ -28,3 +35,4 @@ jobs:
           npm install --prefix /tmp/settings-browser --no-save playwright
           /tmp/settings-browser/node_modules/.bin/playwright install --with-deps chromium
           NODE_PATH=/tmp/settings-browser/node_modules node tests/settings-review-browser.cjs
+          NODE_PATH=/tmp/settings-browser/node_modules node tests/settings-content-preview-browser.cjs
