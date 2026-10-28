@@ -42,21 +42,11 @@ add_action('init', function () {
 });
 
 /**
- * Determine whether serialized block HTML is effectively empty.
+ * Check only whether a serialized payload exists, never what it contains.
+ * Blank paragraphs, comments, media, and dynamic blocks are all authored data.
  */
 function modfarm_ppb_is_slot_markup_empty(string $html): bool {
-    if ($html === '') {
-        return true;
-    }
-
-    $clean = preg_replace('/<!--.*?-->/s', '', $html);
-    $clean = is_string($clean) ? $clean : $html;
-    $clean = str_replace("\xC2\xA0", ' ', $clean);
-    $clean = preg_replace('/&nbsp;?/i', ' ', $clean);
-    $clean = is_string($clean) ? $clean : '';
-    $clean = trim(strip_tags(html_entity_decode($clean, ENT_QUOTES | ENT_HTML5, 'UTF-8')));
-
-    return $clean === '';
+    return $html === '';
 }
 
 /**

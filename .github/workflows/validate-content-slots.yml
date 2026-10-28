@@ -1,0 +1,22 @@
+name: Validate content slot media
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'modfarm-theme/modfarm-theme/blocks/content-slot/**'
+      - 'modfarm-theme/modfarm-theme/blocks/simple-gallery/**'
+      - 'modfarm-theme/modfarm-theme/inc/content-slot-payloads.php'
+      - 'tests/content-slot-media.php'
+      - '.github/workflows/validate-content-slots.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: php tests/content-slot-media.php
+      - name: PHP syntax
+        run: |
+          php -l modfarm-theme/modfarm-theme/blocks/content-slot/render.php
+          php -l modfarm-theme/modfarm-theme/inc/content-slot-payloads.php

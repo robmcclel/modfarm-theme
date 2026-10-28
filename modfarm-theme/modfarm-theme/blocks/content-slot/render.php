@@ -11,17 +11,13 @@ if (!function_exists('modfarm_render_content_slot_block')) {
 
     $slot = (string) ($a['slot'] ?? 'main');
 
-    // Treat trivial InnerBlocks as empty (avoids <p></p> placeholder)
-    $is_empty = function ($html) {
-      if ($html === '' || $html === null) return true;
-      $clean = preg_replace('/<!--.*?-->/s', '', (string)$html);
-      $clean = str_replace("\xC2\xA0", ' ', $clean);
-      $clean = preg_replace('/&nbsp;?/i', ' ', $clean);
-      $clean = trim(strip_tags(html_entity_decode($clean, ENT_QUOTES|ENT_HTML5, 'UTF-8')));
-      return $clean === '';
-    };
-
-    if (!$is_empty($content)) {
+    // A slot is a protected container, not a judge of its contents. An authored
+    // child owns the slot even when that child currently renders an empty string.
+    // Only ignore serialization whitespace around a structurally empty slot.
+    $has_authored_content = is_object($block) && isset($block->parsed_block['innerBlocks'])
+      ? !empty($block->parsed_block['innerBlocks']) || trim((string) ($block->parsed_block['innerHTML'] ?? '')) !== ''
+      : (string) $content !== '';
+    if ($has_authored_content) {
       return '<div class="mf-content-slot" data-slot="'.esc_attr($slot).'">'.$content.'</div>';
     }
 
