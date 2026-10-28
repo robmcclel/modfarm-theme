@@ -11,17 +11,9 @@ if (!function_exists('modfarm_render_content_slot_block')) {
 
     $slot = (string) ($a['slot'] ?? 'main');
 
-    // Treat trivial InnerBlocks as empty (avoids <p></p> placeholder)
-    $is_empty = function ($html) {
-      if ($html === '' || $html === null) return true;
-      $clean = preg_replace('/<!--.*?-->/s', '', (string)$html);
-      $clean = str_replace("\xC2\xA0", ' ', $clean);
-      $clean = preg_replace('/&nbsp;?/i', ' ', $clean);
-      $clean = trim(strip_tags(html_entity_decode($clean, ENT_QUOTES|ENT_HTML5, 'UTF-8')));
-      return $clean === '';
-    };
-
-    if (!$is_empty($content)) {
+    // Share the payload emptiness rules: media-only InnerBlocks are authored
+    // content too, while blank paragraph placeholders still allow fallback.
+    if (!modfarm_ppb_is_slot_markup_empty((string) $content)) {
       return '<div class="mf-content-slot" data-slot="'.esc_attr($slot).'">'.$content.'</div>';
     }
 
