@@ -20,10 +20,10 @@ assert.equal(groupProps.wrapperProps.style.color,'red');
    await page.setContent(`<style>${css}
     :root{--mf-content-width:1100px;--mf-wide-width:1300px}
     .test-group{width:min(1068px,calc(100% - 32px));margin:auto}
-    .test-group>:not(.alignfull){max-width:800px;margin-left:auto!important;margin-right:auto!important}
+    .test-group>:where(:not(.alignfull)){max-width:800px;margin-left:auto!important;margin-right:auto!important}
     .test-group>.alignwide{max-width:${localWide || 1300}px}
     .direct-prose{max-width:800px;margin:auto}
-   </style><div class="test-group" style="${groupStyle}">
+   </style><div class="test-group is-layout-constrained" style="${groupStyle}">
     <p class="direct-prose">Outside prose</p><figure class="alignwide direct">Outside wide</figure>
     <div class="mf-content-slot">${children}<div class="mf-content-slot">${children}</div></div>
    </div>`);
