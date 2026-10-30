@@ -38,8 +38,12 @@ const navHtml=process.env.MFS_NAV_FIXTURE ? fs.readFileSync(process.env.MFS_NAV_
  const shadow=await page.locator('#mf-book-live-preview .mf-book-visualizer__media').evaluate(el=>getComputedStyle(el).boxShadow);
  assert.ok(shadow.includes('1px 6px'),shadow);
  await page.locator('[data-category="layout"]').click();
+ const widths=page.locator('.mf-settings-group').filter({has:page.locator('[name="modfarm_theme_settings[wide_width]"]')});
+ assert.equal(await widths.locator('[name="modfarm_theme_settings[content_width]"]').count(),1);
+ assert.equal(await widths.locator('[name="modfarm_theme_settings[wide_width]"]').inputValue(),'1300px');
  const submission=await page.locator('.modfarm-settings-form').evaluate(form=>Array.from(new FormData(form).keys()));
  assert.ok(submission.includes('modfarm_theme_settings[post_body_pattern]'));
+ assert.ok(submission.includes('modfarm_theme_settings[wide_width]'));
  assert.equal(await page.locator('[name="modfarm_theme_settings[post_body_pattern]"]').first().isDisabled(),true);
  assert.equal(await page.locator('.mf-settings-help').count(),3);
 

@@ -57,6 +57,7 @@ function modfarm_block_native_font_library_screen(): void {
 add_action('load-appearance_page_font-library', 'modfarm_block_native_font_library_screen');
 add_action('load-appearance_page_font-library-wp-admin', 'modfarm_block_native_font_library_screen');
 
+require_once get_template_directory() . '/inc/layout-widths.php';
 require_once get_template_directory() . '/inc/content-slot-payloads.php';
 require_once get_template_directory() . '/inc/hero-presentation.php';
 
@@ -1719,7 +1720,8 @@ add_action('wp_head', function () {
         '--mf-nav-font-size'   => max(1, intval($settings['nav_font_size'] ?? 16)) . 'px',
 		'--modfarm-font-heading' => modfarm_font_css_value(modfarm_effective_font_family($settings['heading_font'] ?? '')),
 		'--modfarm-font-body'    => modfarm_font_css_value(modfarm_effective_font_family($settings['body_font'] ?? '')),
-        '--mf-content-width'   => $settings['content_width'] ?? '1200px',
+        '--mf-content-width'   => modfarm_layout_widths()['contentSize'],
+        '--mf-wide-width'      => modfarm_layout_widths()['wideSize'],
         '--mf-nav-center-max-width'   => $settings['nav_center_max_width'] ?? '250px',
     ];
 

@@ -78,36 +78,13 @@ a:focus {
   line-height: 1.75;
 }
 
-/* Default content width for unconstrained blocks */
+/* Default content width for unconstrained blocks. Wide alignment is shared
+   with the editor in assets/css/layout-widths.css. */
 .site-main > *:not(.alignwide):not(.alignfull) {
-  max-width: 1100px;
+  max-width: var(--mf-content-width, 1100px);
   margin-left: auto;
   margin-right: auto;
   padding: 0 1rem;
-}
-
-/* === Default Width for Unaligned Content === */
-.site-main > *:not(.alignwide):not(.alignfull) {
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 1rem;
-  box-sizing: border-box;
-}
-
-/* === Wide Alignment === */
-.alignwide,
-.wp-block.alignwide,
-.wp-block-group.alignwide,
-.site-inner > .alignwide,
-.site-inner > .wp-block-group.alignwide,
-.is-layout-constrained.alignwide {
-  width: 100vw;
-  max-width: var(--wp--style--global--wide-size, 1400px);
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-  padding-left: 1rem;
-  padding-right: 1rem;
   box-sizing: border-box;
 }
 
@@ -130,46 +107,8 @@ a:focus {
 }
 
 
-/* === ALIGNMENT FIX FOR PATTERN-BASED LAYOUTS === */
-
-.wp-block[class*="alignwide"],
-.wp-block-group.alignwide {
-  width: 100vw;
-  max-width: var(--wp--style--global--wide-size, 1400px);
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-  padding-left: 1rem;
-  padding-right: 1rem;
-  box-sizing: border-box;
-}
-
-/* === ALIGNWIDE: CONSTRAIN BUT EXPAND === */
-.wp-block.alignwide,
-.wp-block-group.alignwide,
-.alignwide {
-  max-width: var(--wp--style--global--wide-size, 1400px);
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-/* === Alignment Fixes for Block Theme Layouts === */
-
 body {
   overflow-x: hidden;
-}
-
-
-/* Wide alignment */
-.alignwide {
-  max-width: var(--wp--style--global--wide-size, 1400px);
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  box-sizing: border-box;
 }
 
 /* Fix image overflow inside full/wide blocks */
@@ -388,30 +327,6 @@ img,
   margin-bottom: 1.5rem;
   line-height: 1.75;
 }
-
-.site-inner > .alignwide,
-.site-inner > .wp-block-group.alignwide {
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-  max-width: 1400px;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  box-sizing: border-box;
-}
-
-/* Break constraint inside wide group blocks */
-.is-layout-constrained.alignwide {
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-}
-
-.is-layout-constrained.alignwide img,
-.is-layout-constrained.alignwide .wp-block {
-  max-width: 100%;
-}
-
 
 /* === Force alignfull to truly go full width, even inside constrained layouts === */
 .is-layout-constrained .alignfull,

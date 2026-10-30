@@ -378,7 +378,8 @@ function modfarm_register_settings() {
     add_settings_field('nav_transparent', 'Transparent Background', 'modfarm_checkbox_field', 'modfarm_theme_settings', 'modfarm_section_navigation', ['id' => 'nav_transparent']);
 
     // === Layout (existing) ===
-    add_settings_field('content_width', 'Content Width (e.g., 1200px or 90%)', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_layout', ['id' => 'content_width']);
+    add_settings_field('content_width', 'Content Width (e.g., 1100px or 90%)', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_layout', ['id' => 'content_width']);
+    add_settings_field('wide_width', 'Wide Width (e.g., 1300px)', 'modfarm_text_field', 'modfarm_theme_settings', 'modfarm_section_layout', ['id' => 'wide_width', 'default' => '1300px']);
     add_settings_field(
         'default_post_template',
         'Default Post Template',
@@ -599,8 +600,8 @@ function modfarm_font_dropdown($args) {
 function modfarm_text_field($args) {
     $id = $args['id'];
     $options = get_option('modfarm_theme_settings');
-    $value = $options[$id] ?? '';
-    echo '<input type="text" name="modfarm_theme_settings[' . esc_attr($id) . ']" value="' . esc_attr($value) . '" />';
+    $value = $options[$id] ?? ($args['default'] ?? '');
+    echo '<input type="text" id="mf-' . esc_attr(str_replace('_', '-', $id)) . '" name="modfarm_theme_settings[' . esc_attr($id) . ']" value="' . esc_attr($value) . '" />';
 }
 
 function modfarm_color_field($args) {
@@ -2464,6 +2465,7 @@ function modfarm_sanitize_settings($settings) {
         'footer_submenu_text_color',
         'footer_nav_transparent',
         'content_width',
+        'wide_width',
         'default_post_template',
         'book_header_pattern',
         'book_body_pattern',
@@ -2559,6 +2561,10 @@ function modfarm_sanitize_settings($settings) {
         $val = $settings[$key];
 
         switch ($key) {
+            case 'content_width':
+            case 'wide_width':
+                $clean[$key] = modfarm_sanitize_layout_width($val);
+                break;
             case 'hero_default_image':
                 $clean[$key] = absint($val);
                 break;
@@ -3296,12 +3302,20 @@ function modfarm_render_settings_page() {
                                                     <?php
                                                     modfarm_text_field([
                                                         'id' => 'content_width',
+                                                        'default' => '1100px',
                                                     ]);
                                                     ?>
                                                     <p class="description">
-                                                        Example: <code>1200px</code> or <code>90%</code>.
+                                                        Default: <code>1100px</code> or <code>90%</code>.
                                                         This controls the maximum width for most content areas.
                                                     </p>
+                                                 </td>
+                                             </tr>
+                                             <tr>
+                                                 <th scope="row"><label for="mf-wide-width">Wide Width</label></th>
+                                                 <td>
+                                                     <?php modfarm_text_field(['id' => 'wide_width', 'default' => '1300px']); ?>
+                                                     <p class="description">Default: <code>1300px</code>. Maximum width for blocks aligned Wide. Groups can override either width for a specific layout.</p>
                                                  </td>
                                              </tr>
                                              <tr>
