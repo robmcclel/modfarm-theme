@@ -92,7 +92,7 @@
     },
     "layout": {
       "contentSize": "var(--mf-content-width, 1100px)",
-      "wideSize": "1400px",
+      "wideSize": "var(--mf-wide-width, 1300px)",
       "inherit": true,
       "types": ["constrained", "flex"]
     },
@@ -112,6 +112,6 @@
 
   "layout": {
     "contentSize": "var(--mf-content-width, 1100px)",
-    "wideSize": "1400px"
+    "wideSize": "var(--mf-wide-width, 1300px)"
   }
 }

@@ -194,8 +194,11 @@
     bookMain.querySelectorAll(':scope > .mf-settings-group').forEach(group => {
       if (!group.querySelector('input,select,textarea')) group.hidden = true;
     });
-    const widthGroup = makeGroup('Content width', siteMain);
-    const width = settingControl('content_width'); if (width && width.closest('tr')) widthGroup.body.appendChild(width.closest('tr'));
+    const widthGroup = makeGroup('Content widths', siteMain);
+    ['content_width', 'wide_width'].forEach(id => {
+      const width = settingControl(id);
+      if (width && width.closest('tr')) widthGroup.body.appendChild(width.closest('tr'));
+    });
     const originalSiteGroups = Array.from(siteMain.querySelectorAll(':scope > .mf-settings-group')).filter(group => group !== widthGroup.group);
     originalSiteGroups.forEach((group,index) => {
       const archive = root.querySelector('.mf-ppb-layout-panel[data-ppb-layout-type="archive"]');
@@ -496,8 +499,8 @@
       if (!themePreview) return;
       const page = themePreview.querySelector('.mf-theme-visualizer__page');
       if (page) {
-        const width = settingValue('content_width', '1200px');
-        page.style.maxWidth = window.CSS && window.CSS.supports('max-width', width) ? width : '1200px';
+        const width = settingValue('content_width', '1100px');
+        page.style.maxWidth = window.CSS && window.CSS.supports('max-width', width) ? width : '1100px';
         page.style.margin = '0 auto';
       }
 
