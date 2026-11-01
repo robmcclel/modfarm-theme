@@ -37,6 +37,22 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
     $accentColor = trim((string)($attributes['accentColor'] ?? ''));
     $textColor   = trim((string)($attributes['textColor'] ?? ''));
 
+    $identity_source = ($attributes['source'] ?? 'taxonomy') === 'identity';
+    $snapshot = [];
+    if ($identity_source) {
+      $snapshot = function_exists('modfarm_get_identity_snapshot')
+        ? modfarm_get_identity_snapshot((string) ($attributes['identityId'] ?? '')) : [];
+      if (empty($snapshot['identity'])) {
+        return current_user_can('edit_posts') && !$hide_empty
+          ? '<div class="mfc-team mfc--admin-note">Creator Credit: Choose an available Site Identity, or configure the primary identity in Site Identity.</div>' : '';
+      }
+      $name = $snapshot['identity']['name'];
+      $identity_image = ($snapshot['identity']['type'] ?? '') === 'organization'
+        ? ($snapshot['images']['logo'] ?? $snapshot['images']['profile'] ?? '')
+        : ($snapshot['images']['profile'] ?? $snapshot['images']['logo'] ?? '');
+      $role_label = implode(' · ', array_map(static function($role) { return ucwords(str_replace(['-', '_'], ' ', $role)); }, $snapshot['identity']['roles'] ?? []));
+      $profile_url = $snapshot['identity']['url'] ?? '';
+    } else {
     // --- Taxonomy sanity -----------------------------------------------------
     if (!$tax || !taxonomy_exists($tax)) {
       if (current_user_can('edit_posts') && !$hide_empty) {
@@ -99,6 +115,9 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
     $tax_obj    = get_taxonomy($tax);
     $role_label = $tax_obj ? ($tax_obj->labels->singular_name ?: $tax_obj->label ?: ucfirst($tax)) : ucfirst($tax);
 
+    $name = $term->name;
+    $profile_url = get_term_link($term);
+    }
     // --- CSS vars ------------------------------------------------------------
     $style_vars = ['--mfc-img-size:' . $img_size . 'px'];
     if ($accentColor !== '') $style_vars[] = '--mfc-accent:' . esc_attr($accentColor);
@@ -169,16 +188,20 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
 
       <article class="mfc-card">
         <?php if ($show_image): ?>
-        <div class="mfc-card__image"><?php echo $resolve_img($term); ?></div>
+        <div class="mfc-card__image"><?php echo $identity_source
+          ? ( $identity_image !== ''
+            ? '<img class="mfc-headshot" src="' . esc_url($identity_image) . '" alt="' . esc_attr($name) . '" loading="lazy" decoding="async" />'
+            : '<div class="mfc-headshot mfc-fallback" aria-hidden="true">' . esc_html(mb_substr($name, 0, 1)) . '</div>' )
+          : $resolve_img($term); ?></div>
         <?php endif; ?>
         <?php ob_start(); ?>
           <?php if ($show_name): ?>
           <h3 class="mfc-card__name">
-            <?php $link = get_term_link($term); $has_link = $link && !is_wp_error($link); ?>
+            <?php $link = $profile_url; $has_link = $link && !is_wp_error($link); ?>
             <?php if ($link_name && $has_link): ?>
-              <a href="<?php echo esc_url($link); ?>"><?php echo esc_html($term->name); ?></a>
+              <a href="<?php echo esc_url($link); ?>"><?php echo esc_html($name); ?></a>
             <?php else: ?>
-              <?php echo esc_html($term->name); ?>
+              <?php echo esc_html($name); ?>
             <?php endif; ?>
           </h3>
           <?php endif; ?>
@@ -188,7 +211,9 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
           <?php if ($show_desc):
             $desc = trim(wp_strip_all_tags($description_override)) !== ''
               ? wpautop($description_override)
-              : term_description((int) $term->term_id, $tax);
+              : ($identity_source
+                ? wpautop(esc_html($snapshot['profile']['biography'] ?? $snapshot['profile']['introduction'] ?? ''))
+                : term_description((int) $term->term_id, $tax));
             if (!empty($desc)): ?>
               <div class="mfc-card__desc"><?php echo wp_kses_post($desc); ?></div>
             <?php endif; ?>
@@ -197,8 +222,8 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
             $author_taxonomies = function_exists('modfarm_author_taxonomies')
               ? modfarm_author_taxonomies()
               : ['book-author', 'book-authors'];
-            if ($show_social && in_array($tax, $author_taxonomies, true)) {
-              $socials = modfarm_render_author_social_links($term, [
+            if ($show_social && ($identity_source || in_array($tax, $author_taxonomies, true))) {
+              $social_options = [
                 'align' => 'left',
                 'iconSize' => $social_icon_size,
                 'gap' => $social_gap,
@@ -206,7 +231,10 @@ if (!function_exists('modfarm_render_creator_credit_block')) {
                 'monotoneColor' => $social_monotone_color,
                 'openInNewTab' => $social_open_new_tab,
                 'hideIfEmpty' => true,
-              ]);
+              ];
+              $socials = $identity_source
+                ? modfarm_render_profile_social_links($snapshot['external_profiles'] ?? [], $name, $social_options)
+                : modfarm_render_author_social_links($term, $social_options);
               if ($socials !== '') {
                 echo '<div class="mfc-card__socials">' . $socials . '</div>';
               }
