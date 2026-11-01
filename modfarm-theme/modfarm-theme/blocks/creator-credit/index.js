@@ -42,6 +42,26 @@
     edit: function (props) {
       const { attributes, setAttributes } = props;
       const blockProps = useBlockProps();
+      const identitySource = attributes.source === 'identity';
+      const [identities, setIdentities] = useState([]);
+      const [identityError, setIdentityError] = useState(false);
+      useEffect(() => {
+        if (!identitySource) return;
+        let active = true;
+        setIdentityError(false);
+        wp.apiFetch({path: '/modfarm/v1/cir/entities?provider=modfarm-core'})
+          .then(rows => { if (active) setIdentities(Array.isArray(rows) ? rows : []); })
+          .catch(() => { if (active) setIdentityError(true); });
+        return () => { active = false; };
+      }, [identitySource]);
+      const identityOptions = [
+        {label: __('Site primary identity', 'modfarm'), value: ''},
+        ...identities.map(row => ({label: row.label, value: row.reference.provider_id}))
+      ];
+      if (attributes.identityId && !identityOptions.some(option => option.value === attributes.identityId)) {
+        identityOptions.push({label: __('Saved identity (unavailable)', 'modfarm'), value: attributes.identityId});
+      }
+
 
       /* ----------------------------- */
       /* Dynamic taxonomy list         */
@@ -65,7 +85,7 @@
       const [creatorSearch, setCreatorSearch] = useState('');
       const [isSearchingCreators, setIsSearchingCreators] = useState(false);
       useEffect(() => {
-        if (!attributes.taxonomy || attributes.taxonomy === '__custom__') {
+        if (identitySource || !attributes.taxonomy || attributes.taxonomy === '__custom__') {
           setAttachedTerms([]);
           return;
         }
@@ -77,7 +97,7 @@
         })
           .then(terms => setAttachedTerms(Array.isArray(terms) ? terms : []))
           .catch(() => setAttachedTerms([]));
-      }, [attributes.taxonomy]);
+      }, [attributes.taxonomy, identitySource]);
 
       /* ----------------------------- */
       /* Derived values + helpers      */
@@ -89,7 +109,7 @@
       }, [attributes.taxonomy, attributes.customTax]);
 
       useEffect(() => {
-        if (!effectiveTax) {
+        if (identitySource || !effectiveTax) {
           setCreatorTerms([]);
           return;
         }
@@ -133,7 +153,7 @@
           active = false;
           clearTimeout(timer);
         };
-      }, [effectiveTax, creatorSearch, attributes.termId]);
+      }, [effectiveTax, creatorSearch, attributes.termId, identitySource]);
 
       const clearAccent = () => setAttributes({ accentColor: '' });
       const clearText = () => setAttributes({ textColor: '' });
@@ -159,7 +179,20 @@
               value: attributes.heading || '',
               onChange: v => setAttributes({ heading: v })
             }),
-            taxOpts === null
+            el(SelectControl, {
+              label: __('Content source', 'modfarm'),
+              value: attributes.source || 'taxonomy',
+              options: [{label: __('Creator taxonomy', 'modfarm'), value: 'taxonomy'}, {label: __('Site Identity', 'modfarm'), value: 'identity'}],
+              onChange: source => setAttributes({source})
+            }),
+            identitySource && el(SelectControl, {
+              label: __('Identity', 'modfarm'),
+              value: attributes.identityId || '',
+              options: identityOptions,
+              help: identityError ? __('Site Identity could not be loaded. Check that ModFarm Core is available.', 'modfarm') : __('Choose a person or organization by name, or follow the site primary identity.', 'modfarm'),
+              onChange: identityId => setAttributes({identityId})
+            }),
+            !identitySource && (taxOpts === null
               ? el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
                   el(Spinner, {}),
                   el('span', {}, __('Loading taxonomies…', 'modfarm'))
@@ -171,16 +204,16 @@
                     ? taxOpts
                     : [{ label: __('(No book taxonomies found)', 'modfarm'), value: '' }],
                   onChange: v => setAttributes({ taxonomy: v, termId: 0 })
-                }),
+                })),
 
-            attributes.taxonomy === '__custom__' && el(TextControl, {
+            !identitySource && attributes.taxonomy === '__custom__' && el(TextControl, {
               label: __('Custom taxonomy slug', 'modfarm'),
               placeholder: 'e.g. artist',
               value: attributes.customTax || '',
               onChange: v => setAttributes({ customTax: v })
             }),
 
-            el(ComboboxControl, {
+            !identitySource && el(ComboboxControl, {
               label: __('Creator term', 'modfarm'),
               help: __('Search all creators, or use Auto on book pages.', 'modfarm'),
               value: String(parseInt(attributes.termId, 10) || 0),
@@ -193,7 +226,7 @@
               isLoading: isSearchingCreators
             }),
 
-            attachedTerms.length > 1 && parseInt(attributes.termId, 10) === 0 && el(Notice, { status: 'info', isDismissible: false },
+            !identitySource && attachedTerms.length > 1 && parseInt(attributes.termId, 10) === 0 && el(Notice, { status: 'info', isDismissible: false },
               __('Auto mode will show the first attached term. Pick a creator term above for a specific person.', 'modfarm')
             ),
 
@@ -208,7 +241,7 @@
                 'aria-label': __('Description override', 'modfarm')
               }),
               el('p', { className: 'components-base-control__help' },
-                __('Leave blank to use the saved creator biography. Changes apply only to this block. Supports paragraphs, links, bold and italic.', 'modfarm')
+                __('Leave blank to use the saved biography or public Site Identity description. Changes apply only to this block. Supports paragraphs, links, bold and italic.', 'modfarm')
               ),
               el(Button, {
                 variant: 'secondary',
@@ -217,7 +250,7 @@
               }, __('Use saved biography', 'modfarm'))
             ),
 
-            !effectiveTax && el(Notice, { status: 'warning', isDismissible: false },
+            !identitySource && !effectiveTax && el(Notice, { status: 'warning', isDismissible: false },
               __('Choose a taxonomy or enter a custom slug.', 'modfarm')
             )
           ),
@@ -235,7 +268,7 @@
               onChange: v => setAttributes({ layout: v })
             }),
             ...[
-              ['showImage', __('Show portrait', 'modfarm')],
+              ['showImage', __('Show image', 'modfarm')],
               ['showName', __('Show name', 'modfarm')],
               ['showRole', __('Show role label', 'modfarm')]
             ].map(([key, label]) => el(ToggleControl, {
@@ -259,7 +292,7 @@
               onChange: v => setAttributes({ imgSize: v })
             }),
             attributes.showName !== false && el(ToggleControl, {
-              label: __('Link name to archive', 'modfarm'),
+              label: __('Link name to profile page', 'modfarm'),
               checked: !!attributes.linkToArchive,
               onChange: v => setAttributes({ linkToArchive: !!v })
             }),
@@ -269,7 +302,7 @@
               onChange: v => setAttributes({ showDescription: !!v })
             }),
             el(ToggleControl, {
-              label: __('Show author social links', 'modfarm'),
+              label: __('Show social links', 'modfarm'),
               checked: !!attributes.showSocialLinks,
               onChange: v => setAttributes({ showSocialLinks: !!v })
             })
