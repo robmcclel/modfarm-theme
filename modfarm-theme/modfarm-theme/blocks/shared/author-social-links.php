@@ -120,6 +120,13 @@ if (!function_exists('modfarm_author_social_icon_svg')) {
 
 if (!function_exists('modfarm_render_author_social_links')) {
   function modfarm_render_author_social_links(WP_Term $term, array $attributes = []): string {
+    $socials = function_exists('modfarm_get_author_socials') ? modfarm_get_author_socials((int) $term->term_id) : [];
+    return modfarm_render_profile_social_links($socials, $term->name, $attributes);
+  }
+}
+
+if (!function_exists('modfarm_render_profile_social_links')) {
+  function modfarm_render_profile_social_links(array $socials, string $name, array $attributes = []): string {
     $a = wp_parse_args($attributes, [
       'align'         => 'left',
       'iconSize'      => 32,
@@ -130,13 +137,9 @@ if (!function_exists('modfarm_render_author_social_links')) {
       'hideIfEmpty'   => false,
     ]);
 
-    $socials = function_exists('modfarm_get_author_socials')
-      ? modfarm_get_author_socials((int) $term->term_id)
-      : [];
-
     if (empty($socials)) {
       if (current_user_can('edit_posts') && empty($a['hideIfEmpty'])) {
-        return '<div class="mfas-socials mfas-socials--empty"><em>Author Social Links:</em> No links found for ' . esc_html($term->name) . '.</div>';
+        return '<div class="mfas-socials mfas-socials--empty"><em>Author Social Links:</em> No links found for ' . esc_html($name) . '.</div>';
       }
       return '';
     }
@@ -158,7 +161,7 @@ if (!function_exists('modfarm_render_author_social_links')) {
     $target = !empty($a['openInNewTab']) ? ' target="_blank" rel="noopener noreferrer"' : '';
 
     ob_start(); ?>
-    <div class="mfas-socials mfas-socials--align-<?php echo esc_attr($align); ?> mfas-socials--<?php echo esc_attr($color_mode); ?>" style="<?php echo esc_attr(implode(';', $style_vars)); ?>" aria-label="<?php echo esc_attr(sprintf(__('%s links', 'modfarm'), $term->name)); ?>">
+    <div class="mfas-socials mfas-socials--align-<?php echo esc_attr($align); ?> mfas-socials--<?php echo esc_attr($color_mode); ?>" style="<?php echo esc_attr(implode(';', $style_vars)); ?>" aria-label="<?php echo esc_attr(sprintf(__('%s links', 'modfarm'), $name)); ?>">
       <?php foreach ($socials as $social):
         $label = trim((string) ($social['label'] ?? ''));
         $url = trim((string) ($social['url'] ?? ''));
