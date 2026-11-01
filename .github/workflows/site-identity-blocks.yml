@@ -1,0 +1,31 @@
+name: Site Identity block sources
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [codex/site-identity-block-sources]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring
+          coverage: none
+      - name: Block source checks
+        working-directory: modfarm-theme/modfarm-theme
+        run: |
+          php -l blocks/shared/author-social-links.php
+          php -l blocks/creator-credit/render.php
+          php -l blocks/author-social-links/render.php
+          node --check blocks/creator-credit/index.js
+          node --check blocks/author-social-links/index.js
+          node tests/creator-credit-editor.cjs
+          php tests/site-identity-blocks.php

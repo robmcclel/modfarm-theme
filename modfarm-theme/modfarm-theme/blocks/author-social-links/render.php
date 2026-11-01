@@ -19,6 +19,15 @@ if (!function_exists('modfarm_render_author_social_links_block')) {
       'hideIfEmpty'      => false,
     ]);
 
+    if (($attributes['source'] ?? 'author') === 'identity') {
+      $snapshot = function_exists('modfarm_get_identity_snapshot')
+        ? modfarm_get_identity_snapshot((string) ($attributes['identityId'] ?? '')) : [];
+      if (empty($snapshot['identity'])) {
+        return current_user_can('edit_posts') && empty($a['hideIfEmpty'])
+          ? '<div class="mfas-socials mfas-socials--empty">Author Social Links: Choose an available Site Identity, or configure the primary identity in Site Identity.</div>' : '';
+      }
+      return modfarm_render_profile_social_links($snapshot['external_profiles'] ?? [], $snapshot['identity']['name'], $a);
+    }
     $term = null;
     $author_id = absint($a['authorId']);
 

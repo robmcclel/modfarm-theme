@@ -25,6 +25,26 @@
     edit: function (props) {
       const { attributes, setAttributes } = props;
       const blockProps = useBlockProps();
+      const identitySource = attributes.source === 'identity';
+      const [identities, setIdentities] = useState([]);
+      const [identityError, setIdentityError] = useState(false);
+      useEffect(() => {
+        if (!identitySource) return;
+        let active = true;
+        setIdentityError(false);
+        wp.apiFetch({path: '/modfarm/v1/cir/entities?provider=modfarm-core'})
+          .then(rows => { if (active) setIdentities(Array.isArray(rows) ? rows : []); })
+          .catch(() => { if (active) setIdentityError(true); });
+        return () => { active = false; };
+      }, [identitySource]);
+      const identityOptions = [
+        {label: __('Site primary identity', 'modfarm'), value: ''},
+        ...identities.map(row => ({label: row.label, value: row.reference.provider_id}))
+      ];
+      if (attributes.identityId && !identityOptions.some(option => option.value === attributes.identityId)) {
+        identityOptions.push({label: __('Saved identity (unavailable)', 'modfarm'), value: attributes.identityId});
+      }
+
       const authorId = parseInt(attributes.authorId, 10) || 0;
 
       const [authors, setAuthors] = useState([]);
@@ -32,6 +52,7 @@
       const [isSearchingAuthors, setIsSearchingAuthors] = useState(false);
 
       useEffect(() => {
+        if (identitySource) return;
         let active = true;
         const search = authorSearch.trim();
         const searchArg = search ? `&search=${encodeURIComponent(search)}` : '';
@@ -70,7 +91,7 @@
           active = false;
           clearTimeout(timer);
         };
-      }, [authorSearch, authorId]);
+      }, [authorSearch, authorId, identitySource]);
 
       const authorOptions = [
         { label: __('Current author archive', 'modfarm'), value: '0' }
@@ -91,8 +112,21 @@
           })
         ),
         el(InspectorControls, {},
-          el(PanelBody, { title: __('Author Source', 'modfarm'), initialOpen: true },
-            el(ComboboxControl, {
+          el(PanelBody, { title: __('Source', 'modfarm'), initialOpen: true },
+            el(SelectControl, {
+              label: __('Content source', 'modfarm'),
+              value: attributes.source || 'author',
+              options: [{label: __('Author taxonomy', 'modfarm'), value: 'author'}, {label: __('Site Identity', 'modfarm'), value: 'identity'}],
+              onChange: source => setAttributes({source})
+            }),
+            identitySource && el(SelectControl, {
+              label: __('Identity', 'modfarm'),
+              value: attributes.identityId || '',
+              options: identityOptions,
+              help: identityError ? __('Site Identity could not be loaded. Check that ModFarm Core is available.', 'modfarm') : __('Choose a person or organization by name, or follow the site primary identity.', 'modfarm'),
+              onChange: identityId => setAttributes({identityId})
+            }),
+            !identitySource && el(ComboboxControl, {
               label: __('Author', 'modfarm'),
               help: __('Search all authors, or use the current author archive.', 'modfarm'),
               value: String(authorId),
@@ -101,7 +135,7 @@
               onChange: value => setAttributes({ authorId: parseInt(value, 10) || 0 }),
               isLoading: isSearchingAuthors
             }),
-            el(ToggleControl, {
+            !identitySource && el(ToggleControl, {
               label: __('Use current author archive when no author is selected', 'modfarm'),
               checked: attributes.useArchiveAuthor !== false,
               onChange: (value) => setAttributes({ useArchiveAuthor: !!value })
