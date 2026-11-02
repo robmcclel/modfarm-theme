@@ -41,3 +41,4 @@ jobs:
           NODE_PATH=/tmp/settings-browser/node_modules node tests/settings-review-browser.cjs
           NODE_PATH=/tmp/settings-browser/node_modules node tests/settings-content-preview-browser.cjs
           NODE_PATH=/tmp/settings-browser/node_modules node tests/layout-widths-browser.cjs
+          NODE_PATH=/tmp/settings-browser/node_modules node tests/settings-visualizer-height.cjs

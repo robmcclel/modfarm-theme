@@ -51,6 +51,9 @@
   toolbar.append(studio.querySelector('.mf-studio-devices'), studio.querySelector('header'));
   studio.append(canvas, toolbar, sizeNote, studio.querySelector('.mf-studio-note'));
   if (layoutPreview) {
+    // Status belongs outside the fixed device viewport, not in its sizing grid.
+    const layoutFeedback = layoutPreview.querySelector('#mf-ppb-visualizer-feedback');
+    if (layoutFeedback) studio.appendChild(layoutFeedback);
     const layoutDevices = layoutPreview.querySelector('.mf-ppb-visualizer__viewports');
     const layoutFrame = layoutPreview.querySelector('.mf-ppb-visualizer__frame-wrap');
     if (layoutDevices && layoutFrame) {
