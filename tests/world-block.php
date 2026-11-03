@@ -21,7 +21,7 @@ function wp_unslash( $v ) { return $v; }
 function selected( $a, $b, $echo = true ) { return (string) $a === (string) $b ? ' selected' : ''; }
 function wp_unique_id( $prefix ) { static $id = 0; return $prefix . ++$id; }
 function get_block_wrapper_attributes( $v ) { return 'class="' . esc_attr( $v['class'] ) . '" style="' . esc_attr( $v['style'] ) . '"'; }
-function wp_get_attachment_image( $id, $size, $icon, $attrs ) { return '<img src="https://dev.test/portrait.jpg" alt="' . esc_attr( $attrs['alt'] ) . '">'; }
+function wp_get_attachment_image( $id, $size, $icon, $attrs ) { return '<img class="' . esc_attr( $attrs['class'] ) . '" src="https://dev.test/portrait.jpg" alt="' . esc_attr( $attrs['alt'] ) . '">'; }
 function get_posts( $args ) { check( 'publish' === $args['post_status'] && 3 === $args['tax_query'][0]['terms'], 'Book query escaped selected Series/published status' ); return array( (object) array( 'ID' => 10, 'post_title' => 'The Last Stand' ) ); }
 function get_post_meta( $id, $key, $single ) { return '1'; }
 function get_the_title( $post ) { return $post->post_title; }
