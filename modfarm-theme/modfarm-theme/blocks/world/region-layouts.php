@@ -13,7 +13,7 @@ function modfarm_world_region_style( $region ) {
     $ratios = array( 'original' => 'auto', 'square' => '1 / 1', 'portrait' => '3 / 4', 'landscape' => '16 / 9' );
     $style = '--mfw-region-columns:' . (int) $region['columns'] . ';--mfw-image-ratio:' . ( 'portraits' === $region['layout'] && 'original' === $region['image_ratio'] ? '1' : $ratios[$region['image_ratio']] ) . ';--mfw-image-fit:' . $region['image_fit'] . ';';
     $shape = $region['image_shape'] ?? 'layout';
-    if ( 'circle' === $shape ) $style .= '--mfw-image-ratio:1;--mfw-image-radius:50%;--mfw-image-width:220px;';
+    if ( 'circle' === $shape || ( 'layout' === $shape && 'portraits' === $region['layout'] ) ) $style .= '--mfw-image-ratio:1;--mfw-image-fit:cover;--mfw-image-radius:50%;--mfw-image-width:220px;';
     elseif ( 'rounded' === $shape ) $style .= '--mfw-image-radius:18px;';
     elseif ( 'square' === $shape ) $style .= '--mfw-image-radius:0;';
     if ( 'inherit' !== ( $region['text_align'] ?? 'inherit' ) ) $style .= '--mfw-text-align:' . $region['text_align'] . ';';

@@ -29,8 +29,8 @@ const {chromium} = require('playwright');
     }
     const feature = page.locator('.mfw-region--overview');
     if (!(await feature.isVisible())) throw new Error('Overview feature is missing');
-    const shape = await feature.locator('img').evaluate(image => ({radius: getComputedStyle(image).borderRadius, ratio: getComputedStyle(image).aspectRatio}));
-    if (shape.radius !== '50%' || !shape.ratio.startsWith('1')) throw new Error('Overview circle not rendered: ' + JSON.stringify(shape));
+    const shape = await feature.locator('img').evaluate(image => ({radius: getComputedStyle(image).borderRadius, ratio: getComputedStyle(image).aspectRatio, fit: getComputedStyle(image).objectFit}));
+    if (shape.radius !== '50%' || !shape.ratio.startsWith('1') || shape.fit !== 'cover') throw new Error('Overview circle not rendered: ' + JSON.stringify(shape));
     // Editor canvases receive the same stylesheet via metadata; verify layout in a frame.
     await page.evaluate(html => { const frame = document.createElement('iframe'); frame.id = 'editor-canvas'; frame.style.width = '1100px'; frame.srcdoc = html; document.body.append(frame); }, html);
     const frame = page.frameLocator('#editor-canvas');
