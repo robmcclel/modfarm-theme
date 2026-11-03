@@ -118,6 +118,6 @@ $metadata = json_decode( file_get_contents( __DIR__ . '/../modfarm-theme/modfarm
 check( $metadata['style'] === $metadata['editorStyle'], 'Editor and reader styles differ' );
 if ( in_array( '--regions-fixture', $argv, true ) ) {
     $css = file_get_contents( __DIR__ . '/../modfarm-theme/modfarm-theme/blocks/world/style.css' );
-    echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:18px/1.65 Arial;background:#10181c}main{max-width:1280px;margin:auto}h1{color:white;padding:24px}' . $css . '</style></head><body><main><h1>World Regions · layout review</h1>' . $region_html . $tab_html . $overview_html . '</main></body></html>';
+    echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:18px/1.65 Arial;background:#10181c}main{max-width:1280px;margin:auto}.alignfull{width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);box-sizing:border-box}h1{color:white;padding:24px}' . $css . '</style></head><body><main><h1>World Regions · layout review</h1>' . $region_html . $tab_html . $overview_html . '</main></body></html>';
 } elseif ( in_array( '--fixture', $argv, true ) ) echo $legacy_fixture;
 else echo "World block renderer and Regions: passed\n";
