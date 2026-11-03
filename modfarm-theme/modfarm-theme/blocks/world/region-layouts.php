@@ -11,13 +11,27 @@ function modfarm_world_region_entries( $region, $public ) {
 
 function modfarm_world_region_style( $region ) {
     $ratios = array( 'original' => 'auto', 'square' => '1 / 1', 'portrait' => '3 / 4', 'landscape' => '16 / 9' );
-    $style = '--mfw-region-columns:' . (int) $region['columns'] . ';--mfw-image-ratio:' . $ratios[$region['image_ratio']] . ';--mfw-image-fit:' . $region['image_fit'] . ';';
+    $style = '--mfw-region-columns:' . (int) $region['columns'] . ';--mfw-image-ratio:' . ( 'portraits' === $region['layout'] && 'original' === $region['image_ratio'] ? '1' : $ratios[$region['image_ratio']] ) . ';--mfw-image-fit:' . $region['image_fit'] . ';';
+    $shape = $region['image_shape'] ?? 'layout';
+    if ( 'circle' === $shape ) $style .= '--mfw-image-ratio:1;--mfw-image-radius:50%;--mfw-image-width:220px;';
+    elseif ( 'rounded' === $shape ) $style .= '--mfw-image-radius:18px;';
+    elseif ( 'square' === $shape ) $style .= '--mfw-image-radius:0;';
+    if ( 'inherit' !== ( $region['text_align'] ?? 'inherit' ) ) $style .= '--mfw-text-align:' . $region['text_align'] . ';';
+    $align = $region['image_align'] ?? 'inherit';
+    if ( 'inherit' !== $align ) {
+        $style .= '--mfw-image-start:' . ( 'left' === $align ? '0' : 'auto' ) . ';--mfw-image-end:' . ( 'right' === $align ? '0' : 'auto' ) . ';--mfw-image-width:220px;';
+    }
     foreach ( $region['colors'] as $key => $color ) if ( $color ) $style .= '--mfw-' . $key . ':' . $color . ';';
     return $style;
 }
 
 function modfarm_world_region_content( $region, $public, $presentation, $term ) {
-    if ( 'overview' === $region['source'] ) return modfarm_world_section_content( 'overview', $public, $presentation, $term );
+    if ( 'overview' === $region['source'] ) {
+        if ( ! trim( wp_strip_all_tags( $public['overview'] ) ) ) return '';
+        $presentation['description'] = 'full';
+        $entry = array( 'name' => $region['show_heading'] ? $region['title'] : '', 'description' => $public['overview'], 'image_id' => $region['image_id'] ?? 0 );
+        return '<div class="mfw-entries">' . modfarm_world_entry_html( $entry, $presentation, 'right' === $region['image_side'] ? 'mfw-image-right' : '', 'full' ) . '</div>';
+    }
     if ( 'books' === $region['source'] ) {
         $presentation['books'] = 'included';
         return modfarm_world_section_content( 'books', $public, $presentation, $term );
@@ -52,7 +66,7 @@ function modfarm_world_build_regions( $presentation, $public, $term, $attributes
         if ( ! $region['enabled'] || ( 'books' === $region['source'] && 'separate' === ( $attributes['books'] ?? '' ) ) ) continue;
         $html = modfarm_world_region_content( $region, $public, $presentation, $term );
         if ( ! trim( $html ) ) continue;
-        $sections[] = array( 'key' => $region['id'], 'label' => $region['title'], 'html' => $html, 'show_heading' => $region['show_heading'], 'class' => 'mfw-region mfw-region--' . $region['layout'], 'style' => modfarm_world_region_style( $region ) );
+        $sections[] = array( 'key' => $region['id'], 'label' => $region['title'], 'html' => $html, 'show_heading' => $region['show_heading'] && 'overview' !== $region['source'], 'class' => 'mfw-region mfw-region--' . $region['layout'] . ( 'overview' === $region['source'] ? ' mfw-region--overview' : '' ), 'style' => modfarm_world_region_style( $region ) );
     }
     return $sections;
 }

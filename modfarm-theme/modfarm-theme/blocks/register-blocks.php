@@ -91,6 +91,8 @@ add_action('init', function () {
         if (file_exists($editor_script)) {
             $script_deps = [ 'wp-blocks', 'wp-element', 'wp-components', 'wp-i18n', 'wp-block-editor', 'wp-data', 'wp-api-fetch', 'wp-server-side-render' ];
             if ($slug === 'world') {
+                // One versioned stylesheet for frontend and both editor canvas modes.
+                wp_register_style('modfarm-world-style', get_template_directory_uri() . '/blocks/world/style.css', [], filemtime($block_dir . '/style.css'));
                 $world_view = $block_dir . '/view.js';
                 wp_register_script('modfarm-world-preview', get_template_directory_uri() . '/blocks/world/view.js', [], filemtime($world_view), true);
                 $script_deps[] = 'modfarm-world-preview';

@@ -27,5 +27,15 @@ const {chromium} = require('playwright');
         metrics.push(result);
         if ([390,1440].includes(width)) await page.screenshot({path: `/tmp/world-regions-${width}.png`, fullPage: true});
     }
+    const feature = page.locator('.mfw-region--overview');
+    if (!(await feature.isVisible())) throw new Error('Overview feature is missing');
+    const shape = await feature.locator('img').evaluate(image => ({radius: getComputedStyle(image).borderRadius, ratio: getComputedStyle(image).aspectRatio}));
+    if (shape.radius !== '50%' || !shape.ratio.startsWith('1')) throw new Error('Overview circle not rendered: ' + JSON.stringify(shape));
+    // Editor canvases receive the same stylesheet via metadata; verify layout in a frame.
+    await page.evaluate(html => { const frame = document.createElement('iframe'); frame.id = 'editor-canvas'; frame.style.width = '1100px'; frame.srcdoc = html; document.body.append(frame); }, html);
+    const frame = page.frameLocator('#editor-canvas');
+    const image = frame.locator('.mfw-region--illustrated .mfw-entry-image').first();
+    await image.waitFor();
+    if (await image.evaluate(image => getComputedStyle(image).display) !== 'block') throw new Error('Editor frame fell back to compact cards');
     console.log(JSON.stringify(metrics)); await browser.close(); console.log('World Region layouts in Chromium: passed');
 })().catch(error => { console.error(error); process.exit(1); });
