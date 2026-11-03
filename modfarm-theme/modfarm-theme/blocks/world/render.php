@@ -1,6 +1,7 @@
 <?php
 /** World presentation consumes the Core public projection, never authoring notes. */
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/region-layouts.php';
 
 function modfarm_world_resolve_series( $attributes, $block = null ) {
     if ( 'manual' === ( $attributes['placement'] ?? 'auto' ) ) {
@@ -64,11 +65,7 @@ function modfarm_render_world_block( $attributes, $content = '', $block = null )
     $query_key = 'mf_world_through_' . $term->term_id;
     $through = 'reader' === $p['spoilers'] && isset( $_GET[$query_key] ) && is_scalar( $_GET[$query_key] ) ? absint( $_GET[$query_key] ) : 0;
     $public = modfarm_world_bible_public( $term->term_id, $through );
-    $sections = array();
-    foreach ( $p['sections'] as $section ) if ( $section['enabled'] ) {
-        $html = modfarm_world_section_content( $section['key'], $public, $p, $term );
-        if ( '' !== trim( $html ) ) $sections[] = array( 'key' => $section['key'], 'label' => $section['label'], 'html' => $html );
-    }
+    $sections = modfarm_world_build_regions( $p, $public, $term, $attributes );
     // A selector must remain reachable when every element is spoiler-bound.
     $has_reader_content = false;
     if ( 'reader' === $p['spoilers'] && ! $sections ) {
@@ -78,14 +75,15 @@ function modfarm_render_world_block( $attributes, $content = '', $block = null )
             if ( is_numeric( $position ) && (float) $position > $last_position ) { $last_position = (float) $position; $last_book = $book->ID; }
         }
         $eligible = modfarm_world_bible_public( $term->term_id, $last_book );
-        foreach ( $p['sections'] as $section ) if ( $section['enabled'] && 'books' !== $section['key'] && modfarm_world_section_content( $section['key'], $eligible, $p, $term ) ) { $has_reader_content = true; break; }
+        $has_reader_content = (bool) modfarm_world_build_regions( $p, $eligible, $term, $attributes );
     }
     if ( ! $sections && ! $has_reader_content ) return '';
     $id = wp_unique_id( 'mfw-' );
     $style = '';
     foreach ( $p['colors'] as $key => $color ) if ( $color ) $style .= '--mfw-' . str_replace( '_', '-', $key ) . ':' . $color . ';';
     $wrapper = get_block_wrapper_attributes( array( 'class' => 'mfw mfw--' . $p['display'], 'style' => $style ) );
-    $html = '<div ' . $wrapper . ' data-world-tabs data-world-default="' . esc_attr( $p['default_section'] ) . '">';
+    $initial = function_exists( 'modfarm_world_regions' ) ? ( ( $p['default_region'] ?? '' ) ?: 'region-' . $p['default_section'] ) : $p['default_section'];
+    $html = '<div ' . $wrapper . ' data-world-tabs data-world-default="' . esc_attr( $initial ) . '">';
     if ( 'reader' === $p['spoilers'] ) {
         $html .= '<form class="mfw-spoilers" method="get"><label for="' . esc_attr( $id . '-spoilers' ) . '">I have finished</label><select id="' . esc_attr( $id . '-spoilers' ) . '" name="' . esc_attr( $query_key ) . '"><option value="0">No books yet · spoiler-free</option>';
         foreach ( modfarm_world_reader_books( $term->term_id ) as $book ) {
@@ -105,6 +103,6 @@ function modfarm_render_world_block( $attributes, $content = '', $block = null )
         foreach ( $sections as $section ) $html .= '<button type="button" id="' . esc_attr( $id . '-tab-' . $section['key'] ) . '" data-world-tab="' . esc_attr( $section['key'] ) . '" aria-controls="' . esc_attr( $id . '-' . $section['key'] ) . '">' . esc_html( $section['label'] ) . '</button>';
         $html .= '</div>';
     }
-    foreach ( $sections as $section ) $html .= '<section class="mfw-section" id="' . esc_attr( $id . '-' . $section['key'] ) . '" data-world-panel="' . esc_attr( $section['key'] ) . '"><h2>' . esc_html( $section['label'] ) . '</h2>' . $section['html'] . '</section>';
+    foreach ( $sections as $section ) $html .= '<section class="mfw-section ' . esc_attr( $section['class'] ) . '" style="' . esc_attr( $section['style'] ) . '" id="' . esc_attr( $id . '-' . $section['key'] ) . '" data-world-panel="' . esc_attr( $section['key'] ) . '" aria-label="' . esc_attr( $section['label'] ) . '">' . ( $section['show_heading'] ? '<h2>' . esc_html( $section['label'] ) . '</h2>' : '' ) . $section['html'] . '</section>';
     return $html . '</div>';
 }

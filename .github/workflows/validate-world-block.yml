@@ -17,8 +17,10 @@ jobs:
           php -l modfarm-theme/modfarm-theme/blocks/register-blocks.php
           php -l modfarm-theme/modfarm-theme/blocks/archive-book-list/render.php
           php -l modfarm-theme/modfarm-theme/blocks/world/render.php
+          php -l modfarm-theme/modfarm-theme/blocks/world/region-layouts.php
           php tests/world-block.php
           php tests/world-block.php --fixture > /tmp/world-block.html
+          php tests/world-block.php --regions-fixture > /tmp/world-regions.html
       - name: PPB editor JavaScript
         run: |
           node --check modfarm-theme/modfarm-theme/assets/js/ppb-zones-panel.js
@@ -27,5 +29,14 @@ jobs:
         run: |
           node --check modfarm-theme/modfarm-theme/blocks/world/index.js
           node --check modfarm-theme/modfarm-theme/blocks/world/view.js
-          npm install --prefix /tmp/modfarm-dom-check --no-save --ignore-scripts jsdom@26.1.0
+          npm install --prefix /tmp/modfarm-dom-check --no-save --ignore-scripts jsdom@26.1.0 playwright@1.56.1
           NODE_PATH=/tmp/modfarm-dom-check/node_modules node tests/world-tabs.cjs /tmp/world-block.html
+      - name: World Region browser layouts
+        run: |
+          export CHROME_PATH="$(command -v google-chrome)"
+          NODE_PATH=/tmp/modfarm-dom-check/node_modules node tests/world-regions-browser.cjs /tmp/world-regions.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-region-layout-review
+          path: /tmp/world-regions-*.png
