@@ -17,9 +17,10 @@ const {chromium} = require('playwright');
             const features = stacked.querySelectorAll('.mfw-region--alternating .mfw-entry');
             const buttons = tabs.querySelectorAll('[role=tab]');
             const invalidImages = [...document.querySelectorAll('.mfw-entry-image')].some(image => getComputedStyle(image).objectFit === 'fill');
-            return {width: innerWidth, scrollWidth: document.documentElement.scrollWidth, columns: getComputedStyle(columns).gridTemplateColumns.split(' ').length, alternatingRight: features[1].classList.contains('mfw-image-right'), tabs: buttons.length, initial: tabs.querySelector('[aria-selected=true]').dataset.worldTab, invalidImages};
+            return {width: innerWidth, scrollWidth: document.documentElement.scrollWidth, columns: getComputedStyle(columns).gridTemplateColumns.split(' ').length, alternatingRight: features[1].classList.contains('mfw-image-right'), bookColumns: getComputedStyle(stacked.querySelector('.mfw-region--books .mfb-grid')).getPropertyValue('--mfb-cols').trim(), bookHeading: getComputedStyle(stacked.querySelector('.mfw-region--books h2')).textAlign, tabs: buttons.length, initial: tabs.querySelector('[aria-selected=true]').dataset.worldTab, invalidImages};
         });
         if (result.scrollWidth > width + 1 || result.invalidImages || result.tabs !== 3 || result.initial !== 'region-features' || !result.alternatingRight) throw new Error(JSON.stringify(result));
+        if (result.bookHeading !== 'center' || (width > 800 && result.bookColumns !== '3') || (width <= 800 && result.bookColumns !== '2')) throw new Error('Books Region controls/responsiveness: ' + JSON.stringify(result));
         if (width === 1440 && result.columns !== 3) throw new Error('Desktop illustrated columns not three across');
         if (width <= 390 && result.columns !== 1) throw new Error('Phone columns did not stack');
         await page.locator('.mfw--tabs [role=tab]').first().click();
@@ -33,6 +34,12 @@ const {chromium} = require('playwright');
         return {outer: world.getBoundingClientRect().width, background: box('.mfw-region--illustrated'), viewport: innerWidth, main: box('.mfw-region--illustrated .mfw-region-inner'), wide: box('.mfw-region--alternating .mfw-region-inner'), full: box('[data-world-panel=region-books] .mfw-region-inner')};
     });
     if (Math.abs(widths.outer - widths.viewport) > 1 || Math.abs(widths.main - 980) > 1 || Math.abs(widths.wide - 1180) > 1 || Math.abs(widths.full - widths.outer) > 1 || Math.abs(widths.background - widths.outer) > 1) throw new Error('Region width/background mismatch: ' + JSON.stringify(widths));
+    const books = page.locator('.mfw--sections .mfw-region--books').first();
+    for (const count of [3,4]) {
+        await books.evaluate((region, count) => region.style.setProperty('--mfw-book-columns', count), String(count));
+        const across = await books.locator('.mfb-grid').evaluate(grid => { const items = [...grid.querySelectorAll('.mfb-item')].map(item => item.getBoundingClientRect()); return items.filter(item => Math.abs(item.top - items[0].top) < 2).length; });
+        if (across !== count) throw new Error('Books per row: expected ' + count + ', got ' + across);
+    }
     const feature = page.locator('.mfw-region--overview');
     if (!(await feature.isVisible())) throw new Error('Overview feature is missing');
     const shape = await feature.locator('img').evaluate(image => ({radius: getComputedStyle(image).borderRadius, ratio: getComputedStyle(image).aspectRatio, fit: getComputedStyle(image).objectFit}));

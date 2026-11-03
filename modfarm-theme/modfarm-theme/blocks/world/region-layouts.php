@@ -15,6 +15,8 @@ function modfarm_world_region_style( $region ) {
     $widths = array( 'main' => 'var(--mf-layout-content-width,var(--mf-content-width,var(--wp--style--global--content-size,1100px)))', 'wide' => 'var(--mf-layout-wide-width,var(--mf-wide-width,var(--wp--style--global--wide-size,1300px)))', 'full' => 'none' );
     $style .= '--mfw-region-width:' . ( $widths[$region['width'] ?? 'main'] ?? $widths['main'] ) . ';';
     if ( 'full' === ( $region['width'] ?? 'main' ) ) $style .= '--mfw-region-gutter:0px;';
+    if ( 'inherit' !== ( $region['heading_align'] ?? 'inherit' ) ) $style .= '--mfw-heading-align:' . $region['heading_align'] . ';';
+    if ( 'books' === $region['source'] ) $style .= '--mfw-book-columns:' . (int) ( $region['book_columns'] ?? 4 ) . ';';
     $shape = $region['image_shape'] ?? 'layout';
     if ( 'circle' === $shape || ( 'layout' === $shape && 'portraits' === $region['layout'] ) ) $style .= '--mfw-image-ratio:1;--mfw-image-fit:cover;--mfw-image-radius:50%;--mfw-image-width:220px;';
     elseif ( 'rounded' === $shape ) $style .= '--mfw-image-radius:18px;';
@@ -70,7 +72,7 @@ function modfarm_world_build_regions( $presentation, $public, $term, $attributes
         if ( ! $region['enabled'] || ( 'books' === $region['source'] && 'separate' === ( $attributes['books'] ?? '' ) ) ) continue;
         $html = modfarm_world_region_content( $region, $public, $presentation, $term );
         if ( ! trim( $html ) ) continue;
-        $sections[] = array( 'key' => $region['id'], 'label' => $region['title'], 'html' => $html, 'show_heading' => $region['show_heading'] && 'overview' !== $region['source'], 'show_titles' => in_array( $region['source'], array( 'overview', 'books' ), true ) || ( $region['show_titles'] ?? true ), 'class' => 'mfw-region mfw-region--' . $region['layout'] . ( 'overview' === $region['source'] ? ' mfw-region--overview' : '' ), 'style' => modfarm_world_region_style( $region ) );
+        $sections[] = array( 'key' => $region['id'], 'label' => $region['title'], 'html' => $html, 'show_heading' => $region['show_heading'] && 'overview' !== $region['source'], 'show_titles' => in_array( $region['source'], array( 'overview', 'books' ), true ) || ( $region['show_titles'] ?? true ), 'class' => 'mfw-region mfw-region--' . $region['layout'] . ( in_array( $region['source'], array( 'overview', 'books' ), true ) ? ' mfw-region--' . $region['source'] : '' ), 'style' => modfarm_world_region_style( $region ) );
     }
     return $sections;
 }
