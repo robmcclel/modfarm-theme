@@ -27,6 +27,12 @@ const {chromium} = require('playwright');
         metrics.push(result);
         if ([390,1440].includes(width)) await page.screenshot({path: `/tmp/world-regions-${width}.png`, fullPage: true});
     }
+    await page.evaluate(() => { document.documentElement.style.setProperty('--mf-content-width', '980px'); document.documentElement.style.setProperty('--mf-wide-width', '1180px'); });
+    const widths = await page.locator('.mfw--sections').first().evaluate(world => {
+        const box = selector => world.querySelector(selector).getBoundingClientRect().width;
+        return {outer: world.getBoundingClientRect().width, background: box('.mfw-region--illustrated'), main: box('.mfw-region--illustrated .mfw-region-inner'), wide: box('.mfw-region--alternating .mfw-region-inner'), full: box('[data-world-panel=region-books] .mfw-region-inner')};
+    });
+    if (Math.abs(widths.main - 980) > 1 || Math.abs(widths.wide - 1180) > 1 || Math.abs(widths.full - widths.outer) > 1 || Math.abs(widths.background - widths.outer) > 1) throw new Error('Region width/background mismatch: ' + JSON.stringify(widths));
     const feature = page.locator('.mfw-region--overview');
     if (!(await feature.isVisible())) throw new Error('Overview feature is missing');
     const shape = await feature.locator('img').evaluate(image => ({radius: getComputedStyle(image).borderRadius, ratio: getComputedStyle(image).aspectRatio, fit: getComputedStyle(image).objectFit}));

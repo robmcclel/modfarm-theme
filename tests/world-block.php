@@ -75,12 +75,14 @@ $draft = $entry; $draft['id'] = 'wb-draft0000'; $draft['name'] = 'Unfinished sec
 $spoiler = $entry; $spoiler['id'] = 'wb-spoiler00'; $spoiler['name'] = 'Later revelation'; $spoiler['spoiler_book_id'] = 10;
 $GLOBALS['world']['elements'] = array( $earth, $ships, $divers, $private, $draft, $spoiler );
 $intro = modfarm_world_region_default( 'region-intro' ); $intro['title'] = 'Explore the world'; $intro['element_ids'] = array( $ships['id'], $earth['id'], $divers['id'], $private['id'], $draft['id'], $spoiler['id'] ); $intro['colors']['background'] = '#142128'; $intro['colors']['text'] = '#ffffff';
-$features = $intro; $features['id'] = 'region-features'; $features['title'] = 'Life above the storms'; $features['layout'] = 'alternating'; $features['element_ids'] = array( $earth['id'], $ships['id'] );
+$features = $intro; $features['id'] = 'region-features'; $features['title'] = 'Life above the storms'; $features['layout'] = 'alternating'; $features['width'] = 'wide'; $features['element_ids'] = array( $earth['id'], $ships['id'] );
 $empty = $intro; $empty['id'] = 'region-empty'; $empty['element_ids'] = array( $private['id'], $draft['id'] );
-$books = modfarm_world_region_default( 'region-books' ); $books['title'] = 'Books'; $books['source'] = 'books';
+$books = modfarm_world_region_default( 'region-books' ); $books['title'] = 'Books'; $books['source'] = 'books'; $books['width'] = 'full';
 $GLOBALS['world']['presentation']['regions'] = array( $intro, $features, $empty, $books );
 $GLOBALS['world']['presentation']['default_region'] = 'region-features';
 $region_html = modfarm_render_world_block( $manual + array( 'display' => 'sections' ) );
+check( str_contains( $region_html, 'mfw-region-inner' ) && str_contains( $region_html, '--mf-content-width' ) && str_contains( $region_html, '--mf-wide-width' ) && str_contains( $region_html, '--mfw-region-width:none' ), 'Group-like Region widths missing' );
+check( str_contains( $region_html, 'alignfull' ), 'World no longer defaults to full width' );
 check( str_contains( $region_html, 'mfw-region--illustrated' ) && str_contains( $region_html, 'mfw-region--alternating' ), 'Region layouts did not render' );
 check( strpos( $region_html, 'The Airships' ) < strpos( $region_html, 'A Postapocalyptic Earth' ), 'Mixed-type selected entry order changed' );
 check( substr_count( $region_html, 'A Postapocalyptic Earth' ) >= 2, 'Reusing content across Regions failed' );
@@ -99,6 +101,7 @@ $overview = array_replace( $overview, array( 'source' => 'overview', 'title' => 
 $title_region = $intro; $title_region['show_titles'] = false; $title_region['show_heading'] = false;
 $GLOBALS['world']['presentation']['regions'] = array( $title_region );
 $titleless = modfarm_render_world_block( $manual );
+check( str_contains( $titleless, 'data-world-entry-titles="hidden"' ), 'Region title visibility did not reach the frontend' );
 check( ! str_contains( $titleless, '<h2>' ) && ! str_contains( $titleless, '<h3>' ) && str_contains( $titleless, 'Rich character context' ) && str_contains( $titleless, 'alt="The Airships"' ), 'Hidden titles lost content or image descriptions' );
 check( str_contains( $titleless, '>Explore the world</button>' ), 'Hiding headings removed the tab label' );
 unset( $GLOBALS['world']['presentation']['regions'][0]['show_titles'] );
