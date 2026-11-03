@@ -21,7 +21,7 @@ function wp_unslash( $v ) { return $v; }
 function selected( $a, $b, $echo = true ) { return (string) $a === (string) $b ? ' selected' : ''; }
 function wp_unique_id( $prefix ) { static $id = 0; return $prefix . ++$id; }
 function get_block_wrapper_attributes( $v ) { return 'class="' . esc_attr( $v['class'] ) . '" style="' . esc_attr( $v['style'] ) . '"'; }
-function wp_get_attachment_image( $id, $size, $icon, $attrs ) { return '<img src="https://dev.test/portrait.jpg" alt="' . esc_attr( $attrs['alt'] ) . '">'; }
+function wp_get_attachment_image( $id, $size, $icon, $attrs ) { return '<img class="' . esc_attr( $attrs['class'] ) . '" src="https://dev.test/portrait.jpg" alt="' . esc_attr( $attrs['alt'] ) . '">'; }
 function get_posts( $args ) { check( 'publish' === $args['post_status'] && 3 === $args['tax_query'][0]['terms'], 'Book query escaped selected Series/published status' ); return array( (object) array( 'ID' => 10, 'post_title' => 'The Last Stand' ) ); }
 function get_post_meta( $id, $key, $single ) { return '1'; }
 function get_the_title( $post ) { return $post->post_title; }
@@ -61,6 +61,41 @@ $GLOBALS['world']['elements'][0]['spoiler_book_id'] = 10; $GLOBALS['world']['ove
 $_GET = array(); $locked = modfarm_render_world_block( $manual ); check( str_contains( $locked, 'I have finished' ) && ! str_contains( $locked, 'Rich character context' ), 'Locked content leaked or selector was unreachable' );
 $_GET = array( 'mf_world_through_3' => '10' ); check( str_contains( modfarm_render_world_block( $manual ), 'Rich character context' ), 'Explicit spoiler choice did not reveal eligible content' );
 $_GET = array(); $GLOBALS['world']['elements'][0]['spoiler_book_id'] = 0; $GLOBALS['world']['overview'] = '<strong>Fractured America</strong>'; $GLOBALS['world']['presentation']['spoilers'] = 'free';
-if ( in_array( '--fixture', $argv, true ) ) {
-    echo '<!doctype html><html><body>' . modfarm_render_world_block( $manual ) . modfarm_render_world_block( $manual ) . modfarm_render_world_block( $manual + array( 'display' => 'sections' ) ) . '</body></html>';
-} else echo "World block renderer: passed\n";
+$legacy_fixture = '<!doctype html><html><body>' . modfarm_render_world_block( $manual ) . modfarm_render_world_block( $manual ) . modfarm_render_world_block( $manual + array( 'display' => 'sections' ) ) . '</body></html>';
+// Region contract stubs exercise the real Theme renderer independently of Core.
+if ( true ) {
+    function modfarm_world_regions( $p ) { return $p['regions'] ?? array(); }
+    function modfarm_world_region_default( $id ) { return array( 'id' => $id, 'title' => 'Region', 'source' => 'elements', 'type' => 'character', 'element_ids' => array(), 'layout' => 'illustrated', 'columns' => 3, 'image_ratio' => 'original', 'image_fit' => 'contain', 'image_side' => 'left', 'description' => 'inherit', 'show_heading' => true, 'enabled' => true, 'colors' => array( 'background' => '', 'text' => '', 'accent' => '' ) ); }
+}
+$earth = $entry; $earth['id'] = 'wb-earth0000'; $earth['type'] = 'location'; $earth['name'] = 'A Postapocalyptic Earth';
+$ships = $entry; $ships['id'] = 'wb-ships0000'; $ships['type'] = 'technology'; $ships['name'] = 'The Airships';
+$divers = $entry; $divers['id'] = 'wb-divers000'; $divers['name'] = 'The Hell Divers';
+$private = $entry; $private['id'] = 'wb-private00'; $private['name'] = 'Hidden secret'; $private['visibility'] = 'internal';
+$draft = $entry; $draft['id'] = 'wb-draft0000'; $draft['name'] = 'Unfinished secret'; $draft['status'] = 'draft';
+$spoiler = $entry; $spoiler['id'] = 'wb-spoiler00'; $spoiler['name'] = 'Later revelation'; $spoiler['spoiler_book_id'] = 10;
+$GLOBALS['world']['elements'] = array( $earth, $ships, $divers, $private, $draft, $spoiler );
+$intro = modfarm_world_region_default( 'region-intro' ); $intro['title'] = 'Explore the world'; $intro['element_ids'] = array( $ships['id'], $earth['id'], $divers['id'], $private['id'], $draft['id'], $spoiler['id'] ); $intro['colors']['background'] = '#142128'; $intro['colors']['text'] = '#ffffff';
+$features = $intro; $features['id'] = 'region-features'; $features['title'] = 'Life above the storms'; $features['layout'] = 'alternating'; $features['element_ids'] = array( $earth['id'], $ships['id'] );
+$empty = $intro; $empty['id'] = 'region-empty'; $empty['element_ids'] = array( $private['id'], $draft['id'] );
+$books = modfarm_world_region_default( 'region-books' ); $books['title'] = 'Books'; $books['source'] = 'books';
+$GLOBALS['world']['presentation']['regions'] = array( $intro, $features, $empty, $books );
+$GLOBALS['world']['presentation']['default_region'] = 'region-features';
+$region_html = modfarm_render_world_block( $manual + array( 'display' => 'sections' ) );
+check( str_contains( $region_html, 'mfw-region--illustrated' ) && str_contains( $region_html, 'mfw-region--alternating' ), 'Region layouts did not render' );
+check( strpos( $region_html, 'The Airships' ) < strpos( $region_html, 'A Postapocalyptic Earth' ), 'Mixed-type selected entry order changed' );
+check( substr_count( $region_html, 'A Postapocalyptic Earth' ) >= 2, 'Reusing content across Regions failed' );
+check( ! str_contains( $region_html, 'Hidden secret' ) && ! str_contains( $region_html, 'Unfinished secret' ) && ! str_contains( $region_html, 'Later revelation' ) && ! str_contains( $region_html, 'region-empty' ), 'Unavailable Region entries or empty Region leaked' );
+check( str_contains( $region_html, 'book-cards' ), 'Explicit Books Region did not render with legacy separate default' );
+check( ! str_contains( modfarm_render_world_block( $manual + array( 'books' => 'separate' ) ), 'book-cards' ), 'Placement Books override was ignored' );
+foreach ( array( 'illustrated', 'portraits', 'alternating', 'immersive', 'editorial', 'banner', 'compact' ) as $layout ) {
+    $GLOBALS['world']['presentation']['regions'][0]['layout'] = $layout;
+    check( str_contains( modfarm_render_world_block( $manual ), 'mfw-region--' . $layout ), 'Missing layout: ' . $layout );
+}
+$GLOBALS['world']['presentation']['regions'][0]['layout'] = 'illustrated';
+$tab_html = modfarm_render_world_block( $manual );
+check( str_contains( $tab_html, 'data-world-default="region-features"' ) && str_contains( $tab_html, 'mfw-region--illustrated' ) && str_contains( $tab_html, 'mfw-region--alternating' ), 'Navigation switch lost layout or initial Region' );
+if ( in_array( '--regions-fixture', $argv, true ) ) {
+    $css = file_get_contents( __DIR__ . '/../modfarm-theme/modfarm-theme/blocks/world/style.css' );
+    echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:18px/1.65 Arial;background:#10181c}main{max-width:1280px;margin:auto}h1{color:white;padding:24px}' . $css . '</style></head><body><main><h1>World Regions · layout review</h1>' . $region_html . $tab_html . '</main></body></html>';
+} elseif ( in_array( '--fixture', $argv, true ) ) echo $legacy_fixture;
+else echo "World block renderer and Regions: passed\n";
