@@ -82,7 +82,7 @@ function modfarm_render_world_block( $attributes, $content = '', $block = null )
     $id = wp_unique_id( 'mfw-' );
     $style = '';
     foreach ( $p['colors'] as $key => $color ) if ( $color ) $style .= '--mfw-' . str_replace( '_', '-', $key ) . ':' . $color . ';';
-    $wrapper = get_block_wrapper_attributes( array( 'class' => 'mfw mfw--' . $p['display'], 'style' => $style ) );
+    $wrapper = get_block_wrapper_attributes( array( 'class' => 'mfw mfw--' . $p['display'] . ' align' . ( in_array( $attributes['align'] ?? 'full', array( 'wide', 'full' ), true ) ? ( $attributes['align'] ?? 'full' ) : 'none' ), 'style' => $style ) );
     $initial = function_exists( 'modfarm_world_regions' ) ? ( ( $p['default_region'] ?? '' ) ?: 'region-' . $p['default_section'] ) : $p['default_section'];
     $html = '<div ' . $wrapper . ' data-world-tabs data-world-default="' . esc_attr( $initial ) . '">';
     if ( 'reader' === $p['spoilers'] ) {
@@ -104,6 +104,6 @@ function modfarm_render_world_block( $attributes, $content = '', $block = null )
         foreach ( $sections as $section ) $html .= '<button type="button" id="' . esc_attr( $id . '-tab-' . $section['key'] ) . '" data-world-tab="' . esc_attr( $section['key'] ) . '" aria-controls="' . esc_attr( $id . '-' . $section['key'] ) . '">' . esc_html( $section['label'] ) . '</button>';
         $html .= '</div>';
     }
-    foreach ( $sections as $section ) $html .= '<section class="mfw-section ' . esc_attr( $section['class'] ) . '" style="' . esc_attr( $section['style'] ) . '" id="' . esc_attr( $id . '-' . $section['key'] ) . '" data-world-panel="' . esc_attr( $section['key'] ) . '" aria-label="' . esc_attr( $section['label'] ) . '">' . ( $section['show_heading'] ? '<h2>' . esc_html( $section['label'] ) . '</h2>' : '' ) . $section['html'] . '</section>';
+    foreach ( $sections as $section ) $html .= '<section class="mfw-section ' . esc_attr( $section['class'] ) . '" style="' . esc_attr( $section['style'] ) . '" id="' . esc_attr( $id . '-' . $section['key'] ) . '" data-world-panel="' . esc_attr( $section['key'] ) . '" aria-label="' . esc_attr( $section['label'] ) . '" data-world-entry-titles="' . ( false === ( $section['show_titles'] ?? true ) ? 'hidden' : 'visible' ) . '"><div class="mfw-region-inner">' . ( $section['show_heading'] ? '<h2>' . esc_html( $section['label'] ) . '</h2>' : '' ) . $section['html'] . '</div></section>';
     return $html . '</div>';
 }

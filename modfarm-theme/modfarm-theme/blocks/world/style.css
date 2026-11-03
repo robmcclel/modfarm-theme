@@ -23,7 +23,7 @@
 .mfw-spoilers button { background:var(--mfw-active-background,var(--mfs-button-bg,#222)); color:var(--mfw-active-text,var(--mfs-button-fg,#fff)); padding:9px 14px; border:0; border-radius:4px; cursor:pointer; font:inherit; }
 .mfw [hidden] { display:none !important; }
 .mfw-region { background:var(--mfw-background,var(--mfs-background,#fff)); color:var(--mfw-text,var(--mfs-body,#222)); padding-block:clamp(20px,4vw,48px); }
-.mfw-region > h2 { font-size:clamp(1.6rem,3vw,2.8rem); line-height:1.15; margin-bottom:clamp(20px,3vw,36px); }
+.mfw-region-inner > h2 { font-size:clamp(1.6rem,3vw,2.8rem); line-height:1.15; margin-bottom:clamp(20px,3vw,36px); }
 .mfw-region .mfw-entry h3 { font-size:clamp(1.2rem,2vw,1.65rem); line-height:1.25; }
 .mfw-region .mfw-rich-text { line-height:1.75; }
 .mfw-region:not(.mfw-region--compact) .mfw-entry { border:0; border-radius:0; padding:0; }
@@ -68,3 +68,16 @@
 .mfw-region--overview.mfw-region--portraits .mfw-entry-image { margin-inline-start:var(--mfw-image-start,auto); margin-inline-end:var(--mfw-image-end,auto); }
 @media(max-width:900px) { .mfw-region--compact .mfw-entries { grid-template-columns:repeat(min(var(--mfw-region-columns,3),2),minmax(0,1fr)); } }
 @media(max-width:600px) { .mfw-region--compact .mfw-entries { grid-template-columns:minmax(0,1fr); } }
+
+/* Background bands span the block; content follows the site's Group widths. */
+.mfw { padding:0; border-radius:0; box-sizing:border-box; min-width:0; }
+.mfw.alignfull { max-width:none; }
+.mfw-section { margin-block:0; }
+.mfw-region-inner { box-sizing:border-box; width:100%; max-width:var(--mfw-region-width,var(--mf-content-width,1100px)); margin-inline:auto; padding-inline:var(--mfw-region-gutter,clamp(16px,3vw,32px)); min-width:0; }
+.mfw > .mfw-tablist,.mfw > .mfw-spoilers { box-sizing:border-box; max-width:var(--mf-content-width,1100px); margin-inline:auto; padding-inline:clamp(16px,3vw,32px); }
+.mfw-section[data-world-entry-titles=hidden] .mfw-entry-copy > h3 { display:none !important; }
+.mfw-region--banner .mfw-entry-copy:empty { display:none; }
+
+.mfw-region-inner > h2,.mfw-region--overview .mfw-entry-copy > h3 { text-align:var(--mfw-heading-align,inherit); }
+/* Reuse archive cards, overriding only the count inside a Books Region. */
+@media(min-width:801px) { .mfw-region--books .mfb-grid { --mfb-cols:var(--mfw-book-columns,4) !important; } }
