@@ -17,3 +17,5 @@ The shared initializer enhances both reader and block-editor previews into acces
 Validation covers the legacy renderer, mixed-type selection and ordering, entry reuse, private/draft/spoiler omission, empty Regions, Books overrides, navigation parity, layout presets, existing tab behavior, and real Chromium layouts at phone/tablet/desktop widths. Workflow artifacts contain review screenshots with deterministic test artwork. Live site artwork/typography acceptance remains part of Dev review.
 
 First acceptance layout: Hell Divers — three illustrated world entries, two alternating editorial entries, then Books. Switch the same Regions to Tabs and confirm layouts, colors, content, and ordering remain.
+
+Overview uses the shared entry renderer, including its Region artwork, layout, shape, and alignment. Its heading appears once inside the layout. Empty overview content stays hidden. The editor and frontend register the same World stylesheet with a file modification version so layout updates invalidate cached CSS.

@@ -94,8 +94,27 @@ foreach ( array( 'illustrated', 'portraits', 'alternating', 'immersive', 'editor
 $GLOBALS['world']['presentation']['regions'][0]['layout'] = 'illustrated';
 $tab_html = modfarm_render_world_block( $manual );
 check( str_contains( $tab_html, 'data-world-default="region-features"' ) && str_contains( $tab_html, 'mfw-region--illustrated' ) && str_contains( $tab_html, 'mfw-region--alternating' ), 'Navigation switch lost layout or initial Region' );
+$overview = modfarm_world_region_default( 'region-overview-feature' );
+$overview = array_replace( $overview, array( 'source' => 'overview', 'title' => 'An immersive world', 'layout' => 'immersive', 'image_id' => 7, 'image_shape' => 'circle', 'text_align' => 'center', 'image_align' => 'right' ) );
+$title_region = $intro; $title_region['show_titles'] = false; $title_region['show_heading'] = false;
+$GLOBALS['world']['presentation']['regions'] = array( $title_region );
+$titleless = modfarm_render_world_block( $manual );
+check( ! str_contains( $titleless, '<h2>' ) && ! str_contains( $titleless, '<h3>' ) && str_contains( $titleless, 'Rich character context' ) && str_contains( $titleless, 'alt="The Airships"' ), 'Hidden titles lost content or image descriptions' );
+check( str_contains( $titleless, '>Explore the world</button>' ), 'Hiding headings removed the tab label' );
+unset( $GLOBALS['world']['presentation']['regions'][0]['show_titles'] );
+check( str_contains( modfarm_render_world_block( $manual ), '<h3>The Airships</h3>' ), 'Existing entries no longer show titles by default' );
+$GLOBALS['world']['presentation']['regions'] = array( $overview );
+$overview_html = modfarm_render_world_block( $manual + array( 'display' => 'sections' ) );
+check( str_contains( $overview_html, 'mfw-region--immersive' ) && str_contains( $overview_html, 'mfw-entry-image' ) && str_contains( $overview_html, '<strong>Fractured America</strong>' ), 'Overview bypassed the feature renderer' );
+check( 1 === substr_count( $overview_html, '>An immersive world<' ) && str_contains( $overview_html, '--mfw-image-radius:50%' ) && str_contains( $overview_html, '--mfw-text-align:center' ), 'Overview heading or circular/aligned artwork was lost' );
+$GLOBALS['world']['presentation']['regions'][0]['show_heading'] = false;
+check( ! str_contains( modfarm_render_world_block( $manual ), '<h3>' ), 'Hidden Overview heading rendered' );
+$GLOBALS['world']['overview'] = '';
+check( '' === modfarm_render_world_block( $manual ), 'Artwork-only empty Overview rendered' );
+$metadata = json_decode( file_get_contents( __DIR__ . '/../modfarm-theme/modfarm-theme/blocks/world/block.json' ), true );
+check( $metadata['style'] === $metadata['editorStyle'], 'Editor and reader styles differ' );
 if ( in_array( '--regions-fixture', $argv, true ) ) {
     $css = file_get_contents( __DIR__ . '/../modfarm-theme/modfarm-theme/blocks/world/style.css' );
-    echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:18px/1.65 Arial;background:#10181c}main{max-width:1280px;margin:auto}h1{color:white;padding:24px}' . $css . '</style></head><body><main><h1>World Regions · layout review</h1>' . $region_html . $tab_html . '</main></body></html>';
+    echo '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:18px/1.65 Arial;background:#10181c}main{max-width:1280px;margin:auto}h1{color:white;padding:24px}' . $css . '</style></head><body><main><h1>World Regions · layout review</h1>' . $region_html . $tab_html . $overview_html . '</main></body></html>';
 } elseif ( in_array( '--fixture', $argv, true ) ) echo $legacy_fixture;
 else echo "World block renderer and Regions: passed\n";
