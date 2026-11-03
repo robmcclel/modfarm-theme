@@ -23,7 +23,7 @@ const {chromium} = require('playwright');
         if (width === 1440 && result.columns !== 3) throw new Error('Desktop illustrated columns not three across');
         if (width <= 390 && result.columns !== 1) throw new Error('Phone columns did not stack');
         await page.locator('.mfw--tabs [role=tab]').first().click();
-        if (!(await page.locator('.mfw--tabs .mfw-region--illustrated').isVisible())) throw new Error('Changing tab lost illustrated layout');
+        if (!(await page.locator('.mfw--tabs .mfw-region--illustrated').first().isVisible())) throw new Error('Changing tab lost illustrated layout');
         metrics.push(result);
         if ([390,1440].includes(width)) await page.screenshot({path: `/tmp/world-regions-${width}.png`, fullPage: true});
     }
