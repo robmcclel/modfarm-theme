@@ -39,6 +39,7 @@ function modfarm_world_region_content( $region, $public, $presentation, $term ) 
     $entries = modfarm_world_region_entries( $region, $public );
     if ( ! $entries ) return '';
     if ( 'inherit' !== $region['description'] ) $presentation['description'] = $region['description'];
+    $presentation['show_titles'] = $region['show_titles'] ?? true;
     $html = '<div class="mfw-entries">';
     foreach ( $entries as $index => $entry ) {
         $right = 'right' === $region['image_side'];

@@ -34,7 +34,7 @@ function modfarm_world_entry_html( $entry, $presentation, $classes = '', $image_
     }
     $html = '<article class="mfw-entry ' . esc_attr( $classes . ( $image ? '' : ' mfw-without-image' ) ) . '">' . $image;
     $html .= '<div class="mfw-entry-copy">';
-    if ( '' !== $entry['name'] ) $html .= '<h3>' . esc_html( $entry['name'] ) . '</h3>';
+    if ( '' !== $entry['name'] && false !== ( $presentation['show_titles'] ?? true ) ) $html .= '<h3>' . esc_html( $entry['name'] ) . '</h3>';
     if ( ! empty( $entry['summary'] ) ) $html .= '<p class="mfw-entry-summary">' . nl2br( esc_html( $entry['summary'] ) ) . '</p>';
     if ( 'full' === $presentation['description'] && ! empty( $entry['description'] ) ) $html .= '<div class="mfw-rich-text">' . wp_kses_post( wpautop( $entry['description'] ) ) . '</div>';
     return $html . '</div></article>';
