@@ -29,12 +29,7 @@ function modfarm_world_region_content( $region, $public, $presentation, $term ) 
     foreach ( $entries as $index => $entry ) {
         $right = 'right' === $region['image_side'];
         if ( 'alternating' === $region['layout'] && $index % 2 ) $right = ! $right;
-        $image = '';
-        if ( $presentation['show_images'] && ! empty( $entry['image_id'] ) ) $image = wp_get_attachment_image( absint( $entry['image_id'] ), 'full', false, array( 'class' => 'mfw-entry-image', 'alt' => $entry['name'] ) );
-        $html .= '<article class="mfw-entry' . ( $right ? ' mfw-image-right' : '' ) . ( $image ? '' : ' mfw-without-image' ) . '">' . $image . '<div class="mfw-entry-copy"><h3>' . esc_html( $entry['name'] ) . '</h3>';
-        if ( ! empty( $entry['summary'] ) ) $html .= '<p class="mfw-entry-summary">' . nl2br( esc_html( $entry['summary'] ) ) . '</p>';
-        if ( 'full' === $presentation['description'] && ! empty( $entry['description'] ) ) $html .= '<div class="mfw-rich-text">' . wp_kses_post( wpautop( $entry['description'] ) ) . '</div>';
-        $html .= '</div></article>';
+        $html .= modfarm_world_entry_html( $entry, $presentation, $right ? 'mfw-image-right' : '', 'full' );
     }
     return $html . '</div>';
 }
