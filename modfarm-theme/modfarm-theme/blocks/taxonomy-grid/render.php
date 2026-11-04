@@ -498,6 +498,10 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     }
 
     if ('books_by_series' === $group_mode) {
+      // Shared card styles need the layout class as well as the global gap
+      // token to join cover/button corners correctly.
+      $card_settings = get_option('modfarm_theme_settings', []);
+      $cta_mode = ($card_settings['book_card_cta_mode'] ?? 'joined') === 'gap' ? 'gap' : 'joined';
       $toc_items = [];
       foreach ($terms_for_paging as $toc_term) {
         if ($toc_term instanceof WP_Term) {
@@ -509,7 +513,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       }
 
       ob_start(); ?>
-      <div class="mfb-wrapper mfb-taxgrid-wrapper mfb-taxgrid-wrapper--series-books<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?><?php echo $label_style_attr; ?>>
+      <div class="mfb-wrapper mfb-taxgrid-wrapper mfb-taxgrid-wrapper--series-books<?php echo ' mfb-shape--'.esc_attr($shape) . ' mfb-cta--' . esc_attr($cta_mode); ?>"<?php echo $anchor; ?><?php echo $label_style_attr; ?>>
         <?php if (!empty($a['showTOC'])) $render_section_toc($toc_items); ?>
         <?php foreach ($terms_for_paging as $series_loop_index => $term): ?>
           <?php
