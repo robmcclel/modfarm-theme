@@ -6,7 +6,7 @@
   const PluginSidebar = (wp.editor && wp.editor.PluginSidebar) || (wp.editPost && wp.editPost.PluginSidebar);
   const embedded = !!window.ModFarmOSEmbeddedEditor;
   const PanelContainer = embedded ? PluginSidebar : PluginDocumentSettingPanel;
-  const { createElement: el, Fragment, useEffect, useRef, useState } = wp.element;
+  const { createElement: el, Fragment, useEffect, useMemo, useRef, useState } = wp.element;
   const { PanelRow, Notice, Button, SelectControl, Modal, TextControl } = wp.components;
   const BlockPreview = wp.blockEditor && (wp.blockEditor.BlockPreview || wp.blockEditor.__experimentalBlockPreview);
   const { select, dispatch } = wp.data;
@@ -271,6 +271,16 @@
     });
   }
 
+  function PatternPreview({ content }) {
+    // Parsing allocates new client IDs. Keep thumbnail blocks stable when a
+    // selection or zone changes so their dynamic previews do not all remount
+    // and compete with the newly inserted blocks' server-render requests.
+    const blocks = useMemo(() => BlockPreview ? parse(content || '') : [], [content]);
+    return BlockPreview
+      ? el(BlockPreview, { blocks, viewportWidth: 1200 })
+      : el('span', null, 'Preview unavailable');
+  }
+
   function PatternCards({ patterns, value, assigned, onChange }) {
     const [browse, setBrowse] = useState(false);
     const [query, setQuery] = useState('');
@@ -280,9 +290,7 @@
         el('div', { key: pattern.value, className: 'mf-ppb-card' + (value === pattern.value ? ' is-selected' : '') },
           el('button', { type: 'button', className: 'mf-ppb-card-select', 'aria-pressed': value === pattern.value,
             onClick: () => onChange(pattern.value) },
-            el('div', { className: 'mf-ppb-thumbnail' }, BlockPreview
-              ? el(BlockPreview, { blocks: parse(pattern.content || ''), viewportWidth: 1200 })
-              : el('span', null, 'Preview unavailable')),
+            el('div', { className: 'mf-ppb-thumbnail' }, el(PatternPreview, { content: pattern.content })),
             el('strong', null, pattern.label),
             pattern.value === assigned ? el('small', null, 'Assigned') : null),
           el(Button, { variant: 'tertiary', onClick: () => setPreview(pattern) }, 'Preview'))));
@@ -296,7 +304,7 @@
         cards(patterns.filter(pattern => (pattern.label + ' ' + pattern.value).toLowerCase().includes(query.toLowerCase()))),
         el(Button, { variant: 'primary', onClick: () => setBrowse(false) }, 'Done')) : null,
       preview ? el(Modal, { title: preview.label, onRequestClose: () => setPreview(null), className: 'mf-ppb-preview' },
-        BlockPreview ? el(BlockPreview, { blocks: parse(preview.content || ''), viewportWidth: 1200 }) : el('p', null, 'Preview unavailable'),
+        el(PatternPreview, { content: preview.content }),
         el(Button, { variant: 'primary', onClick: () => { onChange(preview.value); setPreview(null); } }, 'Select pattern')) : null);
   }
 
