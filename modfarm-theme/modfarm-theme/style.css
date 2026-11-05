@@ -389,6 +389,26 @@ img,
     margin-right: auto;
 }
 
+/* Hybrid content has no Gutenberg layout wrapper to supply image floats. */
+.entry-content > figure.wp-block-image.alignright {
+  float: right;
+  margin: 0 0 1.5em 2em;
+  max-width: 100%;
+}
+
+.entry-content > figure.wp-block-image.alignleft {
+  float: left;
+  margin: 0 2em 1.5em 0;
+  max-width: 100%;
+}
+
+/* Keep short posts' floated images above the footer. */
+.entry-content::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 /* Center linked and unlinked images; keep captions below in normal flow. */
 figure.wp-block-image.aligncenter {
   display: block;
