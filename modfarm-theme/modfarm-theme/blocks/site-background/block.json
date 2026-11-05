@@ -2,7 +2,7 @@
   "apiVersion": 2,
   "name": "modfarm/site-background",
   "title": "Page Background (Inline Style)",
-  "description": "Set a page background via a generated <style> tag (same behavior as the core HTML block).",
+  "description": "Set a page background color, gradient, or image.",
   "category": "design",
   "icon": "art",
   "keywords": ["background", "page", "style", "gradient", "image", "color"],

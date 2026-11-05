@@ -172,6 +172,10 @@ if (a.linkColor) {
     )
   );
 
+  const attributes = Object.fromEntries(Object.entries(DEFAULTS).map(([name, value]) =>
+    [name, { type: typeof value, default: value }]
+  ));
+
   /* -------------------- BLOCK -------------------- */
   registerBlockType('modfarm/site-background', {
     apiVersion: 2,
@@ -180,10 +184,7 @@ if (a.linkColor) {
     category: 'design',
     supports: { html:false, align:false, multiple:false },
 
-    attributes: Object.keys(DEFAULTS).reduce((acc, k)=>{
-      acc[k] = { type: typeof DEFAULTS[k], default: DEFAULTS[k] };
-      return acc;
-    }, {}),
+    attributes,
 
     edit: (props) => {
       const { attributes:a, setAttributes } = props;
@@ -282,10 +283,19 @@ if (a.linkColor) {
       );
     },
 
-    save: (props) => {
-      const a = props.attributes || {};
-      const css = buildFullCss(a);
-      return el('style', { id:'mf-site-page-background' }, css);
-    }
+    save: () => null,
+
+    deprecated: [
+      {
+        attributes,
+        save: ({ attributes }) =>
+          el('style', { id:'mf-site-page-background' }, buildFullCss(attributes))
+      },
+      {
+        attributes,
+        // WordPress can strip the style tag while leaving its CSS as text.
+        save: ({ attributes }) => buildFullCss(attributes)
+      }
+    ]
   });
 })(window.wp);
