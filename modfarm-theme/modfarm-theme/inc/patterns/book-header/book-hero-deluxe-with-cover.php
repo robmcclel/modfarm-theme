@@ -12,8 +12,8 @@ return [
 <!-- /wp:modfarm/hero-area -->
 
 <!-- wp:modfarm/hero-area {"area":"content"} -->
-<!-- wp:group {"align":"wide","layout":{"type":"constrained"}} -->
-<div class="wp-block-group alignwide"><!-- wp:columns -->
+<!-- wp:group {"layout":{"type":"constrained"}} -->
+<div class="wp-block-group"><!-- wp:columns -->
 <div class="wp-block-columns"><!-- wp:column {"width":"33.33%"} -->
 <div class="wp-block-column" style="flex-basis:33.33%"><!-- wp:modfarm/book-cover-art /--></div>
 <!-- /wp:column -->
