@@ -6,8 +6,8 @@ return [
     'categories'  => ['modfarm-book-header'],
     'keywords'    => ['hero', 'navigation', 'cover'],
     'content'     => '
-<!-- wp:group {"metadata":{"name":"Book Hero with Cover"},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:modfarm/hero-cover {"structuredLayout":true} -->
+<!-- wp:group {"metadata":{"name":"Book Hero with Cover"},"align":"full","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignfull"><!-- wp:modfarm/hero-cover {"structuredLayout":true,"align":"full"} -->
 <!-- wp:modfarm/hero-area {"area":"navigation","metadata":{"name":"Hero navigation"}} -->
 <!-- wp:modfarm/navigation-menu {"localStyle":true,"transparent":true} /-->
 <!-- /wp:modfarm/hero-area -->
