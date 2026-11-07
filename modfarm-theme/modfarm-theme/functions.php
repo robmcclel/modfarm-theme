@@ -665,6 +665,7 @@ add_action('init', function () {
         'book-header-basic-split-nav-center.php',
         'book-header-full-image-split-nav.php',
         'book-header-image-split-nav.php',
+        'header-navigation-only-split.php',
     ];
 
     // Recursive scan for *.php pattern files (supports subfolders)
