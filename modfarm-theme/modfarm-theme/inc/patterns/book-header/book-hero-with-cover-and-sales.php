@@ -9,18 +9,18 @@ return [
 <!-- wp:group {"metadata":{"name":"Book Hero with Cover and Sales"},"align":"full","layout":{"type":"constrained"}} -->
 <div class="wp-block-group alignfull"><!-- wp:modfarm/hero-cover {"structuredLayout":true,"align":"full"} -->
 <!-- wp:modfarm/hero-area {"area":"navigation","metadata":{"name":"Hero navigation"}} -->
-<!-- wp:modfarm/navigation-menu {"localStyle":true,"transparent":true} /-->
+<!-- wp:modfarm/navigation-menu {"localStyle":true,"transparent":true,"align":"full"} /-->
 <!-- /wp:modfarm/hero-area -->
 
 <!-- wp:modfarm/hero-area {"area":"content","metadata":{"name":"Hero content"}} -->
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)"><!-- wp:columns -->
-<div class="wp-block-columns"><!-- wp:column {"width":"33.33%"} -->
-<div class="wp-block-column" style="flex-basis:33.33%"><!-- wp:modfarm/book-cover-art {"coverType":"featured"} /--></div>
+<div class="wp-block-columns"><!-- wp:column {"verticalAlignment":"bottom","width":"33.33%"} -->
+<div class="wp-block-column is-vertically-aligned-bottom" style="flex-basis:33.33%"><!-- wp:modfarm/book-cover-art {"coverType":"featured"} /--></div>
 <!-- /wp:column -->
 
-<!-- wp:column {"verticalAlignment":"center","width":"66.66%"} -->
-<div class="wp-block-column is-vertically-aligned-center" style="flex-basis:66.66%"><!-- wp:post-title {"level":1,"style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}},"typography":{"textAlign":"left"}},"textColor":"base"} /-->
+<!-- wp:column {"verticalAlignment":"bottom","width":"66.66%"} -->
+<div class="wp-block-column is-vertically-aligned-bottom" style="flex-basis:66.66%"><!-- wp:post-title {"level":1,"style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}},"typography":{"textAlign":"left"}},"textColor":"base"} /-->
 
 <!-- wp:modfarm/book-page-series {"fontSize":24,"textColor":"#ffffff"} /-->
 
