@@ -8,12 +8,12 @@ return [
     'content'     => '
 <!-- wp:modfarm/hero-cover {"metadata":{"name":"Book Hero Deluxe with Cover"},"structuredLayout":true,"minHeight":520,"dimRatio":35,"align":"full"} -->
 <!-- wp:modfarm/hero-area {"area":"navigation"} -->
-<!-- wp:modfarm/navigation-menu {"localStyle":true,"transparent":true} /-->
+<!-- wp:modfarm/navigation-menu {"localStyle":true,"transparent":true,"align":"full"} /-->
 <!-- /wp:modfarm/hero-area -->
 
 <!-- wp:modfarm/hero-area {"area":"content"} -->
-<!-- wp:group {"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:columns -->
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)"><!-- wp:columns -->
 <div class="wp-block-columns"><!-- wp:column {"width":"33.33%"} -->
 <div class="wp-block-column" style="flex-basis:33.33%"><!-- wp:modfarm/book-cover-art /--></div>
 <!-- /wp:column -->
