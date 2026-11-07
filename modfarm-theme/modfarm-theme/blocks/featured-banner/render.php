@@ -131,11 +131,18 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
     $a = is_array($attrs) ? $attrs : [];
 
     $book_id = (int)($a['bookId'] ?? 0);
+    $use_current_book = ($a['bookSource'] ?? 'selected') === 'current';
+    if ($use_current_book) {
+      $book_id = (int)($block->context['postId'] ?? get_the_ID());
+    }
     if ($book_id <= 0 || get_post_type($book_id) !== 'book') {
       $wrapper = function_exists('get_block_wrapper_attributes')
         ? get_block_wrapper_attributes(['class' => 'mfbb mfbb--notice'])
         : 'class="mfbb mfbb--notice"';
-      return '<div ' . $wrapper . '><p>Pick a book. Invalid/missing Book ID.</p></div>';
+      $message = $use_current_book
+        ? 'Current Book requires a book page. Choose Select a Book to use this banner here.'
+        : 'Pick a book. Invalid/missing Book ID.';
+      return '<div ' . $wrapper . '><p>' . esc_html($message) . '</p></div>';
     }
 
     $title     = get_the_title($book_id) ?: '';
@@ -230,7 +237,7 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
     } elseif ($hero_source === 'featured_image') {
       $thumb_id = get_post_thumbnail_id($book_id);
       if ($thumb_id) $hero_url = wp_get_attachment_image_url((int)$thumb_id, 'full') ?: '';
-    } else {
+    } elseif ($hero_source !== 'none') {
       // book_meta: prefer hero_image, then fall back to composite/ebook cover, then featured image
       $hero_url = $val_to_url(get_post_meta($book_id, 'hero_image', true));
     
@@ -369,7 +376,9 @@ if (!function_exists('modfarm_render_featured_banner_block')) {
         data-mf-page-id="<?php echo esc_attr((string)$page_id); ?>"
         data-mf-page-type="<?php echo esc_attr((string)$page_type); ?>"
       >
-        <div class="mfbb__overlay" style="background:<?php echo esc_attr($overlay_bg); ?>;opacity:<?php echo esc_attr($overlay_opacity); ?>;"></div>
+        <?php if ($hero_source !== 'none'): ?>
+          <div class="mfbb__overlay" style="background:<?php echo esc_attr($overlay_bg); ?>;opacity:<?php echo esc_attr($overlay_opacity); ?>;"></div>
+        <?php endif; ?>
 
 
         <div class="mfbb__inner">
