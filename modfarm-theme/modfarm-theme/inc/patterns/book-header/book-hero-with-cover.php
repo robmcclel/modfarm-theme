@@ -9,7 +9,7 @@ return [
 <!-- wp:group {"metadata":{"name":"Book Hero with Cover"},"align":"full","layout":{"type":"constrained"}} -->
 <div class="wp-block-group alignfull"><!-- wp:modfarm/hero-cover {"structuredLayout":true,"align":"full"} -->
 <!-- wp:modfarm/hero-area {"area":"navigation","metadata":{"name":"Hero navigation"}} -->
-<!-- wp:modfarm/navigation-menu {"localStyle":true,"transparent":true} /-->
+<!-- wp:modfarm/navigation-menu {"localStyle":true,"transparent":true,"align":"full"} /-->
 <!-- /wp:modfarm/hero-area -->
 
 <!-- wp:modfarm/hero-area {"area":"content","metadata":{"name":"Hero content"}} -->
