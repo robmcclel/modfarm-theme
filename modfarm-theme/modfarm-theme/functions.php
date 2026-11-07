@@ -659,6 +659,14 @@ add_action('init', function () {
 
     $base_dir = get_template_directory() . '/inc/patterns';
 
+    // Upload-based deployments can leave deleted pattern files on the server.
+    $retired_pattern_files = [
+        'book-basic.php',
+        'book-header-basic-split-nav-center.php',
+        'book-header-full-image-split-nav.php',
+        'book-header-image-split-nav.php',
+    ];
+
     // Recursive scan for *.php pattern files (supports subfolders)
     $iterator = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($base_dir, FilesystemIterator::SKIP_DOTS)
@@ -666,6 +674,10 @@ add_action('init', function () {
 
     foreach ($iterator as $file) {
         if (!$file->isFile() || strtolower($file->getExtension()) !== 'php') {
+            continue;
+        }
+
+        if (in_array($file->getFilename(), $retired_pattern_files, true)) {
             continue;
         }
 
