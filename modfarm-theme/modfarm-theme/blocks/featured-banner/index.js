@@ -234,10 +234,22 @@
     category: 'modfarm-theme',
 
     edit: (props) => {
-      const { attributes, setAttributes } = props;
+      const { attributes, setAttributes, context = {} } = props;
       const blockProps = useBlockProps();
 
-      const bookId = attributes.bookId || 0;
+      const useCurrentBook = attributes.bookSource === 'current';
+      const currentPost = wp.data.useSelect((select) => {
+        const editor = select('core/editor');
+        return {
+          id: editor?.getCurrentPostId?.(),
+          type: editor?.getCurrentPostType?.()
+        };
+      }, []);
+      const postId = context.postId || currentPost.id;
+      const postType = context.postId ? context.postType : currentPost.type;
+      const bookId = useCurrentBook
+        ? (postType === 'book' ? postId : 0)
+        : (attributes.bookId || 0);
 
       useEffect(() => {
         if (!bookId) return;
@@ -259,6 +271,7 @@
         if (!attributes.useCustomDesc) return;
         if (!attributes.refreshCustomDescOnBookChange) return;
         if (!bookId) return;
+        if (useCurrentBook && attributes.descOverride?.trim()) return;
 
         apiFetch({ path: `/wp/v2/book/${bookId}?_fields=meta` })
           .then((r) => {
@@ -271,7 +284,7 @@
             }
           })
           .catch(() => {});
-      }, [bookId, attributes.useCustomDesc, attributes.refreshCustomDescOnBookChange]);
+      }, [bookId, useCurrentBook, attributes.useCustomDesc, attributes.refreshCustomDescOnBookChange]);
 
       const mediaMode = attributes.mediaMode || 'cover';
       const heroSource = attributes.heroSource || 'book_meta';
@@ -284,16 +297,27 @@
           {},
           el(
             PanelBody,
-            { title: 'Select Book', initialOpen: true },
-            el(BookSearch, {
+            { title: 'Book Source', initialOpen: true },
+            el(SelectControl, {
+              label: 'Book Source',
+              value: useCurrentBook ? 'current' : 'selected',
+              options: [
+                { label: 'Select a Book', value: 'selected' },
+                { label: 'Current Book', value: 'current' }
+              ],
+              onChange: (value) => setAttributes({ bookSource: value })
+            }),
+            !useCurrentBook && el(BookSearch, {
               value: attributes.bookId,
               onPick: (id) => setAttributes({ bookId: id })
             }),
-            !attributes.bookId &&
+            !bookId &&
               el(
                 Notice,
                 { status: 'info', isDismissible: false },
-                'Pick a book to populate cover/card, hero background (hero_image), and description.'
+                useCurrentBook
+                  ? 'Current Book follows the book page. Choose Select a Book to use this banner on another page.'
+                  : 'Pick a book to populate the cover, description, and links.'
               )
           ),
 
@@ -306,7 +330,8 @@
               options: [
                 { label: 'Book Meta: hero_image', value: 'book_meta' },
                 { label: 'Book Featured Image', value: 'featured_image' },
-                { label: 'Custom URL', value: 'custom' }
+                { label: 'Custom URL', value: 'custom' },
+                { label: 'No background', value: 'none' }
               ],
               onChange: (v) => setAttributes({ heroSource: v })
             }),
@@ -683,7 +708,8 @@
           blockProps,
           el(ServerSideRender, {
             block: 'modfarm/featured-banner',
-            attributes: attributes
+            attributes: attributes,
+            urlQueryArgs: useCurrentBook && postId ? { post_id: postId } : undefined
           })
         )
       );
