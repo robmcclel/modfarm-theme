@@ -74,6 +74,18 @@ foreach (['cardShowTitle'=>'title', 'cardShowSeries'=>'series', 'cardShowPrimary
         'primary' => $card['button']['url'] === '', 'sample' => $card['audio_mode'] === 'off' }, 'Visibility control failed: ' . $key);
 }
 check(modfarm_book_card_visibility(['cardShowTitle'=>false])['title'] === true, 'Global defaults must take precedence.');
+$curated = ['groupMode'=>'books_by_series', 'seriesOrder'=>['deleted-series', 'beta', 'beta']];
+$GLOBALS['cards'] = [];
+$html = modfarm_render_taxonomy_grid_block($curated);
+check(strpos($html, 'href="#taxgrid-series-2"') < strpos($html, 'href="#taxgrid-series-1"'), 'TOC follows custom series order');
+check(array_column($GLOBALS['cards'], 'id') === [21, 12, 11, 13], 'Custom section order preserves book order and ignores stale or duplicate slugs');
+$GLOBALS['cards'] = [];
+$html = modfarm_render_taxonomy_grid_block($curated + ['hiddenSeries'=>['beta']]);
+check(!str_contains($html, 'taxgrid-series-2') && array_column($GLOBALS['cards'], 'id') === [12, 11, 13], 'Hidden series are omitted from both sections and TOC');
+$terms = modfarm_taxonomy_grid_resolve_terms(['seriesOrder'=>['beta'], 'perPage'=>1, 'enablePagination'=>true]);
+check(array_column($terms['visible'], 'term_id') === [2], 'Series card order is applied before pagination');
+$terms = modfarm_taxonomy_grid_resolve_terms(['groupMode'=>'series_by_genre', 'hiddenSeries'=>['alpha']]);
+check(array_column($terms['visible'], 'term_id') === [2], 'Genre groups also respect hidden series');
 $no_format = modfarm_filter_books_by_format(['tax_query'=>['relation'=>'OR', ['taxonomy'=>'book-series','terms'=>[1]]]], []);
 check($no_format['tax_query']['relation'] === 'OR', 'No-format queries must retain their original structure.');
 $filtered = modfarm_filter_books_by_format($no_format, ['book-format'=>['id'=>7]]);

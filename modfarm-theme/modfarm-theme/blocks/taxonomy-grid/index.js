@@ -70,6 +70,38 @@
     return build(0);
   }
 
+  function SectionControls({ options, order, hidden, onOrderChange, onHiddenChange }) {
+    const labels = new Map(options.map(({ value, label }) => [value, label]));
+    const visibleOrder = order.filter((value) => !hidden.includes(value));
+    const selectTerm = (label, excluded, onChange) => el(SelectControl, {
+      label,
+      value: '',
+      options: [{ label: 'Choose a section…', value: '' }, ...options.filter(({ value }) => !excluded.includes(value))],
+      onChange: (value) => { if (value) onChange(value); }
+    });
+    const move = (index, offset) => {
+      const next = [...order];
+      const from = next.indexOf(visibleOrder[index]);
+      const to = next.indexOf(visibleOrder[index + offset]);
+      [next[from], next[to]] = [next[to], next[from]];
+      onOrderChange(next);
+    };
+    return el(wp.element.Fragment, {},
+      el('p', {}, 'Sections in this list appear first. Remaining visible sections follow the default sort.'),
+      el('ol', {}, visibleOrder.map((value, index) => el('li', { key: value },
+        el('div', {}, labels.get(value) || value),
+        el(Button, { variant: 'tertiary', disabled: index === 0, 'aria-label': 'Move up: ' + (labels.get(value) || value), onClick: () => move(index, -1) }, 'Up'),
+        el(Button, { variant: 'tertiary', disabled: index === visibleOrder.length - 1, 'aria-label': 'Move down: ' + (labels.get(value) || value), onClick: () => move(index, 1) }, 'Down'),
+        el(Button, { variant: 'tertiary', 'aria-label': 'Remove from custom order: ' + (labels.get(value) || value), onClick: () => onOrderChange(order.filter((item) => item !== value)) }, 'Remove')
+      ))),
+      selectTerm('Add to custom order', [...visibleOrder, ...hidden], (value) => onOrderChange([...order, value])),
+      selectTerm('Hide a section', hidden, (value) => onHiddenChange([...hidden, value])),
+      hidden.map((value) => el('div', { key: value },
+        el(Button, { variant: 'tertiary', onClick: () => onHiddenChange(hidden.filter((item) => item !== value)) }, 'Show ' + (labels.get(value) || value))
+      ))
+    );
+  }
+
   // Block -----------------------------------------------------------------
   registerBlockType('modfarm/taxonomy-grid', {
     edit: function (props) {
@@ -103,7 +135,9 @@
 
       // Data sources
       const taxonomies = useAllPublicTaxonomies();
-      const terms = useTermsForTaxonomy(attributes.taxonomy);
+      const grouped = ['books_by_series', 'series_by_genre'].includes(attributes.groupMode);
+      const seriesControls = grouped || attributes.taxonomy === 'book-series';
+      const terms = useTermsForTaxonomy(grouped ? 'book-series' : attributes.taxonomy);
       const termTree = useMemo(() => buildTermTree(terms), [terms]);
       const clearLabelColor = () => setAttributes({ labelColor: '' });
       // Options
@@ -225,6 +259,19 @@
               label: 'Show Counts',
               checked: !!attributes.showCounts,
               onChange: (v) => setAttributes({ showCounts: !!v })
+            })
+          ),
+
+          seriesControls && el(
+            PanelBody, { title: 'Series Order & Visibility', initialOpen: false },
+            attributes.groupMode === 'series_by_genre' &&
+              el('p', {}, 'Custom series order applies within each genre.'),
+            el(SectionControls, {
+              options: terms.map((term) => ({ label: term.name, value: term.slug })),
+              order: attributes.seriesOrder || [],
+              hidden: attributes.hiddenSeries || [],
+              onOrderChange: (value) => setAttributes({ seriesOrder: value }),
+              onHiddenChange: (value) => setAttributes({ hiddenSeries: value })
             })
           ),
 

@@ -15,6 +15,9 @@
     "hideParents":      { "type": "boolean", "default": false },
     "seriesGenreSlug":  { "type": "string",  "default": "" },
 
+    "seriesOrder":       { "type": "array", "items": { "type": "string" }, "default": [] },
+    "hiddenSeries":      { "type": "array", "items": { "type": "string" }, "default": [] },
+
     "columns":          { "type": "number",  "default": 4 },
     "perPage":          { "type": "number",  "default": 24 },
     "enablePagination": { "type": "boolean", "default": true },
