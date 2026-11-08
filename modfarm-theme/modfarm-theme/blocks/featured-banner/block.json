@@ -7,8 +7,10 @@
   "description": "Hero banner with selectable book, overlay/gradient, optional media (none/cover/card), and up to three buttons.",
   "keywords": ["featured", "banner", "hero", "book", "series"],
   "supports": { "html": false, "align": ["wide", "full"] },
+  "usesContext": ["postId", "postType"],
 
   "attributes": {
+    "bookSource": { "type": "string", "default": "selected" },
     "bookId": { "type": "number", "default": 0 },
 
     "mediaMode": { "type": "string", "default": "cover" },
