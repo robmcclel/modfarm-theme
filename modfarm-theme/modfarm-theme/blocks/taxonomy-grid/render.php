@@ -58,6 +58,21 @@ if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
       }
     }
 
+    if ($taxonomy === 'book-series' && (!empty($attributes['seriesOrder']) || !empty($attributes['hiddenSeries']))) {
+      $hidden = array_fill_keys($attributes['hiddenSeries'] ?? [], true);
+      $remaining = [];
+      foreach ($terms as $term) {
+        if (!isset($hidden[$term->slug])) $remaining[$term->slug] = $term;
+      }
+      $terms = [];
+      foreach ($attributes['seriesOrder'] ?? [] as $slug) {
+        if (!isset($remaining[$slug])) continue;
+        $terms[] = $remaining[$slug];
+        unset($remaining[$slug]);
+      }
+      $terms = array_merge($terms, array_values($remaining));
+    }
+
     $per_page = max(1, absint($attributes['perPage'] ?? 24));
 	$pagination = 'terms' === $group_mode && !empty($attributes['enablePagination']);
     $pages = $pagination ? max(1, (int)ceil(count($terms) / $per_page)) : 1;
@@ -583,10 +598,18 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       return ob_get_clean();
     }
 
+    // A curated series grid can cross letter boundaries, so link to cards in display order.
+    $custom_series_order = $tax === 'book-series' && !empty($a['seriesOrder']);
+    $series_card_prefix = $custom_series_order ? wp_unique_id('taxgrid-series-card-') . '-' : '';
     ob_start(); ?>
     <div class="mfb-taxgrid-wrapper<?php echo ' mfb-shape--'.esc_attr($shape); ?>"<?php echo $anchor; ?><?php echo $label_style_attr; ?>>
 
-      <?php if (!empty($a['showTOC']) && !empty($toc)): ?>
+      <?php if (!empty($a['showTOC']) && $custom_series_order):
+        $render_section_toc(array_map(static fn($term) => [
+          'id' => $series_card_prefix . $term->term_id,
+          'label' => $term->name,
+        ], $terms));
+      elseif (!empty($a['showTOC']) && !empty($toc)): ?>
         <nav class="mfb-taxgrid-toc" aria-label="<?php echo esc_attr(get_taxonomy($tax)->labels->name); ?> index">
           <?php foreach (array_keys($toc) as $letter): ?>
             <a href="#mfb-taxgrid-letter-<?php echo esc_attr($letter); ?>"><?php echo esc_html($letter); ?></a>
@@ -611,7 +634,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           $first = strtoupper(mb_substr(preg_replace('/[^A-Za-z0-9]/u', '', $term->name), 0, 1));
           if ($first === '') $first = '#';
 
-          if (!empty($a['showTOC']) && $first !== $current_letter):
+          if (!empty($a['showTOC']) && !$custom_series_order && $first !== $current_letter):
             $current_letter = $first; ?>
             <div class="mfb-taxgrid-letter" id="mfb-taxgrid-letter-<?php echo esc_attr($first); ?>">
               <span><?php echo esc_html($first); ?></span>
@@ -637,7 +660,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
           $thumb_attrs = $common_attrs . ' data-slot="thumb"';
           $title_attrs = $common_attrs . ' data-slot="title"';
           ?>
-          <div class="mfb-taxgrid-card">
+          <div class="mfb-taxgrid-card"<?php if ($custom_series_order) echo ' id="' . esc_attr($series_card_prefix . $term->term_id) . '"'; ?>>
             <a class="mfb-taxgrid-thumb"
                href="<?php echo esc_url($link); ?>"
                style="<?php echo $ratio; ?>"
