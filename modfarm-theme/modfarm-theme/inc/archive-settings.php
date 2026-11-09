@@ -13,7 +13,7 @@
  * - archive_show_series:   int(1|0)
  * - archive_format_filter: int (book-format term ID; 0 = no additional filter)
  * - archive_books_in_row:  string percent width used by archive-list
- * - archive_display_order: string enum (ASC|DESC|rand)
+ * - archive_display_order: string enum (ASC|DESC|rand|reading_order|series_position)
  * - archive_order_date_key:string enum meta key used to order archive-list
  * - archive_hero_image:    int (attachment ID)
  * - archive_default_image: int (attachment ID)
@@ -327,6 +327,12 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
         'DESC' => 'Most recent first',
         'rand' => 'Random',
     ];
+    if ($taxonomy === 'book-series') {
+        $order_options += [
+            'reading_order' => 'Reading Order',
+            'series_position' => 'Series Position',
+        ];
+    }
     $date_key_options = [
         'publication_date' => 'Primary Publication Date',
         'paperback_publication_date' => 'Paperback Publication Date',
@@ -394,7 +400,9 @@ function mfs_render_book_archive_term_fields($term, $taxonomy) {
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <p class="description mfs-term-note">Choose whether archive books start with earliest, newest, or random entries.</p>
+                <p class="description mfs-term-note"><?php echo esc_html($taxonomy === 'book-series'
+                    ? 'Reading Order and Series Position start with the lowest value. Books without a value appear last.'
+                    : 'Choose whether archive books start with earliest, newest, or random entries.'); ?></p>
             </td>
         </tr>
 
@@ -536,6 +544,12 @@ function mfs_render_book_archive_add_fields($taxonomy) {
         'DESC' => 'Most recent first',
         'rand' => 'Random',
     ];
+    if ($taxonomy === 'book-series') {
+        $order_options += [
+            'reading_order' => 'Reading Order',
+            'series_position' => 'Series Position',
+        ];
+    }
     $date_key_options = [
         'publication_date' => 'Primary Publication Date',
         'paperback_publication_date' => 'Paperback Publication Date',
@@ -706,7 +720,12 @@ function mfs_save_book_archive_term_fields($term_id, $tt_id = 0) {
     update_term_meta($term_id, 'archive_show_series',   $cb('archive_show_series'));
     update_term_meta($term_id, 'archive_format_filter', $id('archive_format_filter'));
     update_term_meta($term_id, 'archive_books_in_row', $one_of('archive_books_in_row', ['50%', '33.333%', '25%', '20%', '16.666%'], '25%'));
-    update_term_meta($term_id, 'archive_display_order', $one_of('archive_display_order', ['ASC', 'DESC', 'rand'], 'DESC'));
+    $order_options = ['ASC', 'DESC', 'rand'];
+    $term = get_term($term_id);
+    if ($term instanceof WP_Term && $term->taxonomy === 'book-series') {
+        $order_options = array_merge($order_options, ['reading_order', 'series_position']);
+    }
+    update_term_meta($term_id, 'archive_display_order', $one_of('archive_display_order', $order_options, 'DESC'));
     update_term_meta($term_id, 'archive_order_date_key', $one_of('archive_order_date_key', ['publication_date', 'paperback_publication_date', 'hardcover_publication_date', 'audiobook_publication_date', 'reading_order', 'series_position'], 'publication_date'));
 
     update_term_meta($term_id, 'archive_hero_image',    $id('archive_hero_image'));

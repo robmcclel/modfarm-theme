@@ -2617,6 +2617,10 @@ function modfarm_sanitize_settings($settings) {
                 break;
 
             case 'archive_default_book_series_display_order':
+                $val = sanitize_text_field($val);
+                $clean[$key] = in_array($val, ['', 'ASC', 'DESC', 'rand', 'reading_order', 'series_position'], true) ? $val : '';
+                break;
+
             case 'archive_default_book_authors_display_order':
             case 'archive_default_book_genre_display_order':
             case 'archive_default_book_format_display_order':
@@ -3958,6 +3962,10 @@ function modfarm_render_settings_page() {
                                                         'DESC' => 'Most recent first',
                                                         'rand' => 'Random',
                                                     ];
+                                                    $mf_archive_series_order_options = $mf_archive_order_options + [
+                                                        'reading_order' => 'Reading Order',
+                                                        'series_position' => 'Series Position',
+                                                    ];
                                                     $mf_archive_list_mode_options = [
                                                         '' => 'Theme default',
                                                         'flat' => 'Flat book list',
@@ -3978,7 +3986,7 @@ function modfarm_render_settings_page() {
                                                                 <tr>
                                                                     <td><?php echo esc_html($mf_archive_tax_label); ?></td>
                                                                     <td><?php modfarm_select_field(['id' => 'archive_default_' . $mf_archive_tax_key . '_books_in_row', 'options' => $mf_archive_row_options]); ?></td>
-                                                                    <td><?php modfarm_select_field(['id' => 'archive_default_' . $mf_archive_tax_key . '_display_order', 'options' => $mf_archive_order_options]); ?></td>
+                                                                    <td><?php modfarm_select_field(['id' => 'archive_default_' . $mf_archive_tax_key . '_display_order', 'options' => 'book_series' === $mf_archive_tax_key ? $mf_archive_series_order_options : $mf_archive_order_options]); ?></td>
                                                                     <td>
                                                                         <?php if ('book_authors' === $mf_archive_tax_key) : ?>
                                                                             <?php modfarm_select_field(['id' => 'archive_default_book_authors_list_mode', 'options' => $mf_archive_list_mode_options]); ?>
