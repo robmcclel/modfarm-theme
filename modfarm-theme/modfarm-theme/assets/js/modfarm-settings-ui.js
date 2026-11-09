@@ -128,7 +128,7 @@
     previews.forEach(preview => { preview.hidden = preview !== (layoutActive ? layoutPreview : tabId === 'book-presentation' ? bookPreview : themePreview); });
     studio.querySelector('.mf-studio-note').textContent = layoutActive
       ? 'Rendered patterns using your selected content. Save to keep these defaults.'
-      : tabId === 'marketing' ? 'Measurement settings do not change the site appearance.'
+      : tabId === 'marketing' ? 'Integration settings do not change this preview.'
       : tabId === 'navigation' ? 'Live navigation preview. Switch devices and open the menu to inspect mobile navigation.'
       : 'Live appearance sample. Changes are kept only when you save.';
     studio.querySelector('.mf-studio-devices').hidden = false;
@@ -152,6 +152,7 @@
   const appearanceTab = root.querySelector('[data-tab="theme-fonts"]');
   if (navigationTab && appearanceTab) appearanceTab.after(navigationTab);
 
+  const openIntegrations = new URLSearchParams(window.location.search).get('mf_section') === 'integrations';
   let initial = 'site-basics';
   try {
     const saved = window.localStorage.getItem(storageKey);
@@ -159,7 +160,7 @@
   } catch (e) {}
 
   const hasTab = Array.prototype.some.call(tabs, t => t.dataset.tab === initial);
-  activate(hasTab ? initial : 'site-basics');
+  activate(openIntegrations ? 'marketing' : hasTab ? initial : 'site-basics');
 
   const config = typeof window.modfarmSettingsUi === 'object' ? window.modfarmSettingsUi : {};
 
@@ -214,7 +215,7 @@
     const secondary = document.createElement('nav'); secondary.className = 'mf-settings-subnav'; secondary.setAttribute('aria-label','Settings sections');
     root.insertBefore(primary, workspace); root.insertBefore(secondary, workspace);
     const layoutTabs = root.querySelector('.mf-ppb-layout-tabs');
-    const choices = {design:[['branding','Branding'],['colors','Colors'],['fonts','Fonts']],function:[['navigation','Navigation'],['book-presentation','Book cards'],['marketing','Marketing'],['site-basics','Site sizing']]};
+    const choices = {design:[['branding','Branding'],['colors','Colors'],['fonts','Fonts']],function:[['navigation','Navigation'],['book-presentation','Book cards'],['marketing','Integrations'],['site-basics','Site sizing']]};
     const remembered = {design:'colors',function:'navigation'};
     let category = 'design';
     const routeKey = 'modfarm-settings-section-v2';
@@ -267,6 +268,10 @@
         if (choices[category] && choices[category].some(item => item[0] === saved.section)) remembered[category] = saved.section;
       }
     } catch (e) {}
+    if (openIntegrations) {
+      category = 'function';
+      remembered.function = 'marketing';
+    }
     root.classList.add('has-hierarchy'); selectCategory(category);
   }
   function layoutMainCleanup() {

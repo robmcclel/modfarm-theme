@@ -2772,6 +2772,13 @@ function modfarm_add_settings_page() {
 }
 add_action('admin_menu', 'modfarm_add_settings_page');
 
+function modfarm_integrations_settings_url(): string {
+    return add_query_arg(
+        ['page' => 'modfarm_theme_settings', 'mf_section' => 'integrations'],
+        admin_url('themes.php')
+    );
+}
+
 function modfarm_custom_font_redirect(string $status, string $message = ''): void {
     $url = add_query_arg(
         [
@@ -3081,6 +3088,8 @@ function modfarm_render_settings_page() {
             <?php wp_nonce_field('modfarm_upload_custom_font'); ?>
         </form>
 
+        <?php do_action('modfarm_integration_settings_forms'); ?>
+
         <form method="post" action="options.php" class="modfarm-settings-form">
             <?php settings_fields($option_group); ?>
 
@@ -3137,7 +3146,7 @@ function modfarm_render_settings_page() {
                             data-tab="marketing"
                             role="tab"
                             aria-selected="false">
-                        Marketing
+                        Integrations
                     </label>
                 <label class="mf-tab" for="mf-tab-control-navigation" data-tab="navigation" role="tab" aria-selected="false">Navigation</label>
 </nav>
@@ -4157,13 +4166,13 @@ function modfarm_render_settings_page() {
                         </div>
                     </section>
 
-                    <!-- MARKETING -->
+                    <!-- INTEGRATIONS -->
                     <section id="mf-tab-marketing"
                              class="mf-tab-panel"
                              role="tabpanel">
                         <div class="mf-panel-inner">
-                            <h2 class="mf-panel-title">Marketing</h2>
-                            <p class="mf-panel-intro">Site-wide marketing and measurement integrations.</p>
+                            <h2 class="mf-panel-title">Integrations</h2>
+                            <p class="mf-panel-intro">Manage external services used by this site.</p>
 
                             <div class="mf-settings-grid">
                                 <div class="mf-settings-main">
@@ -4213,6 +4222,7 @@ function modfarm_render_settings_page() {
                                             </tbody>
                                         </table>
                                     </div>
+                                    <?php do_action('modfarm_integration_settings'); ?>
                                 </div>
                             </div>
                         </div>

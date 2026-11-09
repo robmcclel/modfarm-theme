@@ -2,6 +2,7 @@
 define('ABSPATH', '/tmp/');
 function esc_html__($v,...$a) {return esc_html($v);}
 function add_filter(...$a) {}
+function do_action(...$a) {}
 $root=dirname(__DIR__) . '/modfarm-theme/modfarm-theme';
 function add_action(...$a) {} function get_option($k,$d=[]) {return match($k){'blogname'=>'Test Site','blogdescription'=>'Reader relationships',default=>$d};}
 function get_theme_mod($k,$d=0){return $d;} function wp_get_nav_menus(){return [(object)['term_id'=>1,'name'=>'Main menu']];}
