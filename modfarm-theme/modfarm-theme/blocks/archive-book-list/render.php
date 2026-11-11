@@ -174,7 +174,11 @@ function modfarm_render_archive_book_list_block( $attributes, $content = '', $bl
         }
 
         $term_display_order = mfs_get_archive_term_meta( $qo->term_id, 'archive_display_order', '' );
-        if ( in_array( $term_display_order, array( 'ASC', 'DESC', 'rand' ), true ) ) {
+        $term_order_options = array( 'ASC', 'DESC', 'rand' );
+        if ( 'book-series' === $qo->taxonomy ) {
+            $term_order_options = array_merge( $term_order_options, array( 'reading_order', 'series_position' ) );
+        }
+        if ( in_array( $term_display_order, $term_order_options, true ) ) {
             $a['display-order'] = $term_display_order;
         }
 
@@ -410,7 +414,12 @@ function modfarm_render_archive_book_list_block( $attributes, $content = '', $bl
         'no_found_rows'  => ! $query_has_pagination,
     );
 
-    if ( $orderby === 'rand' ) {
+    $series_order = $qo instanceof WP_Term && 'book-series' === $qo->taxonomy
+        && in_array( $order_setting, array( 'reading_order', 'series_position' ), true );
+
+    if ( $series_order ) {
+        $args['orderby'] = 'date';
+    } elseif ( $orderby === 'rand' ) {
         $args['orderby'] = 'rand';
     } else {
         $args['orderby']   = $numeric_order ? 'meta_value_num' : 'meta_value';
@@ -419,12 +428,48 @@ function modfarm_render_archive_book_list_block( $attributes, $content = '', $bl
         $args['order']     = $order;
     }
 
-    $query = new WP_Query( modfarm_filter_books_by_language($args, $attributes) );
+    $query_books = static function( $query_args ) use ( $attributes, $series_order, $order_setting ) {
+        $query_args = modfarm_filter_books_by_language( $query_args, $attributes );
+        if ( ! $series_order ) {
+            return new WP_Query( $query_args );
+        }
+
+        $query = new WP_Query();
+        $order_books = static function( $orderby, $current_query ) use ( $query, $order_setting ) {
+            if ( $current_query !== $query ) {
+                return $orderby;
+            }
+
+            global $wpdb;
+            // An optional scalar lookup keeps unnumbered books in the results
+            // and gives pagination a stable order without duplicating posts.
+            $rank = $wpdb->prepare(
+                "SELECT CASE WHEN TRIM(series_meta.meta_value) REGEXP '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$'
+                    THEN CAST(series_meta.meta_value AS DECIMAL(30,10)) END
+                 FROM {$wpdb->postmeta} AS series_meta
+                 WHERE series_meta.post_id = {$wpdb->posts}.ID AND series_meta.meta_key = %s
+                 ORDER BY series_meta.meta_id ASC LIMIT 1",
+                $order_setting
+            );
+            return "($rank) IS NULL ASC, ($rank) ASC, {$wpdb->posts}.post_date ASC, {$wpdb->posts}.ID ASC";
+        };
+
+        add_filter( 'posts_orderby', $order_books, 10, 2 );
+        try {
+            $query->query( $query_args );
+        } finally {
+            remove_filter( 'posts_orderby', $order_books, 10 );
+        }
+
+        return $query;
+    };
+
+    $query = $query_books( $args );
 
     if ( $format_term && ! $query->have_posts() ) {
         $fallback_args = $args;
         $fallback_args['tax_query'] = $context_tax_query;
-        $query = new WP_Query( modfarm_filter_books_by_language($fallback_args, $attributes) );
+        $query = $query_books( $fallback_args );
     }
 
     // --------------------------------------------------
