@@ -44,31 +44,42 @@ function modfarm_render_book_button_sample( $post_id, array $sample ) {
             $font = '"' . addcslashes( $sample['heading_font'], "\\\"\n\r\f" ) . '", serif';
         }
     }
+    $palette = array();
+    foreach ( array( 'background_color', 'text_color', 'heading_color', 'button_background_color', 'button_text_color', 'button_border_color' ) as $key ) {
+        $value = $sample[ $key ] ?? '';
+        if ( is_string( $value ) && ( $color = sanitize_hex_color( $value ) ) ) {
+            $palette[] = '--mfs-sample-' . str_replace( '_', '-', $key ) . ':' . $color;
+        }
+    }
     ?>
-    <section class="mfs-book-sample" id="<?php echo esc_attr( $id ); ?>" aria-labelledby="<?php echo esc_attr( $heading_id ); ?>">
+    <section class="mfs-book-sample" id="<?php echo esc_attr( $id ); ?>" aria-labelledby="<?php echo esc_attr( $heading_id ); ?>"<?php if ( $palette ) : ?> style="<?php echo esc_attr( implode( ';', $palette ) ); ?>"<?php endif; ?>>
         <header class="mfs-book-sample-header">
-            <h2 id="<?php echo esc_attr( $heading_id ); ?>" tabindex="-1"<?php if ( $font ) : ?> style="<?php echo esc_attr( 'font-family:' . $font ); ?>"<?php endif; ?>><?php echo esc_html( $title ); ?></h2>
+            <div>
+                <h2 id="<?php echo esc_attr( $heading_id ); ?>" tabindex="-1"<?php if ( $font ) : ?> style="<?php echo esc_attr( 'font-family:' . $font ); ?>"<?php endif; ?>><?php echo esc_html( $title ); ?></h2>
+                <?php if ( ! empty( $sample['subtitle'] ) ) : ?>
+                    <p class="mfs-book-sample-subtitle"><?php echo esc_html( $sample['subtitle'] ); ?></p>
+                <?php endif; ?>
+            </div>
             <button type="button" class="mfs-book-sample-close" aria-label="<?php esc_attr_e( 'Close sample', 'modfarm' ); ?>">&times;</button>
         </header>
-        <?php if ( ! empty( $sample['subtitle'] ) ) : ?>
-            <p class="mfs-book-sample-subtitle"><?php echo esc_html( $sample['subtitle'] ); ?></p>
-        <?php endif; ?>
-        <div class="mfs-book-sample-text">
-            <?php echo wp_kses_post( wpautop( $sample['body'] ) ); ?>
+        <div class="mfs-book-sample-content" tabindex="0" role="region" aria-label="<?php esc_attr_e( 'Sample text', 'modfarm' ); ?>">
+            <div class="mfs-book-sample-text">
+                <?php echo wp_kses_post( wpautop( $sample['body'] ) ); ?>
+            </div>
+            <?php if ( ! empty( $sample['cta_url'] ) && ! empty( $sample['cta_label'] ) ) :
+                $cta_event = array(
+                    'event_type'     => 'click',
+                    'event_category' => 'book_sample_cta',
+                    'origin'         => 'book_page_buttons',
+                    'book_id'        => $post_id,
+                    'label'          => $sample['cta_label'],
+                );
+                ?>
+                <a class="book-page-button is-primary mfs-book-sample-cta" href="<?php echo esc_url( $sample['cta_url'] ); ?>"
+                   data-mf-event="<?php echo esc_attr( wp_json_encode( $cta_event ) ); ?>"
+                   data-mf-href="<?php echo esc_attr( $sample['cta_url'] ); ?>"><?php echo esc_html( $sample['cta_label'] ); ?></a>
+            <?php endif; ?>
         </div>
-        <?php if ( ! empty( $sample['cta_url'] ) && ! empty( $sample['cta_label'] ) ) :
-            $cta_event = array(
-                'event_type'     => 'click',
-                'event_category' => 'book_sample_cta',
-                'origin'         => 'book_page_buttons',
-                'book_id'        => $post_id,
-                'label'          => $sample['cta_label'],
-            );
-            ?>
-            <a class="book-page-button is-primary mfs-book-sample-cta" href="<?php echo esc_url( $sample['cta_url'] ); ?>"
-               data-mf-event="<?php echo esc_attr( wp_json_encode( $cta_event ) ); ?>"
-               data-mf-href="<?php echo esc_attr( $sample['cta_url'] ); ?>"><?php echo esc_html( $sample['cta_label'] ); ?></a>
-        <?php endif; ?>
     </section>
     <?php
 }
