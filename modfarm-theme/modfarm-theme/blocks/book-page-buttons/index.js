@@ -9,10 +9,12 @@
     ToggleControl,
     Button,
     ColorPalette,
+    ComboboxControl,
+    Notice,
     BaseControl
   } = wp.components;
 
-  const { Fragment, createElement: el } = wp.element;
+  const { Fragment, createElement: el, useEffect, useState } = wp.element;
   const ServerSideRender = wp.serverSideRender;
 
   const MAX_BUTTONS = 6;
@@ -36,6 +38,49 @@
     { label: __('Primary (Filled)', 'modfarm'), value: 'primary' },
     { label: __('Secondary (Outline)', 'modfarm'), value: 'secondary' }
   ];
+
+  function BookPicker({ bookId, onPick }) {
+    const [query, setQuery] = useState('');
+    const [options, setOptions] = useState([]);
+    const [failed, setFailed] = useState(false);
+
+    useEffect(() => {
+      let active = true;
+      const timer = setTimeout(async () => {
+        try {
+          const requests = [wp.apiFetch({
+            path: '/wp/v2/book?status=publish&orderby=title&order=asc&per_page=20&_fields=id,title&search=' + encodeURIComponent(query.trim())
+          })];
+          if (bookId) requests.push(wp.apiFetch({ path: `/wp/v2/book?status=publish&include=${bookId}&_fields=id,title` }));
+          const books = (await Promise.all(requests)).flat();
+          if (!active) return;
+          const choices = new Map();
+          books.forEach(book => {
+            const title = document.createElement('textarea');
+            title.innerHTML = book.title.rendered;
+            choices.set(book.id, { value: String(book.id), label: title.value || __('Untitled book', 'modfarm') });
+          });
+          setOptions(Array.from(choices.values()));
+          setFailed(false);
+        } catch {
+          if (active) setFailed(true);
+        }
+      }, 250);
+      return () => { active = false; clearTimeout(timer); };
+    }, [bookId, query]);
+
+    return el(Fragment, null,
+      el(ComboboxControl, {
+        label: __('Book', 'modfarm'),
+        value: bookId ? String(bookId) : null,
+        options,
+        onFilterValueChange: setQuery,
+        onChange: value => onPick(Number(value) || 0),
+        help: __('Search published books by title.', 'modfarm')
+      }),
+      failed && el(Notice, { status: 'warning', isDismissible: false }, __('Unable to load books. Try searching again.', 'modfarm'))
+    );
+  }
 
   registerBlockType('modfarm/book-page-buttons', {
     title: __('Book Page Buttons', 'modfarm'),
@@ -104,6 +149,19 @@
             PanelBody,
             { title: __('Layout', 'modfarm'), initialOpen: true },
             el(SelectControl, {
+              label: __('Book source', 'modfarm'),
+              value: attributes.sourceMode || 'current',
+              options: [
+                { label: __('Current book', 'modfarm'), value: 'current' },
+                { label: __('Select a book', 'modfarm'), value: 'manual' }
+              ],
+              onChange: sourceMode => setAttributes({ sourceMode })
+            }),
+            attributes.sourceMode === 'manual' && el(BookPicker, {
+              bookId: attributes.bookId,
+              onPick: bookId => setAttributes({ bookId })
+            }),
+            el(SelectControl, {
               label: __('Alignment', 'modfarm'),
               value: alignment,
               options: [
@@ -163,7 +221,10 @@
                   value: btn.meta_key || '',
                   options: [
                     { label: __('Select Meta Field', 'modfarm'), value: '' },
-                    ...metaKeyOptions.map((key) => ({ label: key, value: key }))
+                    ...metaKeyOptions.map((key) => ({
+                      label: /^custom[1-6]$/.test(key) ? wp.i18n.sprintf(__('Custom Link %s', 'modfarm'), key.slice(-1)) : key,
+                      value: key
+                    }))
                   ],
                   onChange: (val) => updateButton(index, 'meta_key', val)
                 }),

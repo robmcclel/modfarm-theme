@@ -12,6 +12,14 @@
       "type": "array",
       "default": []
     },
+    "sourceMode": {
+      "type": "string",
+      "default": "current"
+    },
+    "bookId": {
+      "type": "number",
+      "default": 0
+    },
     "alignment": {
       "type": "string",
       "default": "center"
@@ -31,6 +39,7 @@
   },
   "editorScript": "modfarm-book-page-buttons-editor",
   "style": "file:./style.css",
+  "viewScript": "file:./view.js",
   "editorStyle": "file:./editor.css",
   "supports": {
     "html": false

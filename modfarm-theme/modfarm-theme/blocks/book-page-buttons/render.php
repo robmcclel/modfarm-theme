@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 require_once get_template_directory() . '/blocks/shared/book-options.php';
+require_once __DIR__ . '/sample.php';
 
 /**
  * Server-side render for Book Page Buttons block
@@ -18,6 +19,13 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 		// Fix for editor rendering
 		if ( ! $post_id && isset( $attributes['context']['postId'] ) ) {
 			$post_id = intval( $attributes['context']['postId'] );
+		}
+
+		if ( 'manual' === ( $attributes['sourceMode'] ?? '' ) ) {
+			$post_id = absint( $attributes['bookId'] ?? 0 );
+			if ( ! $post_id || 'publish' !== get_post_status( $post_id ) || post_password_required( $post_id ) ) {
+				return '';
+			}
 		}
 
 		if ( ! $post_id ) {
@@ -50,6 +58,7 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 			'review',
 		];
 
+		$samples = [];
 		ob_start();
 		?>
 		<div class="<?php echo $container_class; ?>">
@@ -68,11 +77,19 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 					continue;
 				}
 
+				$sample = preg_match( '/^custom[1-6]$/', $meta_key ) ? modfarm_book_button_sample( (int) $post_id, $url ) : null;
+				if ( array() === $sample ) {
+					continue;
+				}
+				if ( $sample ) {
+					$samples[ $sample['id'] ] = $sample;
+				}
+
 				$label        = esc_html( $button['label'] ?? ( $meta_key ? ucfirst( $meta_key ) : 'Link' ) );
 				if ( ! empty( $button['phrase_key'] ) && function_exists( 'modfarm_phrase' ) && isset( modfarm_phrase_registry()[ $button['phrase_key'] ] ) ) {
 					$label = esc_html( modfarm_phrase( $button['phrase_key'], modfarm_language_context( $post_id, (int) ( $attributes['mfLanguage'] ?? 0 ) ) ) );
 				}
-				$open_new_tab = ! empty( $button['new_tab'] );
+				$open_new_tab = ! $sample && ! empty( $button['new_tab'] );
 
 				// Per-button type (new): inherit | primary | secondary
 				$type = $button['type'] ?? 'inherit';
@@ -118,10 +135,10 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 				// SmartLinks wrap (Genius Quick Build Proxy) — eligible keys only
 				// - Audible excluded for now (SmartLinks core should already enforce)
 				$destination   = (string)$url;
-				$href          = $destination;
+				$href          = $sample ? '#' . $sample['id'] : $destination;
 				$smart_wrapped = 0;
 
-				if ( ! $is_taxonomy_series_link && function_exists('mfc_smartlinks_wrap_url') ) {
+				if ( ! $sample && ! $is_taxonomy_series_link && function_exists('mfc_smartlinks_wrap_url') ) {
 					$maybe = mfc_smartlinks_wrap_url( $destination, $meta_key );
 					if ( is_string($maybe) && $maybe !== '' && $maybe !== $destination ) {
 						$href = $maybe;
@@ -134,7 +151,7 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 				// Click tracking payload (ModFarm Core Events)
 				$event_payload = [
 					'event_type'     => 'click',
-					'event_category' => 'book_button',
+					'event_category' => $sample ? 'book_sample' : 'book_button',
 					'origin'         => 'book_page_buttons',
 					'book_id'        => $post_id,
 					'meta_key'       => $meta_key,
@@ -151,6 +168,9 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 				   data-mf-event="<?php echo $data_mf_event; ?>"
 				   data-mf-href="<?php echo esc_attr( $href ); ?>"
 				   data-mf-destination="<?php echo esc_attr( $destination ); ?>"
+				   <?php if ( $sample ) : ?>
+				   data-mf-book-sample="<?php echo esc_attr( $sample['id'] ); ?>" aria-haspopup="dialog"
+				   <?php endif; ?>
 				   href="<?php echo esc_url( $href ); ?>"
 				   <?php echo $style_attr; ?>
 				   <?php echo $open_new_tab ? 'target="_blank" rel="noopener noreferrer"' : ''; ?>>
@@ -159,6 +179,9 @@ if ( ! function_exists( 'modfarm_render_book_page_buttons_block' ) ) {
 			<?php endforeach; ?>
 		</div>
 		<?php
+		foreach ( $samples as $sample ) {
+			modfarm_render_book_button_sample( (int) $post_id, $sample );
+		}
 		return ob_get_clean();
 	}
 }
