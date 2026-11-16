@@ -63,34 +63,47 @@ a.book-page-button:focus-visible {
 
 /* The fragment remains a readable inline target when JavaScript is unavailable. */
 .mfs-book-sample {
+  --_sample-surface: var(--mfs-sample-background-color, #fffdf8);
+  --_sample-text: var(--mfs-sample-text-color, #26221e);
+  --_sample-heading: var(--mfs-sample-heading-color, #191613);
+  --_sample-button-bg: var(--mfs-sample-button-background-color, #29241f);
+  --_sample-button-text: var(--mfs-sample-button-text-color, #fffdf8);
+  --_sample-button-border: var(--mfs-sample-button-border-color, var(--_sample-button-bg));
+  --_sample-gutter: clamp(1.25rem, 5vw, 3rem);
+
   display: none;
   box-sizing: border-box;
   margin-inline: auto;
   max-width: 46rem;
-  padding: clamp(1.25rem, 5vw, 3rem);
+  background: var(--_sample-surface);
+  color: var(--_sample-text);
   overflow-wrap: anywhere;
 }
 
-.mfs-book-sample:target,
-.mfs-book-sample-dialog[open] > .mfs-book-sample {
-  display: block;
-}
-
 .mfs-book-sample:target {
+  display: block;
   scroll-margin-top: 2rem;
 }
 
 .mfs-book-sample-dialog {
-  padding: 0;
+  box-sizing: border-box;
   width: min(46rem, calc(100% - 2rem));
   max-width: none;
-  max-height: calc(100% - 2rem);
-  box-sizing: border-box;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
   border: 0;
   border-radius: 0.75rem;
-  background: var(--wp--preset--color--base, Canvas);
-  color: var(--wp--preset--color--contrast, CanvasText);
-  overscroll-behavior: contain;
+  background: #fffdf8;
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%);
+}
+
+.mfs-book-sample-dialog[open] > .mfs-book-sample {
+  display: flex;
+  flex-direction: column;
+  max-block-size: calc(100vh - 2rem);
+  max-block-size: calc(100dvh - 2rem);
 }
 
 .mfs-book-sample-dialog::backdrop {
@@ -106,44 +119,99 @@ body:has(.mfs-book-sample-dialog[open]) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  padding: clamp(1.25rem, 4vw, 2rem) var(--_sample-gutter) 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--_sample-text) 16%, transparent);
 }
 
 .mfs-book-sample-header h2 {
+  color: var(--_sample-heading);
+  font-size: clamp(1.5rem, 1.1rem + 1.5vw, 2.4rem);
+  line-height: 1.15;
   margin: 0;
+}
+
+.mfs-book-sample-header .mfs-book-sample-subtitle {
+  color: var(--_sample-text);
+  margin: 0.5em 0 0;
+}
+
+.mfs-book-sample-content {
+  padding: 1.5rem var(--_sample-gutter) var(--_sample-gutter);
+}
+
+.mfs-book-sample-dialog[open] .mfs-book-sample-content {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.mfs-book-sample-content::-webkit-scrollbar {
+  display: none;
+}
+
+.mfs-book-sample-content:focus-visible {
+  outline: 2px solid var(--_sample-heading);
+  outline-offset: -3px;
+}
+
+.mfs-book-sample-text {
+  color: var(--_sample-text);
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+.mfs-book-sample-text > :first-child {
+  margin-block-start: 0;
+}
+
+.mfs-book-sample-text :is(p, li, blockquote, a) {
+  color: var(--_sample-text);
+}
+
+.mfs-book-sample-text :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--_sample-heading);
+}
+
+.mfs-book-sample-text a {
+  text-decoration: underline;
+}
+
+.mfs-book-sample .mfs-book-sample-close,
+.mfs-book-sample a.mfs-book-sample-cta {
+  background: var(--_sample-button-bg);
+  color: var(--_sample-button-text);
+  border: 1px solid var(--_sample-button-border);
 }
 
 .mfs-book-sample-close {
   display: none;
   flex-shrink: 0;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0;
-  border: 1px solid currentColor;
   border-radius: 50%;
-  background: transparent;
-  color: inherit;
   font: inherit;
   font-size: 1.5rem;
+  line-height: 1;
   cursor: pointer;
 }
 
 .mfs-book-sample-dialog[open] .mfs-book-sample-close {
-  display: block;
+  display: grid;
+  place-items: center;
 }
 
-.mfs-book-sample-subtitle {
-  margin: 0.5em 0 0;
-}
-
-.mfs-book-sample-text {
-  margin-top: 1.5rem;
-  font-size: 1.125rem;
-  line-height: 1.75;
+.mfs-book-sample-close:focus-visible,
+.mfs-book-sample a.mfs-book-sample-cta:focus-visible {
+  outline: 2px solid var(--_sample-heading);
+  outline-offset: 3px;
 }
 
 a.mfs-book-sample-cta {
   display: inline-block;
-  margin: 1rem 0 0;
+  margin: 1.25rem 0 0;
+  padding: 0.65rem 1.25rem;
   width: auto;
 }
 
@@ -151,9 +219,15 @@ a.mfs-book-sample-cta {
   .mfs-book-sample-dialog {
     inset: 0;
     width: 100%;
-    max-height: 100%;
     height: 100%;
+    height: 100dvh;
     margin: 0;
     border-radius: 0;
+  }
+
+  .mfs-book-sample-dialog[open] > .mfs-book-sample {
+    max-block-size: none;
+    min-block-size: 100%;
+    block-size: 100%;
   }
 }
