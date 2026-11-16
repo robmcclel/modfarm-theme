@@ -60,3 +60,100 @@ a.book-page-button:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+/* The fragment remains a readable inline target when JavaScript is unavailable. */
+.mfs-book-sample {
+  display: none;
+  box-sizing: border-box;
+  margin-inline: auto;
+  max-width: 46rem;
+  padding: clamp(1.25rem, 5vw, 3rem);
+  overflow-wrap: anywhere;
+}
+
+.mfs-book-sample:target,
+.mfs-book-sample-dialog[open] > .mfs-book-sample {
+  display: block;
+}
+
+.mfs-book-sample:target {
+  scroll-margin-top: 2rem;
+}
+
+.mfs-book-sample-dialog {
+  padding: 0;
+  width: min(46rem, calc(100% - 2rem));
+  max-width: none;
+  max-height: calc(100% - 2rem);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--wp--preset--color--base, Canvas);
+  color: var(--wp--preset--color--contrast, CanvasText);
+  overscroll-behavior: contain;
+}
+
+.mfs-book-sample-dialog::backdrop {
+  background: rgb(0 0 0 / 65%);
+}
+
+body:has(.mfs-book-sample-dialog[open]) {
+  overflow: hidden;
+}
+
+.mfs-book-sample-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mfs-book-sample-header h2 {
+  margin: 0;
+}
+
+.mfs-book-sample-close {
+  display: none;
+  flex-shrink: 0;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.mfs-book-sample-dialog[open] .mfs-book-sample-close {
+  display: block;
+}
+
+.mfs-book-sample-subtitle {
+  margin: 0.5em 0 0;
+}
+
+.mfs-book-sample-text {
+  margin-top: 1.5rem;
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+a.mfs-book-sample-cta {
+  display: inline-block;
+  margin: 1rem 0 0;
+  width: auto;
+}
+
+@media (max-width: 600px) {
+  .mfs-book-sample-dialog {
+    inset: 0;
+    width: 100%;
+    max-height: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+}
