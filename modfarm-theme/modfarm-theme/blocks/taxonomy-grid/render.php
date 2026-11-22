@@ -1,6 +1,58 @@
 <?php
 require_once get_template_directory() . '/blocks/shared/book-options.php';
 
+/** Shared accepted genre matching for the grid, book sections and CIR term resolver. */
+function modfarm_taxgrid_profile_matches(array $profile, string $slug, bool $include_children = true): bool {
+    if ($slug === '') return true;
+    $genres = $profile['accepted_genres'] ?? [['slug'=>$profile['primary_genre_slug'] ?? '']];
+    foreach ($genres as $item) {
+        if (($item['slug'] ?? '') === $slug && ($include_children || !isset($item['direct_score']) || (int)$item['direct_score'] * 2 > (int)($profile['classified_book_count'] ?? 0))) return true;
+        if ($include_children) {
+            $term = get_term_by('slug', $item['slug'] ?? '', 'book-genre');
+            if (!$term instanceof WP_Term) continue;
+            foreach (get_ancestors($term->term_id, 'book-genre', 'taxonomy') as $id) {
+                $parent = get_term((int)$id, 'book-genre');
+                if ($parent instanceof WP_Term && $parent->slug === $slug) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function modfarm_taxgrid_book_genre_query(array $attributes): array {
+    $slug = sanitize_title($attributes['seriesGenreSlug'] ?? '');
+    if (empty($attributes['matchingBooksOnly']) || $slug === '') return [];
+    return [['taxonomy'=>'book-genre', 'field'=>'slug', 'terms'=>[$slug], 'include_children'=>($attributes['includeSubgenres'] ?? true) !== false]];
+}
+
+/** Group under immediate children of the selected genre, rolling deeper descendants upward. */
+function modfarm_taxgrid_genre_groups(array $terms, array $attributes): array {
+    $groups = [];
+    $slug = sanitize_title($attributes['seriesGenreSlug'] ?? '');
+    $parent = $slug !== '' ? get_term_by('slug', $slug, 'book-genre') : null;
+    $children = !empty($attributes['groupBySubgenre']) && $parent instanceof WP_Term
+        ? get_terms(['taxonomy'=>'book-genre','parent'=>$parent->term_id,'hide_empty'=>false]) : [];
+    if (is_wp_error($children)) $children = [];
+    foreach ($terms as $term) {
+        $profile = function_exists('modfarm_get_series_genre_profile') ? modfarm_get_series_genre_profile((int)$term->term_id) : [];
+        $matches = [];
+        if (!empty($attributes['groupBySubgenre']) && $parent instanceof WP_Term) {
+            foreach ($children as $child) {
+                if (modfarm_taxgrid_profile_matches($profile, $child->slug, true)) $matches[$child->slug] = $child->name;
+            }
+            if (!$matches) $matches['other-'.$parent->slug] = sprintf(__('Other %s', 'modfarm'), $parent->name);
+        } else {
+            $matches[($profile['primary_genre_slug'] ?? '') ?: 'unclassified'] = ($profile['primary_genre'] ?? '') ?: __('Unclassified', 'modfarm');
+        }
+        foreach ($matches as $key => $label) {
+            if (!isset($groups[$key])) $groups[$key] = ['name'=>$label,'items'=>[]];
+            $groups[$key]['items'][] = $term;
+        }
+    }
+    uasort($groups, static fn($a,$b) => strcasecmp($a['name'],$b['name']));
+    return $groups;
+}
+
 /** Resolve the taxonomy-grid term set once for both rendering and CIR. */
 if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
   function modfarm_taxonomy_grid_resolve_terms(array $attributes, $requested_page = 1) {
@@ -28,9 +80,9 @@ if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
     }
     $genre_slug = sanitize_title($attributes['seriesGenreSlug'] ?? '');
     if ('book-series' === $taxonomy && '' !== $genre_slug && function_exists('modfarm_get_series_genre_profile')) {
-      $terms = array_values(array_filter($terms, static function($term) use ($genre_slug) {
+      $terms = array_values(array_filter($terms, static function($term) use ($genre_slug, $attributes) {
         $profile = modfarm_get_series_genre_profile((int)$term->term_id);
-        return $genre_slug === sanitize_title($profile['primary_genre_slug'] ?? '');
+        return modfarm_taxgrid_profile_matches($profile, $genre_slug, ($attributes['includeSubgenres'] ?? true) !== false);
       }));
     }
 	// This mode renders book sections and skips series with no published books.
@@ -40,12 +92,12 @@ if (!function_exists('modfarm_taxonomy_grid_resolve_terms')) {
 	}
 
     // Resolve format/language counts before paging, TOC generation, and CIR.
-    if (!empty($attributes['bookLanguage']) || !empty($attributes['book-format']['id'])) {
+    if (!empty($attributes['bookLanguage']) || !empty($attributes['book-format']['id']) || ('books_by_series' === $group_mode && !empty($attributes['matchingBooksOnly']) && $genre_slug !== '')) {
       foreach ($terms as $index => $term) {
         $count_query = new WP_Query(modfarm_filter_books_by_language(modfarm_filter_books_by_format([
           'post_type' => 'book', 'post_status' => 'publish',
           'posts_per_page' => 1, 'fields' => 'ids',
-          'tax_query' => [['taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => [(int)$term->term_id]]],
+          'tax_query' => array_merge([['taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => [(int)$term->term_id]]], 'books_by_series' === $group_mode ? modfarm_taxgrid_book_genre_query($attributes) : []),
         ], $attributes), $attributes));
         $terms[$index] = clone $term;
         $terms[$index]->count = (int)$count_query->found_posts;
@@ -94,6 +146,9 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
       'parentId'           => 0,
       'hideParents'        => false,
       'seriesGenreSlug'    => '',
+      'includeSubgenres' => true,
+      'groupBySubgenre' => false,
+      'matchingBooksOnly' => false,
 
       'columns'            => 4,
       'perPage'            => 24,
@@ -448,21 +503,7 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     };
 
     if ('series_by_genre' === $group_mode) {
-      $groups = [];
-      foreach ($terms_for_paging as $term) {
-        if (!($term instanceof WP_Term)) continue;
-        $profile = function_exists('modfarm_get_series_genre_profile') ? modfarm_get_series_genre_profile((int)$term->term_id) : [];
-        $genre_name = !empty($profile['primary_genre']) ? (string)$profile['primary_genre'] : __('Unclassified', 'modfarm');
-        $genre_slug = !empty($profile['primary_genre_slug']) ? (string)$profile['primary_genre_slug'] : 'unclassified';
-        if (!isset($groups[$genre_slug])) {
-          $groups[$genre_slug] = [
-            'name' => $genre_name,
-            'items' => [],
-          ];
-        }
-        $groups[$genre_slug]['items'][] = $term;
-      }
-      uasort($groups, static fn($left, $right) => strcasecmp((string)$left['name'], (string)$right['name']));
+      $groups = modfarm_taxgrid_genre_groups($terms_for_paging, $a);
       $toc_items = [];
       foreach ($groups as $group_key => $group) {
         $toc_items[] = [
@@ -539,11 +580,11 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
             'posts_per_page' => -1,
             'fields'         => 'ids',
             'no_found_rows'  => true,
-            'tax_query'      => [[
+            'tax_query'      => array_merge([[
               'taxonomy' => 'book-series',
               'field'    => 'term_id',
               'terms'    => [(int)$term->term_id],
-            ]],
+            ]], modfarm_taxgrid_book_genre_query($a)),
           ], $a), $a));
           $book_ids = array_values(array_filter(array_map('absint', is_array($book_ids) ? $book_ids : [])));
           usort($book_ids, static function($left, $right) {
@@ -706,4 +747,5 @@ if (!function_exists('modfarm_render_taxonomy_grid_block')) {
     return ob_get_clean();
   }
 }
+
 
