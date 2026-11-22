@@ -138,6 +138,9 @@
       const grouped = ['books_by_series', 'series_by_genre'].includes(attributes.groupMode);
       const seriesControls = grouped || attributes.taxonomy === 'book-series';
       const terms = useTermsForTaxonomy(grouped ? 'book-series' : attributes.taxonomy);
+      const genreTerms = useTermsForTaxonomy('book-genre');
+      const genreTree = useMemo(() => buildTermTree(genreTerms), [genreTerms]);
+      const selectedGenre = (genreTerms || []).find(t => t.slug === attributes.seriesGenreSlug);
       const termTree = useMemo(() => buildTermTree(terms), [terms]);
       const clearLabelColor = () => setAttributes({ labelColor: '' });
       // Options
@@ -243,13 +246,28 @@
                 checked: !!attributes.hideParents,
                 onChange: (v) => setAttributes({ hideParents: !!v })
               }),
-            attributes.taxonomy === 'book-series' &&
-              el(TextControl, {
-                label: 'Series primary genre slug',
-                help: 'Optional. Example: fantasy or litrpg.',
-                value: attributes.seriesGenreSlug || '',
-                onChange: (v) => setAttributes({ seriesGenreSlug: v })
-              }),
+            seriesControls && el(TreeSelect, {
+              label: 'Genre',
+              help: 'Uses the series classification, including accepted subgenres.',
+              noOptionLabel: attributes.seriesGenreSlug && !selectedGenre ? attributes.seriesGenreSlug : 'All genres',
+              selectedId: selectedGenre ? selectedGenre.id : 0,
+              tree: genreTree,
+              onChange: id => setAttributes({seriesGenreSlug: (genreTerms.find(t => t.id === Number(id)) || {}).slug || ''})
+            }),
+            seriesControls && el(ToggleControl, {
+              label: 'Include subgenres', checked: attributes.includeSubgenres !== false,
+              onChange: v => setAttributes({includeSubgenres: v})
+            }),
+            attributes.groupMode === 'series_by_genre' && !!selectedGenre && el(ToggleControl, {
+              label: 'Group series by subgenre',
+              help: 'Creates sections for children of the selected genre, plus an Other section.',
+              checked: !!attributes.groupBySubgenre, onChange: v => setAttributes({groupBySubgenre: v})
+            }),
+            attributes.groupMode === 'books_by_series' && el(ToggleControl, {
+              label: 'Only books matching this genre',
+              help: 'Off shows the complete qualifying series in reading order.',
+              checked: !!attributes.matchingBooksOnly, onChange: v => setAttributes({matchingBooksOnly: v})
+            }),
             el(ToggleControl, {
               label: 'Hide Empty',
               checked: !!attributes.hideEmpty,
@@ -504,3 +522,4 @@
     }
   });
 })(window.wp);
+

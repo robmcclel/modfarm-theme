@@ -81,7 +81,7 @@ function modfarm_theme_resolve_taxonomy_grid_presentation( array $attributes, ar
 	$book_ids = $term_ids ? get_posts( modfarm_filter_books_by_language(modfarm_filter_books_by_format(array(
 		'post_type' => 'book', 'post_status' => 'publish', 'posts_per_page' => 5001,
 		'fields' => 'ids', 'no_found_rows' => true, 'orderby' => 'ID', 'order' => 'ASC',
-		'tax_query' => array( array( 'taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => $term_ids ) ),
+		'tax_query' => array_merge(array( array( 'taxonomy' => $taxonomy, 'field' => 'term_id', 'terms' => $term_ids ) ), 'books_by_series' === $selection['group_mode'] ? modfarm_taxgrid_book_genre_query($attributes) : array()),
 	), $attributes), $attributes) ) : array();
 	$books_complete = count( $book_ids ) <= 5000;
 	$book_ids = array_slice( array_values( array_unique( array_map( 'absint', $book_ids ) ) ), 0, 5000 );
@@ -104,6 +104,10 @@ function modfarm_theme_resolve_taxonomy_grid_presentation( array $attributes, ar
 		'query_scope' => array(
 			'taxonomy' => $taxonomy,
 			'group_mode' => $selection['group_mode'],
+            'genre_slug' => $selection['genre_slug'],
+            'include_subgenres' => ($attributes['includeSubgenres'] ?? true) !== false,
+            'group_by_subgenre' => !empty($attributes['groupBySubgenre']),
+            'matching_books_only' => !empty($attributes['matchingBooksOnly']),
 			'book_language' => $attributes['bookLanguage'] ?? '',
 			'book_format' => absint($attributes['book-format']['id'] ?? 0),
 			'display_mode' => sanitize_key( $attributes['displayMode'] ?? 'all' ),
@@ -169,3 +173,4 @@ add_action( 'init', function () {
 	modfarm_cir_register_block_provider( 'modfarm/taxonomy-grid', array( 'provider' => 'modfarm-theme', 'version' => '2', 'resolve' => 'modfarm_theme_resolve_taxonomy_grid_presentation' ) );
 	modfarm_cir_register_block_provider( 'modfarm/coming-soon-list', array( 'provider' => 'modfarm-theme', 'version' => '1', 'resolve' => 'modfarm_theme_resolve_coming_soon_presentation' ) );
 }, 30 );
+
